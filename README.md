@@ -1,2 +1,2 @@
 # ccexws
-a go package for crypto currnecy websocket operate
+a go package for crypto currnecy exchange
