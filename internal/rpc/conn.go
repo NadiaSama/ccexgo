@@ -44,6 +44,10 @@ type (
 	}
 )
 
+var (
+	ErrClear = errors.New("handleMessages closed")
+)
+
 func NewConn(stream Stream) Conn {
 	return &connection{
 		stream:  stream,
@@ -82,7 +86,11 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 	}
 
 	select {
-	case rc := <-rchan:
+	case rc, ok := <-rchan:
+		if !ok {
+			//handleMessage quit
+			return ErrClear
+		}
 		if rc.err != nil {
 			return rc.err
 		}
@@ -125,8 +133,19 @@ func (c *connection) fail(err error) {
 	c.stream.Close()
 }
 
+//close all pending rpcCall channel
+func (c *connection) clear() {
+	c.pendingMu.Lock()
+	defer c.pendingMu.Unlock()
+
+	for _, ch := range c.pending {
+		close(ch)
+	}
+}
+
 func (c *connection) handleMessages(ctx context.Context, handler Handler) {
 	defer close(c.done)
+	defer c.clear()
 	for {
 		response, err := c.stream.Read()
 		if err != nil {

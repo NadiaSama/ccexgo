@@ -85,3 +85,33 @@ func TestCall(t *testing.T) {
 		t.Errorf("bad state for connection %v", c.pending)
 	}
 }
+
+type (
+	testStreamH struct {
+		testStream
+	}
+)
+
+func (tsh *testStreamH) Read() (Response, error) {
+	return nil, NewStreamError(errors.New("test stream handler quit"))
+}
+
+func TestHadleMessagQuit(t *testing.T) {
+	stream := &testStreamH{
+		testStream: testStream{
+			result: []int{},
+			closed: false,
+			cond:   sync.NewCond(&sync.Mutex{}),
+			wait:   true,
+		},
+	}
+
+	conn := NewConn(stream)
+	result := &Result{}
+	ctx := context.Background()
+	conn.Run(ctx, nil)
+
+	if err := conn.Call(ctx, "", nil, result); err != ErrClear {
+		t.Errorf("bad error %v", err)
+	}
+}
