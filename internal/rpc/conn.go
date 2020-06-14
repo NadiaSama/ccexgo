@@ -33,7 +33,6 @@ type (
 		pending   map[ID]chan *rpcCall
 		done      chan struct{}
 		err       atomic.Value
-		closed    bool
 		seq       int64
 		streamMu  sync.Mutex
 		pendingMu sync.Mutex
@@ -72,6 +71,9 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 	}
 
 	if err = c.write(call); err != nil {
+		if errors.Is(err, &StreamError{}) {
+			c.fail(err)
+		}
 		return err
 	}
 
