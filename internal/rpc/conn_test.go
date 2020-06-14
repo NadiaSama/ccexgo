@@ -69,8 +69,8 @@ func TestCall(t *testing.T) {
 	conn.Run(ctx, nil)
 	for i := 1; i < 5; i++ {
 		conn.Call(ctx, "", nil, result)
-		if result.Params.(int) != i {
-			t.Errorf("bad value %v", result.Params)
+		if result.Result.(int) != i {
+			t.Errorf("bad value %v", result.Result)
 		}
 	}
 	//read error ctx will timeout

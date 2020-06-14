@@ -1,5 +1,9 @@
 package rpc
 
+const (
+	CodeOK = 0
+)
+
 type (
 	Message interface {
 	}
@@ -28,11 +32,17 @@ type (
 		params interface{}
 	}
 
+	//Error info for result code == 0 means no error
+	Error struct {
+		Code    int
+		Message string
+	}
+
 	//Result call result reply from server
 	Result struct {
 		ID     ID
-		Method string
-		Params interface{}
+		Error  Error
+		Result interface{}
 	}
 
 	//Notify subscribe messages from server (kline, orders...)
