@@ -37,7 +37,7 @@ func (ts *testStream) Read() (Response, error) {
 
 	val := ts.result[0]
 	ts.result = ts.result[1:]
-	return &Result{ID: ts.lastID, Params: val}, nil
+	return &Result{ID: ts.lastID, Result: val}, nil
 }
 
 func (ts *testStream) Write(req Request) error {
