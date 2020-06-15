@@ -2,9 +2,9 @@ package deribit
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 	"github.com/pkg/errors"
 )
@@ -17,14 +17,6 @@ const (
 )
 
 type (
-	BookData struct {
-		Timestamp      int              `json:"timestamp"`
-		InstrumentName string           `json:"instrument_name"`
-		ChangeID       int              `json:"charge_id"`
-		Bids           [][3]interface{} `json:"bids"`
-		Asks           [][3]interface{} `json:"asks"`
-	}
-
 	Notify struct {
 		Data    json.RawMessage `json:"data"`
 		Channel string          `json:"channel"`
@@ -52,7 +44,21 @@ type (
 
 	Codec struct {
 	}
+
+	notifyParseCB func(*Notify) (*rpc.Notify, error)
 )
+
+var (
+	notifyParseMap map[string]notifyParseCB = make(map[string]notifyParseCB)
+)
+
+func reigisterCB(key string, cb notifyParseCB) {
+	_, ok := notifyParseMap[key]
+	if ok {
+		panic(fmt.Sprintf("duplicate cb %s register", key))
+	}
+	notifyParseMap[key] = cb
+}
 
 func (cc *Codec) Decode(raw []byte) (rpc.Response, error) {
 	var resp Response
@@ -70,6 +76,7 @@ func (cc *Codec) Decode(raw []byte) (rpc.Response, error) {
 			Code:    resp.Error.Code,
 			Message: resp.Error.Message,
 		},
+		Result: resp.Result,
 	}, nil
 }
 
@@ -84,64 +91,15 @@ func (cc *Codec) Encode(req rpc.Request) ([]byte, error) {
 	return json.Marshal(&r)
 }
 
-func parseNotify(resp *Response) (*rpc.Notify, error) {
+func parseNotify(resp *Response) (rpc.Response, error) {
 	fields := strings.Split(resp.Params.Channel, ".")
 	if len(fields) == 0 {
 		return nil, errors.Errorf("bad message %v", resp.Params)
 	}
-	//book.${instrument_name}.${gap}
-	if fields[0] == "book" && len(fields) == 3 {
-		return parseNotifyBook(resp.Params.Data, fields[1])
-	}
-	return nil, errors.Errorf("unsupport channel %s", resp.Params.Channel)
 
-}
-
-func parseNotifyBook(data json.RawMessage, instrument string) (*rpc.Notify, error) {
-	processArr := func(d []exchange.OrderElem, s [][3]interface{}) (ret error) {
-		defer func() {
-			if err := recover(); err != nil {
-				ret = err.(error)
-			}
-		}()
-
-		for i, v := range s {
-			op := v[0].(string)
-			price := v[1].(float64)
-			amount := v[2].(float64)
-
-			if op == "new" || op == "change" {
-				d[i].Amount = amount
-				d[i].Price = price
-			} else if op == "delete" {
-				d[i].Amount = 0
-				d[i].Price = price
-			} else {
-				ret = errors.Errorf("unkown op %s", op)
-				return
-			}
-		}
-		return
+	cb, ok := notifyParseMap[fields[0]]
+	if !ok {
+		return nil, errors.Errorf("unsupport channel %s", resp.Params.Channel)
 	}
-	var bn BookData
-	if err := json.Unmarshal(data, &bn); err != nil {
-		return nil, err
-	}
-	notify := &rpc.Notify{
-		Method: subscriptionMethod,
-	}
-	on := &exchange.OrderBookNotify{
-		Symbol: instrument,
-		Asks:   make([]exchange.OrderElem, len(bn.Asks)),
-		Bids:   make([]exchange.OrderElem, len(bn.Bids)),
-	}
-
-	if err := processArr(on.Asks, bn.Asks); err != nil {
-		return nil, err
-	}
-	if err := processArr(on.Bids, bn.Bids); err != nil {
-		return nil, err
-	}
-	notify.Params = on
-	return notify, nil
+	return cb(&resp.Params)
 }
