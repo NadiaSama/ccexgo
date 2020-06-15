@@ -28,7 +28,7 @@ func main() {
 
 	var r rpc.Result
 	if err := conn.Call(ctx, "public/subscribe", map[string]interface{}{
-		"channels": []string{"ticker.BTC-PERPETUAL.100ms"}}, &r); err != nil {
+		"channels": []string{"books.BTC-PERPETUAL.100ms"}}, &r); err != nil {
 		panic(err)
 	}
 
