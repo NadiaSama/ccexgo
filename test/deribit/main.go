@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/NadiaSama/ccexws/exchange/deribit"
-	"github.com/NadiaSama/ccexws/internal/rpc"
+	"github.com/NadiaSama/ccexgo/exchange/deribit"
+	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 type testHandler struct {

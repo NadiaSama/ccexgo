@@ -3,7 +3,7 @@ package deribit
 import (
 	"testing"
 
-	"github.com/NadiaSama/ccexws/internal/rpc"
+	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 func TestDecode(t *testing.T) {

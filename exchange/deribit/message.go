@@ -3,7 +3,7 @@ package deribit
 import (
 	"encoding/json"
 
-	"github.com/NadiaSama/ccexws/internal/rpc"
+	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 //deribit message json serizlize
