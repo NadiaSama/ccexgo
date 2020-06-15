@@ -12,7 +12,19 @@ type (
 		Scope        string `json:"scope"`
 		TokenType    string `json:"token_type"`
 	}
+
+	Token interface {
+		SetToken(string)
+	}
+
+	AuthParam struct {
+		AccessToken string `json:"access_token"`
+	}
 )
+
+func (ap *AuthParam) SetToken(token string) {
+	ap.AccessToken = token
+}
 
 func (c *Client) getToken() (string, error) {
 	now := time.Now()

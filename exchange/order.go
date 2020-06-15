@@ -8,6 +8,7 @@ type (
 	OrderStatus int
 
 	Order struct {
+		ID       interface{}
 		Symbol   Symbol
 		Amount   float64
 		Price    float64
