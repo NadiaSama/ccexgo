@@ -2,9 +2,11 @@ package rpc
 
 import (
 	"context"
-	"errors"
+	"encoding/json"
 	"sync"
 	"sync/atomic"
+
+	"github.com/pkg/errors"
 )
 
 type (
@@ -15,8 +17,8 @@ type (
 	//Conn a connection bettwen the client and server
 	Conn interface {
 		//Call send request from client to server. if r is not nil the
-		//Call will be waiting for the server return and set Result
-		Call(ctx context.Context, method string, params interface{}, r *Result) error
+		//Call will be waiting for the server return and set dest via json.Unmarshal
+		Call(ctx context.Context, method string, params interface{}, dest interface{}) error
 		//Run start a gorotuine loop for notify message from server
 		//and call handler for each message
 		Run(ctx context.Context, handler Handler)
@@ -39,7 +41,6 @@ type (
 	}
 
 	rpcCall struct {
-		err    error
 		result *Result
 	}
 )
@@ -56,12 +57,12 @@ func NewConn(stream Stream) Conn {
 	}
 }
 
-func (c *connection) Call(ctx context.Context, method string, params interface{}, r *Result) error {
+func (c *connection) Call(ctx context.Context, method string, params interface{}, dest interface{}) error {
 	var err error
 	var rchan chan *rpcCall
 	call := NewCall(atomic.AddInt64(&c.seq, 1), method, params)
 
-	if r != nil {
+	if dest != nil {
 		rchan = make(chan *rpcCall, 1)
 		c.pendingMu.Lock()
 		c.pending[call.id] = rchan
@@ -81,7 +82,7 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 		return err
 	}
 
-	if r == nil {
+	if dest == nil {
 		return nil
 	}
 
@@ -91,11 +92,12 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 			//handleMessage quit
 			return ErrClear
 		}
-		if rc.err != nil {
-			return rc.err
+		if rc.result.Error.Code != CodeOK {
+			return errors.Errorf("call %s error: %s, code: %d", method, rc.result.Error.Message,
+				rc.result.Error.Code)
 		}
-		*r = *rc.result
-		return nil
+		err := json.Unmarshal(rc.result.Result, dest)
+		return err
 
 	case <-ctx.Done():
 		return ctx.Err()
@@ -162,7 +164,6 @@ func (c *connection) handleMessages(ctx context.Context, handler Handler) {
 			c.pendingMu.Unlock()
 			if ok {
 				rchan <- &rpcCall{
-					err:    nil,
 					result: msg,
 				}
 			}

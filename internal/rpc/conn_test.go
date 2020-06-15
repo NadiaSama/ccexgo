@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"sync"
 	"testing"
@@ -10,7 +11,7 @@ import (
 
 type (
 	testStream struct {
-		result []int
+		result []string
 		lastID ID
 		closed bool
 		cond   *sync.Cond
@@ -37,7 +38,7 @@ func (ts *testStream) Read() (Response, error) {
 
 	val := ts.result[0]
 	ts.result = ts.result[1:]
-	return &Result{ID: ts.lastID, Result: val}, nil
+	return &Result{ID: ts.lastID, Result: json.RawMessage(val)}, nil
 }
 
 func (ts *testStream) Write(req Request) error {
@@ -57,27 +58,27 @@ func (ts *testStream) Close() error {
 
 func TestCall(t *testing.T) {
 	stream := &testStream{
-		result: []int{1, 2, 3, 4},
+		result: []string{"[1]", "[2]", "[3]", "[4]"},
 		closed: false,
 		cond:   sync.NewCond(&sync.Mutex{}),
 		wait:   true,
 	}
 
 	conn := NewConn(stream)
-	result := &Result{}
 	ctx := context.Background()
 	conn.Run(ctx, nil)
+	var arr []int
 	for i := 1; i < 5; i++ {
-		conn.Call(ctx, "", nil, result)
-		if result.Result.(int) != i {
-			t.Errorf("bad value %v", result.Result)
+		conn.Call(ctx, "", nil, &arr)
+		if arr[0] != i {
+			t.Errorf("bad value %v", arr)
 		}
 	}
 	//read error ctx will timeout
 	ctx, _ = context.WithTimeout(ctx, time.Millisecond*100)
-	conn.Call(ctx, "", nil, result)
+	conn.Call(ctx, "", nil, &arr)
 	conn.Close()
-	if err := conn.Call(ctx, "", nil, result); !errors.Is(err, &StreamError{}) {
+	if err := conn.Call(ctx, "", nil, &arr); !errors.Is(err, &StreamError{}) {
 		t.Errorf("bad expect error %v", err)
 	}
 	c := conn.(*connection)
@@ -99,7 +100,7 @@ func (tsh *testStreamH) Read() (Response, error) {
 func TestHadleMessagQuit(t *testing.T) {
 	stream := &testStreamH{
 		testStream: testStream{
-			result: []int{},
+			result: []string{},
 			closed: false,
 			cond:   sync.NewCond(&sync.Mutex{}),
 			wait:   true,

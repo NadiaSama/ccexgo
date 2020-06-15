@@ -1,5 +1,7 @@
 package rpc
 
+import "encoding/json"
+
 const (
 	CodeOK = 0
 )
@@ -39,10 +41,11 @@ type (
 	}
 
 	//Result call result reply from server
+	//the Result field will be parsed via json.Unmarshal
 	Result struct {
 		ID     ID
 		Error  Error
-		Result interface{}
+		Result json.RawMessage
 	}
 
 	//Notify subscribe messages from server (kline, orders...)
