@@ -6,9 +6,10 @@ type (
 	OrderSide   int
 	OrderType   int
 	OrderStatus int
+	OrderID     interface{}
 
 	Order struct {
-		ID       interface{}
+		ID       OrderID
 		Symbol   Symbol
 		Amount   float64
 		Price    float64

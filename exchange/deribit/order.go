@@ -8,7 +8,7 @@ import (
 
 type (
 	OrderParam struct {
-		AuthParam
+		AuthToken
 		InstrumentName string  `json:"instrument_name"`
 		Amount         float64 `json:"amount"`
 		Price          float64 `json:"price"`
@@ -16,12 +16,16 @@ type (
 	}
 
 	OrderResult struct {
+		Order Order `json:"order"`
+	}
+
+	Order struct {
 		Price                float64 `json:"price"`
 		Amount               float64 `json:"amount"`
 		AveragePrice         float64 `json:"average_price"`
 		OrderState           string  `json:"order_state"`
 		OrderID              string  `json:"order_id"`
-		LastUpdatedTimestamp int64   `json:"last_updated_timestamp"`
+		LastUpdatedTimestamp int64   `json:"last_update_timestamp"`
 		CreationTimestamp    int64   `json:"creation_timestamp"`
 		Commision            float64 `json:"commision"`
 		Direction            string  `json:"direction"`
@@ -50,8 +54,8 @@ var (
 	}
 )
 
-func (c *Client) optionCreateOrder(op exchange.OptionSymbol, side exchange.OrderSide,
-	price, amount float64, typ exchange.OrderType, options interface{}) (*exchange.Order, error) {
+func (c *Client) OptionCreateOrder(op exchange.OptionSymbol, side exchange.OrderSide,
+	price, amount float64, typ exchange.OrderType, options ...interface{}) (*exchange.Order, error) {
 	var method string
 	if side == exchange.OrderSideBuy {
 		method = "/private/buy"
@@ -73,16 +77,29 @@ func (c *Client) optionCreateOrder(op exchange.OptionSymbol, side exchange.Order
 	return or.transform(), nil
 }
 
+func (c *Client) OptionCancelOrder(id exchange.OrderID) error {
+	param := map[string]interface{}{
+		"order_id": id,
+	}
+
+	var r Order
+	if err := c.call("/private/cancel", param, &r, true); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (or *OrderResult) transform() *exchange.Order {
-	create := mill2Time(or.CreationTimestamp)
-	update := mill2Time(or.LastUpdatedTimestamp)
+	order := &or.Order
+	create := mill2Time(order.CreationTimestamp)
+	update := mill2Time(order.LastUpdatedTimestamp)
 	return &exchange.Order{
-		ID:       or.OrderID,
-		Amount:   or.Amount,
-		Price:    or.Price,
-		AvgPrice: or.AveragePrice,
-		Status:   statusMap[or.OrderState],
-		Side:     directionMap[or.Direction],
+		ID:       order.OrderID,
+		Amount:   order.Amount,
+		Price:    order.Price,
+		AvgPrice: order.AveragePrice,
+		Status:   statusMap[order.OrderState],
+		Side:     directionMap[order.Direction],
 		Created:  create,
 		Updated:  update,
 	}
