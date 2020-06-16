@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/internal/rpc"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -18,15 +20,39 @@ type (
 	}
 )
 
+func NewClient(ctx context.Context, conn rpc.Conn, key, secret string) *Client {
+	c := exchange.Client{
+		Conn:   conn,
+		Key:    key,
+		Secret: secret,
+		Ctx:    ctx,
+	}
+	return &Client{
+		Client: &c,
+	}
+}
+
 func (c *Client) call(method string, params interface{}, dest interface{}, private bool) error {
 	if private {
-		token, ok := params.(Token)
-		if !ok {
+		ac, err := c.getToken()
+		if err != nil {
+			return errors.WithMessage(err, "get access token fail")
+		}
+
+		switch token := params.(type) {
+		case Token:
+			token.SetToken(ac)
+
+		case map[string]interface{}:
+			token["access_token"] = ac
+
+		default:
 			return fmt.Errorf("method %s private no access_token specific", method)
 		}
-		token.SetToken(c.accessToken)
+
 	}
-	ctx, _ := context.WithTimeout(c.Ctx, time.Second*5)
+	ctx, cancel := context.WithTimeout(c.Ctx, time.Second*5)
+	defer cancel()
 	err := c.Conn.Call(ctx, method, params, dest)
 	return err
 }

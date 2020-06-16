@@ -5,6 +5,12 @@ import (
 )
 
 type (
+	AuthParam struct {
+		GrantType    string `json:"grant_type"`
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	}
+
 	AuthResult struct {
 		AccessToken  string `json:"access_token"`
 		ExpiresIn    int    `json:"expires_in"`
@@ -17,12 +23,12 @@ type (
 		SetToken(string)
 	}
 
-	AuthParam struct {
+	AuthToken struct {
 		AccessToken string `json:"access_token"`
 	}
 )
 
-func (ap *AuthParam) SetToken(token string) {
+func (ap *AuthToken) SetToken(token string) {
 	ap.AccessToken = token
 }
 
@@ -33,7 +39,12 @@ func (c *Client) getToken() (string, error) {
 	}
 
 	var r AuthResult
-	if err := c.Client.Conn.Call(c.Ctx, "public/auth", nil, &r); err != nil {
+	param := &AuthParam{
+		ClientID:     c.Key,
+		ClientSecret: c.Secret,
+		GrantType:    "client_credentials",
+	}
+	if err := c.call("public/auth", param, &r, false); err != nil {
 		return "", err
 	}
 	c.tokenMu.Lock()
