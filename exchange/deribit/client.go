@@ -22,10 +22,11 @@ type (
 
 func NewClient(ctx context.Context, conn rpc.Conn, key, secret string) *Client {
 	c := exchange.Client{
-		Conn:   conn,
-		Key:    key,
-		Secret: secret,
-		Ctx:    ctx,
+		Conn:    conn,
+		Key:     key,
+		Secret:  secret,
+		Ctx:     ctx,
+		Timeout: time.Second * 2,
 	}
 	return &Client{
 		Client: &c,
@@ -51,7 +52,7 @@ func (c *Client) call(method string, params interface{}, dest interface{}, priva
 		}
 
 	}
-	ctx, cancel := context.WithTimeout(c.Ctx, time.Second*5)
+	ctx, cancel := context.WithTimeout(c.Ctx, c.Timeout)
 	defer cancel()
 	err := c.Conn.Call(ctx, method, params, dest)
 	return err
