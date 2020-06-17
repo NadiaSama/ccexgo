@@ -1,7 +1,6 @@
 package deribit
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -17,37 +16,36 @@ type (
 )
 
 var (
-	ErrBadSymbol = errors.New("bad symbol")
-	timeLayout   = "02Jan06"
+	timeLayout = "02Jan06"
 )
 
 //instrument_name-settle_time-strike-type
 func PraseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	fields := strings.Split(val, "-")
 	if len(fields) != 4 {
-		return nil, ErrBadSymbol
+		return nil, exchange.ErrBadSymbol
 	}
 	var typ exchange.OptionType
 	var strike int
 	var st time.Time
 
 	if fields[0] != "BTC" && fields[0] != "ETH" {
-		return nil, ErrBadSymbol
+		return nil, exchange.ErrBadSymbol
 	}
 	if fields[3] == "C" {
 		typ = exchange.OptionTypeCall
 	} else if fields[3] == "P" {
 		typ = exchange.OptionTypePut
 	} else {
-		return nil, ErrBadSymbol
+		return nil, exchange.ErrBadSymbol
 	}
 	strike, err := strconv.Atoi(fields[2])
 	if err != nil {
-		return nil, ErrBadSymbol
+		return nil, exchange.ErrBadSymbol
 	}
 	st, err = time.Parse(timeLayout, fields[1])
 	if err != nil {
-		return nil, ErrBadSymbol
+		return nil, exchange.ErrBadSymbol
 	}
 	//deribit settle at utc 8:00
 	st = st.UTC()

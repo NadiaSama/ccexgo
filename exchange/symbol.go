@@ -1,6 +1,13 @@
 package exchange
 
-import "time"
+import (
+	"errors"
+	"time"
+)
+
+var (
+	ErrBadSymbol = errors.New("bad symbol")
+)
 
 type (
 	//Symbol is used to unit different exchange markets symbol

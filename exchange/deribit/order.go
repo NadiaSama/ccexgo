@@ -2,7 +2,8 @@ package deribit
 
 import (
 	"context"
-	"time"
+
+	"github.com/NadiaSama/ccexgo/misc"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 )
@@ -30,6 +31,7 @@ type (
 		CreationTimestamp    int64   `json:"creation_timestamp"`
 		Commision            float64 `json:"commision"`
 		Direction            string  `json:"direction"`
+		FilledAmont          float64 `json:"filled_amount"`
 	}
 )
 
@@ -92,8 +94,8 @@ func (c *Client) OptionCancelOrder(ctx context.Context, id exchange.OrderID) err
 
 func (or *OrderResult) transform() *exchange.Order {
 	order := &or.Order
-	create := mill2Time(order.CreationTimestamp)
-	update := mill2Time(order.LastUpdatedTimestamp)
+	create := misc.Milli2Time(order.CreationTimestamp)
+	update := misc.Milli2Time(order.LastUpdatedTimestamp)
 	return &exchange.Order{
 		ID:       order.OrderID,
 		Amount:   order.Amount,
@@ -103,9 +105,6 @@ func (or *OrderResult) transform() *exchange.Order {
 		Side:     directionMap[order.Direction],
 		Created:  create,
 		Updated:  update,
+		Filled:   order.FilledAmont,
 	}
-}
-
-func mill2Time(milli int64) time.Time {
-	return time.Unix(milli/1000, (milli%1000)*100)
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -34,17 +35,25 @@ func NewClient(key, secret string) *Client {
 	}
 }
 
-//Request send a jex rest request
-func (c *Client) Request(ctx context.Context, method string, uri string, param map[string]string,
-	sign bool) ([]byte, error) {
-	req, err := c.buildRequest(ctx, method, uri, param, sign)
+//request send a jex rest request
+func (c *Client) request(ctx context.Context, method string, uri string, param map[string]string,
+	dest interface{}, sign bool) (err error) {
+
+	defer func() {
+		if err != nil {
+			err = errors.WithMessagef(err, "request %s %s", method, uri)
+		}
+	}()
+
+	var req *http.Request
+	req, err = c.buildRequest(ctx, method, uri, param, sign)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	echan := make(chan error)
-	result := make(chan []byte)
 	httpc := http.DefaultClient
 	go func() {
+		defer close(echan)
 		resp, err := httpc.Do(req)
 		if err != nil {
 			echan <- errors.WithMessage(err, "Do request error")
@@ -60,16 +69,19 @@ func (c *Client) Request(ctx context.Context, method string, uri string, param m
 			echan <- errors.Errorf("bad response %s", string(body))
 			return
 		}
-		result <- body
+		if err := json.Unmarshal(body, dest); err != nil {
+			echan <- errors.WithMessagef(err, "unmarshal response error %s", string(body))
+		}
 	}()
 
 	select {
 	case <-ctx.Done():
-		return nil, ctx.Err()
-	case err := <-echan:
-		return nil, err
-	case ret := <-result:
-		return ret, nil
+		return ctx.Err()
+	case err, ok := <-echan:
+		if ok {
+			return nil
+		}
+		return err
 	}
 }
 
