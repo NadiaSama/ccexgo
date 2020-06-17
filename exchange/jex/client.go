@@ -24,22 +24,19 @@ type (
 	}
 )
 
-func NewClient(ctx context.Context, key, secret string) *Client {
+func NewClient(key, secret string) *Client {
 	return &Client{
 		Client: &exchange.Client{
-			Ctx:     ctx,
-			Timeout: time.Second * 2,
-			Key:     key,
-			Secret:  secret,
+			Key:    key,
+			Secret: secret,
 		},
 		apiHost: "testnet.jex.com",
 	}
 }
 
 //Request send a jex rest request
-func (c *Client) Request(method string, uri string, param map[string]string, sign bool) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(c.Ctx, c.Timeout)
-	defer cancel()
+func (c *Client) Request(ctx context.Context, method string, uri string, param map[string]string,
+	sign bool) ([]byte, error) {
 	req, err := c.buildRequest(ctx, method, uri, param, sign)
 	if err != nil {
 		return nil, err

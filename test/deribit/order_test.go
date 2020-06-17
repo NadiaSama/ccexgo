@@ -27,9 +27,9 @@ func TestOrderBuy(t *testing.T) {
 		t.Fatalf("missing env D_KEY D_SECRET")
 	}
 
-	client := deribit.NewClient(ctx, conn, key, secret)
+	client := deribit.NewClient(conn, key, secret)
 	sym, _ := deribit.PraseOptionSymbol("BTC-19JUN20-10250-C")
-	order, err := client.OptionCreateOrder(sym, exchange.OrderSideBuy, 0.001, 0.1, exchange.OrderTypeLimit)
+	order, err := client.OptionCreateOrder(ctx, sym, exchange.OrderSideBuy, 0.001, 0.1, exchange.OrderTypeLimit)
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
 	}
@@ -37,7 +37,7 @@ func TestOrderBuy(t *testing.T) {
 		t.Errorf("bad order status %v", *order)
 	}
 
-	if err := client.OptionCancelOrder(order.ID); err != nil {
+	if err := client.OptionCancelOrder(ctx, order.ID); err != nil {
 		t.Errorf("cancel order fail %s", err.Error())
 	}
 }

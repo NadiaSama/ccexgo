@@ -20,22 +20,20 @@ type (
 	}
 )
 
-func NewClient(ctx context.Context, conn rpc.Conn, key, secret string) *Client {
+func NewClient(conn rpc.Conn, key, secret string) *Client {
 	c := exchange.Client{
-		Conn:    conn,
-		Key:     key,
-		Secret:  secret,
-		Ctx:     ctx,
-		Timeout: time.Second * 2,
+		Conn:   conn,
+		Key:    key,
+		Secret: secret,
 	}
 	return &Client{
 		Client: &c,
 	}
 }
 
-func (c *Client) call(method string, params interface{}, dest interface{}, private bool) error {
+func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
 	if private {
-		ac, err := c.getToken()
+		ac, err := c.getToken(ctx)
 		if err != nil {
 			return errors.WithMessage(err, "get access token fail")
 		}
@@ -52,8 +50,6 @@ func (c *Client) call(method string, params interface{}, dest interface{}, priva
 		}
 
 	}
-	ctx, cancel := context.WithTimeout(c.Ctx, c.Timeout)
-	defer cancel()
 	err := c.Conn.Call(ctx, method, params, dest)
 	return err
 }

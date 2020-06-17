@@ -1,6 +1,7 @@
 package deribit
 
 import (
+	"context"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -54,7 +55,7 @@ var (
 	}
 )
 
-func (c *Client) OptionCreateOrder(op exchange.OptionSymbol, side exchange.OrderSide,
+func (c *Client) OptionCreateOrder(ctx context.Context, op exchange.OptionSymbol, side exchange.OrderSide,
 	price, amount float64, typ exchange.OrderType, options ...interface{}) (*exchange.Order, error) {
 	var method string
 	if side == exchange.OrderSideBuy {
@@ -70,20 +71,20 @@ func (c *Client) OptionCreateOrder(op exchange.OptionSymbol, side exchange.Order
 		Type:           type2Str[typ],
 	}
 	var or OrderResult
-	if err := c.call(method, param, &or, true); err != nil {
+	if err := c.call(ctx, method, param, &or, true); err != nil {
 		return nil, err
 	}
 
 	return or.transform(), nil
 }
 
-func (c *Client) OptionCancelOrder(id exchange.OrderID) error {
+func (c *Client) OptionCancelOrder(ctx context.Context, id exchange.OrderID) error {
 	param := map[string]interface{}{
 		"order_id": id,
 	}
 
 	var r Order
-	if err := c.call("/private/cancel", param, &r, true); err != nil {
+	if err := c.call(ctx, "/private/cancel", param, &r, true); err != nil {
 		return err
 	}
 	return nil

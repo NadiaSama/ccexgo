@@ -1,6 +1,7 @@
 package deribit
 
 import (
+	"context"
 	"time"
 )
 
@@ -32,7 +33,7 @@ func (ap *AuthToken) SetToken(token string) {
 	ap.AccessToken = token
 }
 
-func (c *Client) getToken() (string, error) {
+func (c *Client) getToken(ctx context.Context) (string, error) {
 	now := time.Now()
 	if c.expire.After(now) {
 		return c.accessToken, nil
@@ -44,12 +45,12 @@ func (c *Client) getToken() (string, error) {
 		ClientSecret: c.Secret,
 		GrantType:    "client_credentials",
 	}
-	if err := c.call("public/auth", param, &r, false); err != nil {
+	if err := c.call(ctx, "public/auth", param, &r, false); err != nil {
 		return "", err
 	}
 	c.tokenMu.Lock()
 	defer c.tokenMu.Unlock()
 	c.accessToken = r.AccessToken
-	c.expire = now.Add(time.Duration(r.ExpiresIn) * time.Second)
+	c.expire = now.Add(time.Duration(r.ExpiresIn-1) * time.Second)
 	return r.AccessToken, nil
 }
