@@ -26,7 +26,7 @@ func PraseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 		return nil, exchange.ErrBadSymbol
 	}
 	var typ exchange.OptionType
-	var strike int
+	var strike float64
 	var st time.Time
 
 	if fields[0] != "BTC" && fields[0] != "ETH" {
@@ -39,7 +39,7 @@ func PraseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	} else {
 		return nil, exchange.ErrBadSymbol
 	}
-	strike, err := strconv.Atoi(fields[2])
+	strike, err := strconv.ParseFloat(fields[2], 64)
 	if err != nil {
 		return nil, exchange.ErrBadSymbol
 	}
@@ -62,5 +62,6 @@ func (sym *OptionSymbol) String() string {
 		typ = "C"
 	}
 	st := strings.ToUpper(sym.SettleTime().Format(timeLayout))
-	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, sym.Strike(), typ)
+	strike := int(sym.Strike())
+	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
 }

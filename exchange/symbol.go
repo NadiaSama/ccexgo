@@ -19,21 +19,21 @@ type (
 
 	OptionSymbol interface {
 		Symbol
-		Strike() int
+		Strike() float64
 		Index() string
 		SettleTime() time.Time
 		Type() OptionType
 	}
 
 	BaseOptionSymbol struct {
-		strike     int
+		strike     float64
 		index      string
 		settleTime time.Time
 		typ        OptionType
 	}
 )
 
-func NewBaseOptionSymbol(strike int, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
+func NewBaseOptionSymbol(strike float64, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
 	return &BaseOptionSymbol{
 		strike:     strike,
 		index:      index,
@@ -42,7 +42,7 @@ func NewBaseOptionSymbol(strike int, index string, st time.Time, typ OptionType)
 	}
 }
 
-func (bos *BaseOptionSymbol) Strike() int {
+func (bos *BaseOptionSymbol) Strike() float64 {
 	return bos.strike
 }
 func (bos *BaseOptionSymbol) Index() string {
