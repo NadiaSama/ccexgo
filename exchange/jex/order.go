@@ -31,6 +31,7 @@ type (
 
 const (
 	newOrderRespTypeResult = "RESULT"
+	orderURI               = "/api/v1/option/order"
 )
 
 var (
@@ -88,10 +89,31 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 		"newOrderRespType": newOrderRespTypeResult,
 	}
 	var or OrderResult
-	if err := c.request(ctx, "POST", "/api/v1/option/order", params, &or, true); err != nil {
+	if err := c.request(ctx, "POST", orderURI, params, &or, true); err != nil {
 		return nil, err
 	}
 	return or.Transform()
+}
+
+func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+	params := map[string]string{
+		"symbol":  order.Symbol.String(),
+		"orderId": id2Str(order.ID),
+	}
+
+	var or OrderResult
+	if err := c.request(ctx, "DELETE", orderURI, params, &or, true); err != nil {
+		return nil, err
+	}
+
+	result, err := or.Transform()
+	if err != nil {
+		return nil, err
+	}
+	if result.Status != exchange.OrderStatusCancel {
+		return nil, errors.Errorf("cancel order fail")
+	}
+	return result, nil
 }
 
 func (or *OrderResult) Transform() (*exchange.Order, error) {
@@ -149,4 +171,9 @@ func (or *OrderResult) Transform() (*exchange.Order, error) {
 		Updated: updated,
 		Type:    typ,
 	}, nil
+}
+
+func id2Str(id exchange.OrderID) string {
+	val := id.(int)
+	return fmt.Sprintf("%d", val)
 }

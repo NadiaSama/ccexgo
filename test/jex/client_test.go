@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/jex"
 )
 
@@ -17,21 +18,24 @@ func TestRequest(t *testing.T) {
 	defer cancel()
 	client := jex.NewClient(key, secret)
 
-	_, err := client.Request(ctx, "GET", "/api/v1/optionInfo", nil, false)
-	if err != nil {
-		t.Errorf("test fail %v", err)
+	req := &exchange.OrderRequest{
+		Symbol: jex.NewOptionSymbol("EOS", 1.234,
+			time.Date(2020, 7, 6, 11, 0, 0, 0, time.UTC), exchange.OptionTypeCall),
+		Price:  0.3,
+		Amount: 0.1,
+		Type:   exchange.OrderTypeLimit,
+		Side:   exchange.OrderSideBuy,
 	}
+	order, err := client.OptionCreateOrder(ctx, req)
+	if err != nil {
+		t.Fatalf("put order fail %v", err)
+	}
+	fmt.Printf("new order %v", *order)
 
-	params := map[string]string{
-		"symbol":   "BTC0425CALL",
-		"price":    "0.1",
-		"quantity": "1.0",
-		"side":     "buy",
-		"type":     "LIMIT",
-	}
-	raw, err := client.Request(ctx, "POST", "/api/v1/option/order", params, true)
+	co, err := client.OptionCancelOrder(ctx, order)
 	if err != nil {
-		t.Errorf("put order fail %v", err)
+		t.Errorf("cancel order fail %v", err)
+	} else {
+		fmt.Printf("cancel result %v\n", *co)
 	}
-	fmt.Printf("%s\n", string(raw))
 }

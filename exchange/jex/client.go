@@ -114,7 +114,7 @@ func (c *Client) buildRequest(ctx context.Context, method string, uri string, pa
 	if method == "GET" {
 		url.RawQuery = query
 		body = nil
-	} else if method == "POST" {
+	} else if method == "POST" || method == "DELETE" {
 		body = bytes.NewReader([]byte(query))
 	} else {
 		return nil, errors.Errorf("unsupport http method %s", method)
