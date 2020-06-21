@@ -77,23 +77,34 @@ func (c *Client) OptionCreateOrder(ctx context.Context, op exchange.OptionSymbol
 		return nil, err
 	}
 
-	return or.transform(), nil
+	return or.Order.transform(), nil
 }
 
-func (c *Client) OptionCancelOrder(ctx context.Context, id exchange.OrderID) error {
+func (c *Client) OptionFetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
 	param := map[string]interface{}{
-		"order_id": id,
+		"order_id": order.ID,
+	}
+	var r Order
+	if err := c.call(ctx, "/private/get_order_state", param, &r, true); err != nil {
+		return nil, err
+	}
+
+	return r.transform(), nil
+}
+
+func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+	param := map[string]interface{}{
+		"order_id": order.ID,
 	}
 
 	var r Order
 	if err := c.call(ctx, "/private/cancel", param, &r, true); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return r.transform(), nil
 }
 
-func (or *OrderResult) transform() *exchange.Order {
-	order := &or.Order
+func (order *Order) transform() *exchange.Order {
 	create := misc.Milli2Time(order.CreationTimestamp)
 	update := misc.Milli2Time(order.LastUpdatedTimestamp)
 	return &exchange.Order{
