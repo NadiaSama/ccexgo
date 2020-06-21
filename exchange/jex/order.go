@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
-	"github.com/NadiaSama/ccexgo/misc"
+	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
 )
 
@@ -149,12 +149,12 @@ func (or *OrderResult) Transform() (*exchange.Order, error) {
 	var updated time.Time
 	var created time.Time
 	if or.TranscatTime != 0 {
-		created = misc.Milli2Time(or.TranscatTime)
+		created = tconv.Milli2Time(or.TranscatTime)
 	} else {
-		created = misc.Milli2Time(or.Time)
+		created = tconv.Milli2Time(or.Time)
 	}
 	if or.UpdateTime != 0 {
-		updated = misc.Milli2Time(or.UpdateTime)
+		updated = tconv.Milli2Time(or.UpdateTime)
 	} else {
 		updated = time.Now()
 	}

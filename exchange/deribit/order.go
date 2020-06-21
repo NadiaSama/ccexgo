@@ -3,9 +3,8 @@ package deribit
 import (
 	"context"
 
-	"github.com/NadiaSama/ccexgo/misc"
-
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/misc/tconv"
 )
 
 type (
@@ -105,8 +104,8 @@ func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (
 }
 
 func (order *Order) transform() *exchange.Order {
-	create := misc.Milli2Time(order.CreationTimestamp)
-	update := misc.Milli2Time(order.LastUpdatedTimestamp)
+	create := tconv.Milli2Time(order.CreationTimestamp)
+	update := tconv.Milli2Time(order.LastUpdatedTimestamp)
 	return &exchange.Order{
 		ID:       order.OrderID,
 		Amount:   order.Amount,
