@@ -12,7 +12,7 @@ func TestNotifyBookTest(t *testing.T) {
       "type" : "change",
       "timestamp" : 1554373911330,
       "prev_change_id" : 297217,
-      "instrument_name" : "BTC-PERPETUAL",
+      "instrument_name" : "BTC-17Jun20-1000-C",
       "change_id" : 297218,
       "bids" : [
         [
@@ -34,10 +34,11 @@ func TestNotifyBookTest(t *testing.T) {
 		  ]
       ]
 	}`
-	notify, _ := parseNotifyBook(&Notify{Data: json.RawMessage(raw), Channel: "1.2"})
+	notify, _ := parseNotifyBook(&Notify{Data: json.RawMessage(raw), Channel: "1.BTC-17Jun20-1000-C"})
 	n := notify.Params.(*exchange.OrderBookNotify)
 	if n.Asks[0].Amount != 12 || n.Asks[0].Price != 5041.2 || n.Bids[0].Price != 5041.94 ||
-		n.Bids[0].Amount != 0 || n.Bids[1].Price != 5042.34 || n.Bids[1].Amount != 10 {
+		n.Bids[0].Amount != 0 || n.Bids[1].Price != 5042.34 || n.Bids[1].Amount != 10 ||
+		n.Symbol.String() != "BTC-17JUN20-1000-C" {
 		t.Errorf("bad notify %v", *n)
 	}
 
@@ -53,7 +54,7 @@ func TestNotifyBookTest(t *testing.T) {
         ]
       ],
       "asks" : [ ]}`
-	if _, err := parseNotifyBook(&Notify{Data: json.RawMessage(bad), Channel: "1.2"}); err == nil {
+	if _, err := parseNotifyBook(&Notify{Data: json.RawMessage(bad), Channel: "1.BTC-17Jun20-1000-C"}); err == nil {
 		t.Errorf("test bad format fail")
 	}
 }

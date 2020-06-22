@@ -8,6 +8,7 @@ import (
 	"github.com/NadiaSama/ccexgo/misc/float"
 	"github.com/emirpasic/gods/trees/btree"
 	"github.com/emirpasic/gods/utils"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -19,14 +20,14 @@ type (
 	//OrderBookNotify change of current orderbook
 	//OrderElem.Amount == 0 means delete
 	OrderBookNotify struct {
-		Symbol string
+		Symbol Symbol
 		Bids   []OrderElem
 		Asks   []OrderElem
 	}
 
 	//OrderBookDS is the ds which hold orderbook info
 	OrderBookDS struct {
-		symbol  string
+		symbol  Symbol
 		bids    *btree.Tree
 		asks    *btree.Tree
 		updated time.Time
@@ -34,7 +35,7 @@ type (
 
 	//OrderBook get via OrderBookDS.Snapshot
 	OrderBook struct {
-		Symbol  string
+		Symbol  Symbol
 		Bids    []OrderElem
 		Asks    []OrderElem
 		Created time.Time
@@ -46,8 +47,20 @@ func init() {
 	subRegister(typ, orderbookHandler)
 }
 
+func (c *Client) OrderBook(symbol string) (*OrderBook, error) {
+	c.SubMu.Lock()
+	defer c.SubMu.Unlock()
+	key := orderBookKey(symbol)
+	ins, ok := c.Sub[key]
+	if !ok {
+		return nil, errors.Errorf("unkown symbol %s", symbol)
+	}
+	ds := ins.(*OrderBookDS)
+	return ds.Snapshot(), nil
+}
+
 func (notify *OrderBookNotify) Key() string {
-	return fmt.Sprintf("book.%s", notify.Symbol)
+	return orderBookKey(notify.Symbol.String())
 }
 
 func NewOrderBookDS(notify *OrderBookNotify) *OrderBookDS {
@@ -57,21 +70,6 @@ func NewOrderBookDS(notify *OrderBookNotify) *OrderBookDS {
 		asks:    newBook(notify.Asks),
 		updated: time.Now(),
 	}
-}
-
-func newBook(data []OrderElem) *btree.Tree {
-	l := len(data)
-	if l < 3 {
-		l = 3
-	}
-	tree := btree.NewWith(l, utils.Float64Comparator)
-	for _, depth := range data {
-		if float.Equal(depth.Price, 0.0) {
-			continue
-		}
-		tree.Put(depth.Price, depth.Amount)
-	}
-	return tree
 }
 
 func (ds *OrderBookDS) Update(notify *OrderBookNotify) {
@@ -135,4 +133,23 @@ func orderbookHandler(ds interface{}, msg handlerMsg) interface{} {
 	ob := ds.(*OrderBookDS)
 	ob.Update(notify)
 	return ob
+}
+
+func newBook(data []OrderElem) *btree.Tree {
+	l := len(data)
+	if l < 3 {
+		l = 3
+	}
+	tree := btree.NewWith(l, utils.Float64Comparator)
+	for _, depth := range data {
+		if float.Equal(depth.Price, 0.0) {
+			continue
+		}
+		tree.Put(depth.Price, depth.Amount)
+	}
+	return tree
+}
+
+func orderBookKey(symbol string) string {
+	return fmt.Sprintf("book.%s", symbol)
 }

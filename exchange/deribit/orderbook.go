@@ -27,13 +27,17 @@ func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")
 	var bn BookData
 	if err := json.Unmarshal(resp.Data, &bn); err != nil {
-		return nil, err
+		return nil, errors.WithMessagef(err, "parse orderbookNotify fail %s", string(resp.Data))
+	}
+	sym, err := PraseOptionSymbol(fields[1])
+	if err != nil {
+		return nil, errors.WithMessage(err, "parse orderbookNotify symbol fail")
 	}
 	notify := &rpc.Notify{
 		Method: subscriptionMethod,
 	}
 	on := &exchange.OrderBookNotify{
-		Symbol: fields[1],
+		Symbol: sym,
 		Asks:   make([]exchange.OrderElem, len(bn.Asks)),
 		Bids:   make([]exchange.OrderElem, len(bn.Bids)),
 	}
