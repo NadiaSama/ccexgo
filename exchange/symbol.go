@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+const (
+	OptionTypeCall = iota
+	OptionTypePut
+)
+
 var (
 	ErrBadSymbol = errors.New("bad symbol")
 )
@@ -31,6 +36,11 @@ type (
 		settleTime time.Time
 		typ        OptionType
 	}
+
+	BaseSpotSymbol struct {
+		base  string
+		quote string
+	}
 )
 
 func NewBaseOptionSymbol(strike float64, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
@@ -55,7 +65,16 @@ func (bos *BaseOptionSymbol) Type() OptionType {
 	return bos.typ
 }
 
-const (
-	OptionTypeCall = iota
-	OptionTypePut
-)
+func NewBaseSpotSymbol(base, quote string) *BaseSpotSymbol {
+	return &BaseSpotSymbol{
+		base:  base,
+		quote: quote,
+	}
+}
+func (bss *BaseSpotSymbol) Base() string {
+	return bss.base
+}
+
+func (bss *BaseSpotSymbol) Quote() string {
+	return bss.quote
+}

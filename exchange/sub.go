@@ -32,7 +32,7 @@ func (c *Client) Handle(_ context.Context, notify *rpc.Notify) {
 	typ := reflect.TypeOf(msg)
 	cb := subTyp2CB[typ]
 
-	val, _ := c.Sub[msg.Key()]
+	val := c.Sub[msg.Key()]
 	val = cb(val, msg)
 	c.Sub[msg.Key()] = val
 }

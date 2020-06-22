@@ -13,6 +13,10 @@ type (
 	OptionSymbol struct {
 		*exchange.BaseOptionSymbol
 	}
+
+	SpotSymbol struct {
+		*exchange.BaseSpotSymbol
+	}
 )
 
 var (
@@ -64,4 +68,18 @@ func (sym *OptionSymbol) String() string {
 	st := strings.ToUpper(sym.SettleTime().Format(timeLayout))
 	strike := int(sym.Strike())
 	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
+}
+
+func ParseSpotSymbol(sym string) (exchange.Symbol, error) {
+	fields := strings.Split(strings.ToLower(sym), "_")
+	if len(fields) != 2 {
+		return nil, exchange.ErrBadSymbol
+	}
+	return &SpotSymbol{
+		exchange.NewBaseSpotSymbol(fields[0], fields[1]),
+	}, nil
+}
+
+func (sym *SpotSymbol) String() string {
+	return fmt.Sprintf("%s_%s", sym.Base(), sym.Quote())
 }
