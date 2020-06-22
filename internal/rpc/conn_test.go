@@ -75,10 +75,11 @@ func TestCall(t *testing.T) {
 		}
 	}
 	//read error ctx will timeout
-	ctx, _ = context.WithTimeout(ctx, time.Millisecond*100)
-	conn.Call(ctx, "", nil, &arr)
+	ctx2, cancel := context.WithTimeout(ctx, time.Millisecond*100)
+	defer cancel()
+	conn.Call(ctx2, "", nil, &arr)
 	conn.Close()
-	if err := conn.Call(ctx, "", nil, &arr); !errors.Is(err, &StreamError{}) {
+	if err := conn.Call(ctx2, "", nil, &arr); !errors.Is(err, &StreamError{}) {
 		t.Errorf("bad expect error %v", err)
 	}
 	c := conn.(*connection)

@@ -20,15 +20,18 @@ type (
 	}
 )
 
-func NewClient(conn rpc.Conn, key, secret string) *Client {
-	c := exchange.Client{
-		Conn:   conn,
-		Key:    key,
-		Secret: secret,
+func NewClient(key, secret string, test bool) *Client {
+	var addr string
+	if test {
+		addr = WSTestAddr
+	} else {
+		addr = WSAddr
 	}
-	return &Client{
-		Client: &c,
+
+	ret := &Client{
+		Client: exchange.NewClient(newDeribitConn, addr, key, secret),
 	}
+	return ret
 }
 
 func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
@@ -52,4 +55,13 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 	}
 	err := c.Conn.Call(ctx, method, params, dest)
 	return err
+}
+
+func newDeribitConn(addr string) (rpc.Conn, error) {
+	stream, err := rpc.NewWebsocketStream(addr, &Codec{})
+	if err != nil {
+		return nil, err
+	}
+	conn := rpc.NewConn(stream)
+	return conn, nil
 }

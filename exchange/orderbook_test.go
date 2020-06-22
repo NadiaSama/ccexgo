@@ -3,7 +3,12 @@ package exchange
 import "testing"
 
 func TestOrderBook(t *testing.T) {
-	ods := NewOrderBookDS("A", []OrderElem{}, []OrderElem{})
+	notify := &OrderBookNotify{
+		Symbol: "A",
+		Bids:   []OrderElem{},
+		Asks:   []OrderElem{},
+	}
+	ods := NewOrderBookDS(notify)
 
 	ods.Update(&OrderBookNotify{
 		Symbol: "A",

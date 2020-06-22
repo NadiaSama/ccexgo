@@ -1,6 +1,8 @@
 package exchange
 
 import (
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/misc/float"
@@ -22,6 +24,7 @@ type (
 		Asks   []OrderElem
 	}
 
+	//OrderBookDS is the ds which hold orderbook info
 	OrderBookDS struct {
 		symbol  string
 		bids    *btree.Tree
@@ -29,6 +32,7 @@ type (
 		updated time.Time
 	}
 
+	//OrderBook get via OrderBookDS.Snapshot
 	OrderBook struct {
 		Symbol  string
 		Bids    []OrderElem
@@ -37,11 +41,20 @@ type (
 	}
 )
 
-func NewOrderBookDS(symbol string, bids []OrderElem, asks []OrderElem) *OrderBookDS {
+func init() {
+	typ := reflect.TypeOf(&OrderBookNotify{})
+	subRegister(typ, orderbookHandler)
+}
+
+func (notify *OrderBookNotify) Key() string {
+	return fmt.Sprintf("book.%s", notify.Symbol)
+}
+
+func NewOrderBookDS(notify *OrderBookNotify) *OrderBookDS {
 	return &OrderBookDS{
-		symbol:  symbol,
-		bids:    newBook(bids),
-		asks:    newBook(asks),
+		symbol:  notify.Symbol,
+		bids:    newBook(notify.Bids),
+		asks:    newBook(notify.Asks),
 		updated: time.Now(),
 	}
 }
@@ -111,4 +124,15 @@ func (ds *OrderBookDS) Snapshot() *OrderBook {
 	}
 
 	return ret
+}
+
+func orderbookHandler(ds interface{}, msg handlerMsg) interface{} {
+	notify := msg.(*OrderBookNotify)
+	if ds == nil {
+		return NewOrderBookDS(notify)
+	}
+
+	ob := ds.(*OrderBookDS)
+	ob.Update(notify)
+	return ob
 }

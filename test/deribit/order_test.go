@@ -8,19 +8,11 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/deribit"
-	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 func TestOrderBuy(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
-
-	stream, err := rpc.NewWebsocketStream(deribit.WSTestAddr, &deribit.Codec{})
-	if err != nil {
-		t.Fatalf("create stream error %v", err)
-	}
-	conn := rpc.NewConn(stream)
-	go conn.Run(ctx, &testHandler{})
 
 	key := os.Getenv("D_KEY")
 	secret := os.Getenv("D_SECRET")
@@ -28,7 +20,10 @@ func TestOrderBuy(t *testing.T) {
 		t.Fatalf("missing env D_KEY D_SECRET")
 	}
 
-	client := deribit.NewClient(conn, key, secret)
+	client := deribit.NewClient(key, secret, true)
+	if err := client.Run(ctx); err != nil {
+		t.Fatalf("running the loop fail %s", err.Error())
+	}
 	sym, _ := deribit.PraseOptionSymbol("BTC-26JUN20-9000-C")
 	order, err := client.OptionCreateOrder(ctx, sym, exchange.OrderSideBuy, 0.001, 0.1, exchange.OrderTypeLimit)
 	if err != nil {
