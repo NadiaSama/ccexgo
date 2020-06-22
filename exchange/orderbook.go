@@ -47,20 +47,20 @@ func init() {
 	subRegister(typ, orderbookHandler)
 }
 
-func (c *Client) OrderBook(symbol string) (*OrderBook, error) {
+func (c *Client) OrderBook(symbol Symbol) (*OrderBook, error) {
 	c.SubMu.Lock()
 	defer c.SubMu.Unlock()
 	key := orderBookKey(symbol)
 	ins, ok := c.Sub[key]
 	if !ok {
-		return nil, errors.Errorf("unkown symbol %s", symbol)
+		return nil, errors.Errorf("unkown symbol %s", symbol.String())
 	}
 	ds := ins.(*OrderBookDS)
 	return ds.Snapshot(), nil
 }
 
 func (notify *OrderBookNotify) Key() string {
-	return orderBookKey(notify.Symbol.String())
+	return orderBookKey(notify.Symbol)
 }
 
 func NewOrderBookDS(notify *OrderBookNotify) *OrderBookDS {
@@ -150,6 +150,6 @@ func newBook(data []OrderElem) *btree.Tree {
 	return tree
 }
 
-func orderBookKey(symbol string) string {
-	return fmt.Sprintf("book.%s", symbol)
+func orderBookKey(symbol Symbol) string {
+	return fmt.Sprintf("book.%s", symbol.String())
 }

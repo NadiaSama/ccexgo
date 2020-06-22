@@ -16,7 +16,8 @@ func (c *Client) Subscribe(ctx context.Context, channels ...string) error {
 	}
 
 	if len(result) != len(channels) {
-		return errors.Errorf("subscribe error bad result %s", strings.Join(result, ","))
+		return errors.Errorf("subscribe [%s] error bad result [%s]",
+			strings.Join(channels, ","), strings.Join(result, ","))
 	}
 	set := map[string]struct{}{}
 	for _, r := range result {
