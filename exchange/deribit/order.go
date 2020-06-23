@@ -56,20 +56,19 @@ var (
 	}
 )
 
-func (c *Client) OptionCreateOrder(ctx context.Context, op exchange.OptionSymbol, side exchange.OrderSide,
-	price, amount float64, typ exchange.OrderType, options ...interface{}) (*exchange.Order, error) {
+func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderRequest) (*exchange.Order, error) {
 	var method string
-	if side == exchange.OrderSideBuy {
+	if req.Side == exchange.OrderSideBuy {
 		method = "/private/buy"
 	} else {
 		method = "/private/sell"
 	}
 
 	param := &OrderParam{
-		Amount:         amount,
-		Price:          price,
-		InstrumentName: op.String(),
-		Type:           type2Str[typ],
+		Amount:         req.Amount,
+		Price:          req.Price,
+		InstrumentName: req.Symbol.String(),
+		Type:           type2Str[req.Type],
 	}
 	var or OrderResult
 	if err := c.call(ctx, method, param, &or, true); err != nil {
