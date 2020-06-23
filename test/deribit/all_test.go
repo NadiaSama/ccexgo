@@ -22,6 +22,7 @@ func TestAll(t *testing.T) {
 	}
 
 	client := deribit.NewClient(key, secret, true)
+	channels := []string{}
 	if err := client.Run(baseCtx); err != nil {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
@@ -29,6 +30,7 @@ func TestAll(t *testing.T) {
 	if err := client.Subscribe(baseCtx, "deribit_price_index.btc_usd"); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}
+	channels = append(channels, "deribit_price_index.btc_usd")
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
 	if err != nil {
 		t.Fatalf("load instrument error %s", err.Error())
@@ -50,6 +52,7 @@ func TestAll(t *testing.T) {
 	if err := client.Subscribe(baseCtx, fmt.Sprintf("book.%s.raw", sym.String())); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
+	channels = append(channels, fmt.Sprintf("book.%s.raw", sym.String()))
 	//wait goroutine handle orderbook update
 	time.Sleep(100 * time.Millisecond)
 	orderbook, err := client.OrderBook(sym)
@@ -68,7 +71,14 @@ func TestAll(t *testing.T) {
 	}
 
 	fmt.Printf("ORDER %s %f\n", sym.String(), price)
-	order, err := client.OptionCreateOrder(baseCtx, sym, exchange.OrderSideBuy, price, 0.1, exchange.OrderTypeLimit)
+	req := exchange.OrderRequest{
+		Symbol: sym,
+		Price:  price,
+		Amount: 0.1,
+		Type:   exchange.OrderTypeLimit,
+		Side:   exchange.OrderSideBuy,
+	}
+	order, err := client.OptionCreateOrder(baseCtx, &req)
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
 	}
@@ -86,5 +96,9 @@ func TestAll(t *testing.T) {
 		if order.Status != exchange.OrderStatusCancel {
 			t.Errorf("test cancel fail %v", *order)
 		}
+	}
+
+	if err := client.UnSubscribe(baseCtx, channels...); err != nil {
+		t.Errorf("unsubscribe fail %s", err.Error())
 	}
 }
