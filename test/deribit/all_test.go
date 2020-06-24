@@ -26,14 +26,14 @@ func TestAll(t *testing.T) {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
 
-	if err := client.Subscribe(baseCtx, "deribit_price_index.btc_usd"); err != nil {
+	spot, _ := deribit.ParseSpotSymbol("btc_usd")
+	if err := client.Subscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
 	if err != nil {
 		t.Fatalf("load instrument error %s", err.Error())
 	}
-	spot, _ := deribit.ParseSpotSymbol("btc_usd")
 	index, _ := client.Index(spot)
 	fmt.Printf("GOT INDEX %v\n", *index)
 	var sym exchange.OptionSymbol
@@ -47,11 +47,11 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := client.Subscribe(baseCtx, fmt.Sprintf("book.%s.raw", sym.String())); err != nil {
+	if err := client.Subscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
 	//wait goroutine handle orderbook update
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	orderbook, err := client.OrderBook(sym)
 	if err != nil {
 		t.Fatalf("load order book fail %s", err.Error())
@@ -68,7 +68,14 @@ func TestAll(t *testing.T) {
 	}
 
 	fmt.Printf("ORDER %s %f\n", sym.String(), price)
-	order, err := client.OptionCreateOrder(baseCtx, sym, exchange.OrderSideBuy, price, 0.1, exchange.OrderTypeLimit)
+	req := exchange.OrderRequest{
+		Symbol: sym,
+		Price:  price,
+		Amount: 0.1,
+		Type:   exchange.OrderTypeLimit,
+		Side:   exchange.OrderSideBuy,
+	}
+	order, err := client.OptionCreateOrder(baseCtx, &req)
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
 	}
@@ -86,5 +93,12 @@ func TestAll(t *testing.T) {
 		if order.Status != exchange.OrderStatusCancel {
 			t.Errorf("test cancel fail %v", *order)
 		}
+	}
+
+	if err := client.UnSubscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
+		t.Errorf("unsubscribe orderbook fail %s", err.Error())
+	}
+	if err := client.UnSubscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
+		t.Errorf("unsubscribe index fail %s", err.Error())
 	}
 }

@@ -2,22 +2,55 @@ package deribit
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
 )
 
-func (c *Client) Subscribe(ctx context.Context, channels ...string) error {
+const (
+	methodSubscribe   = "subscribe"
+	methodUnSubscribe = "unsubscribe"
+)
+
+type (
+	subTypeCB func(syms ...exchange.Symbol) ([]string, error)
+)
+
+var (
+	subType2CB map[exchange.SubType]subTypeCB = make(map[exchange.SubType]subTypeCB)
+)
+
+func (c *Client) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
+	return c.subInternal(ctx, typ, methodSubscribe, syms...)
+}
+
+func (c *Client) UnSubscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
+	return c.subInternal(ctx, typ, methodUnSubscribe, syms...)
+}
+
+func (c *Client) subInternal(ctx context.Context, typ exchange.SubType, op string, syms ...exchange.Symbol) error {
+	cb, ok := subType2CB[typ]
+	if !ok {
+		return errors.WithMessagef(exchange.ErrUnsupport, "unsupport subtype %d", typ)
+	}
+	channels, err := cb(syms...)
+	if err != nil {
+		return err
+	}
+
 	var result []string
-	if err := c.call(ctx, "public/subscribe", map[string]interface{}{
+	method := fmt.Sprintf("public/%s", op)
+	if err := c.call(ctx, method, map[string]interface{}{
 		"channels": channels,
 	}, &result, false); err != nil {
 		return err
 	}
 
 	if len(result) != len(channels) {
-		return errors.Errorf("subscribe [%s] error bad result [%s]",
-			strings.Join(channels, ","), strings.Join(result, ","))
+		return errors.Errorf("%s [%s] error bad result [%s]",
+			op, strings.Join(channels, ","), strings.Join(result, ","))
 	}
 	set := map[string]struct{}{}
 	for _, r := range result {
@@ -25,8 +58,12 @@ func (c *Client) Subscribe(ctx context.Context, channels ...string) error {
 	}
 	for _, r := range channels {
 		if _, ok := set[r]; !ok {
-			return errors.Errorf("failed subscribe channel %s", r)
+			return errors.Errorf("failed %s channel %s", op, r)
 		}
 	}
 	return nil
+}
+
+func registerSubTypeCB(typ exchange.SubType, cb subTypeCB) {
+	subType2CB[typ] = cb
 }

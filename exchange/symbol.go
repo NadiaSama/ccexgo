@@ -1,17 +1,12 @@
 package exchange
 
 import (
-	"errors"
 	"time"
 )
 
 const (
 	OptionTypeCall = iota
 	OptionTypePut
-)
-
-var (
-	ErrBadSymbol = errors.New("bad symbol")
 )
 
 type (
