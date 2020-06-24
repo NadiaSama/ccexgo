@@ -8,12 +8,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	methodSubscribe   = "subscribe"
+	methodUnSubscribe = "unsubscribe"
+)
+
 func (c *Client) Subscribe(ctx context.Context, channels ...string) error {
-	return c.subInternal(ctx, "subscribe", channels...)
+	return c.subInternal(ctx, methodSubscribe, channels...)
 }
 
 func (c *Client) UnSubscribe(ctx context.Context, channels ...string) error {
-	return c.subInternal(ctx, "unsubscribe", channels...)
+	return c.subInternal(ctx, methodUnSubscribe, channels...)
 }
 
 func (c *Client) subInternal(ctx context.Context, op string, channels ...string) error {

@@ -1,7 +1,9 @@
 package deribit
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
@@ -19,6 +21,18 @@ type (
 
 func init() {
 	reigisterCB("deribit_price_index", parseNotifyIndex)
+}
+
+func (c *Client) SubscribeIndex(ctx context.Context, sym exchange.Symbol) error {
+	return c.subInternal(ctx, methodSubscribe, indexChannel(sym))
+}
+
+func (c *Client) UnSubscribeIndex(ctx context.Context, sym exchange.Symbol) error {
+	return c.subInternal(ctx, methodUnSubscribe, indexChannel(sym))
+}
+
+func indexChannel(sym exchange.Symbol) string {
+	return fmt.Sprintf("deribit_price_index.%s", sym.String())
 }
 
 func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {

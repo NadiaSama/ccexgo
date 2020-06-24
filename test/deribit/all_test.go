@@ -22,20 +22,18 @@ func TestAll(t *testing.T) {
 	}
 
 	client := deribit.NewClient(key, secret, true)
-	channels := []string{}
 	if err := client.Run(baseCtx); err != nil {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
 
-	if err := client.Subscribe(baseCtx, "deribit_price_index.btc_usd"); err != nil {
+	spot, _ := deribit.ParseSpotSymbol("btc_usd")
+	if err := client.SubscribeIndex(baseCtx, spot); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}
-	channels = append(channels, "deribit_price_index.btc_usd")
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
 	if err != nil {
 		t.Fatalf("load instrument error %s", err.Error())
 	}
-	spot, _ := deribit.ParseSpotSymbol("btc_usd")
 	index, _ := client.Index(spot)
 	fmt.Printf("GOT INDEX %v\n", *index)
 	var sym exchange.OptionSymbol
@@ -49,12 +47,11 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := client.Subscribe(baseCtx, fmt.Sprintf("book.%s.raw", sym.String())); err != nil {
+	if err := client.SubscribeOrderBook(baseCtx, sym); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
-	channels = append(channels, fmt.Sprintf("book.%s.raw", sym.String()))
 	//wait goroutine handle orderbook update
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	orderbook, err := client.OrderBook(sym)
 	if err != nil {
 		t.Fatalf("load order book fail %s", err.Error())
@@ -98,7 +95,10 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := client.UnSubscribe(baseCtx, channels...); err != nil {
-		t.Errorf("unsubscribe fail %s", err.Error())
+	if err := client.UnSubscribeOrderBook(baseCtx, sym); err != nil {
+		t.Errorf("unsubscribe orderbook fail %s", err.Error())
+	}
+	if err := client.UnSubscribeIndex(baseCtx, spot); err != nil {
+		t.Errorf("unsubscribe index fail %s", err.Error())
 	}
 }

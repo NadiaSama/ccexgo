@@ -1,7 +1,9 @@
 package deribit
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -23,6 +25,23 @@ func init() {
 	reigisterCB("book", parseNotifyBook)
 }
 
+func (c *Client) SubscribeOrderBook(ctx context.Context, syms ...exchange.Symbol) error {
+	channels := orderBookChannel(syms...)
+	return c.subInternal(ctx, methodSubscribe, channels...)
+}
+
+func (c *Client) UnSubscribeOrderBook(ctx context.Context, syms ...exchange.Symbol) error {
+	channels := orderBookChannel(syms...)
+	return c.subInternal(ctx, methodUnSubscribe, channels...)
+}
+
+func orderBookChannel(syms ...exchange.Symbol) []string {
+	ret := make([]string, len(syms))
+	for i, sym := range syms {
+		ret[i] = fmt.Sprintf("book.%s.raw", sym.String())
+	}
+	return ret
+}
 func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")
 	var bn BookData
