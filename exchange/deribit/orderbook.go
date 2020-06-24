@@ -1,7 +1,6 @@
 package deribit
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -23,24 +22,15 @@ type (
 
 func init() {
 	reigisterCB("book", parseNotifyBook)
+	registerSubTypeCB(exchange.SubTypeOrderBook, orderBookChannel)
 }
 
-func (c *Client) SubscribeOrderBook(ctx context.Context, syms ...exchange.Symbol) error {
-	channels := orderBookChannel(syms...)
-	return c.subInternal(ctx, methodSubscribe, channels...)
-}
-
-func (c *Client) UnSubscribeOrderBook(ctx context.Context, syms ...exchange.Symbol) error {
-	channels := orderBookChannel(syms...)
-	return c.subInternal(ctx, methodUnSubscribe, channels...)
-}
-
-func orderBookChannel(syms ...exchange.Symbol) []string {
+func orderBookChannel(syms ...exchange.Symbol) ([]string, error) {
 	ret := make([]string, len(syms))
 	for i, sym := range syms {
 		ret[i] = fmt.Sprintf("book.%s.raw", sym.String())
 	}
-	return ret
+	return ret, nil
 }
 func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")

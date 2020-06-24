@@ -1,7 +1,6 @@
 package deribit
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 
@@ -21,18 +20,15 @@ type (
 
 func init() {
 	reigisterCB("deribit_price_index", parseNotifyIndex)
+	registerSubTypeCB(exchange.SubTypeIndex, indexChannel)
 }
 
-func (c *Client) SubscribeIndex(ctx context.Context, sym exchange.Symbol) error {
-	return c.subInternal(ctx, methodSubscribe, indexChannel(sym))
-}
-
-func (c *Client) UnSubscribeIndex(ctx context.Context, sym exchange.Symbol) error {
-	return c.subInternal(ctx, methodUnSubscribe, indexChannel(sym))
-}
-
-func indexChannel(sym exchange.Symbol) string {
-	return fmt.Sprintf("deribit_price_index.%s", sym.String())
+func indexChannel(syms ...exchange.Symbol) ([]string, error) {
+	ret := make([]string, len(syms))
+	for i, sym := range syms {
+		ret[i] = fmt.Sprintf("deribit_price_index.%s", sym.String())
+	}
+	return ret, nil
 }
 
 func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {

@@ -27,7 +27,7 @@ func TestAll(t *testing.T) {
 	}
 
 	spot, _ := deribit.ParseSpotSymbol("btc_usd")
-	if err := client.SubscribeIndex(baseCtx, spot); err != nil {
+	if err := client.Subscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
@@ -47,7 +47,7 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := client.SubscribeOrderBook(baseCtx, sym); err != nil {
+	if err := client.Subscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
 	//wait goroutine handle orderbook update
@@ -95,10 +95,10 @@ func TestAll(t *testing.T) {
 		}
 	}
 
-	if err := client.UnSubscribeOrderBook(baseCtx, sym); err != nil {
+	if err := client.UnSubscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
 		t.Errorf("unsubscribe orderbook fail %s", err.Error())
 	}
-	if err := client.UnSubscribeIndex(baseCtx, spot); err != nil {
+	if err := client.UnSubscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
 		t.Errorf("unsubscribe index fail %s", err.Error())
 	}
 }

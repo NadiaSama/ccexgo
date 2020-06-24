@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
 )
 
@@ -13,15 +14,32 @@ const (
 	methodUnSubscribe = "unsubscribe"
 )
 
-func (c *Client) Subscribe(ctx context.Context, channels ...string) error {
-	return c.subInternal(ctx, methodSubscribe, channels...)
+type (
+	subTypeCB func(syms ...exchange.Symbol) ([]string, error)
+)
+
+var (
+	subType2CB map[exchange.SubType]subTypeCB = make(map[exchange.SubType]subTypeCB)
+)
+
+func (c *Client) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
+	return c.subInternal(ctx, typ, methodSubscribe, syms...)
 }
 
-func (c *Client) UnSubscribe(ctx context.Context, channels ...string) error {
-	return c.subInternal(ctx, methodUnSubscribe, channels...)
+func (c *Client) UnSubscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
+	return c.subInternal(ctx, typ, methodUnSubscribe, syms...)
 }
 
-func (c *Client) subInternal(ctx context.Context, op string, channels ...string) error {
+func (c *Client) subInternal(ctx context.Context, typ exchange.SubType, op string, syms ...exchange.Symbol) error {
+	cb, ok := subType2CB[typ]
+	if !ok {
+		return errors.WithMessagef(exchange.ErrUnsupport, "unsupport subtype %d", typ)
+	}
+	channels, err := cb(syms...)
+	if err != nil {
+		return err
+	}
+
 	var result []string
 	method := fmt.Sprintf("public/%s", op)
 	if err := c.call(ctx, method, map[string]interface{}{
@@ -44,4 +62,8 @@ func (c *Client) subInternal(ctx context.Context, op string, channels ...string)
 		}
 	}
 	return nil
+}
+
+func registerSubTypeCB(typ exchange.SubType, cb subTypeCB) {
+	subType2CB[typ] = cb
 }

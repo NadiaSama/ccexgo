@@ -2,12 +2,15 @@ package exchange
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 type (
+	SubType int
+
 	handlerMsg interface {
 		Key() string
 	}
@@ -15,11 +18,19 @@ type (
 	handlerMsgCB func(ds interface{}, msg handlerMsg) interface{}
 )
 
+const (
+	SubTypeOrderBook = iota
+	SubTypeIndex
+)
+
 var (
 	subTyp2CB = map[reflect.Type]handlerMsgCB{}
 )
 
 func subRegister(typ reflect.Type, cb handlerMsgCB) {
+	if _, ok := subTyp2CB[typ]; ok {
+		panic(fmt.Sprintf("duplicate subtype %d", typ))
+	}
 	subTyp2CB[typ] = cb
 }
 
