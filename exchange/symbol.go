@@ -15,6 +15,12 @@ type (
 		String() string
 	}
 
+	SpotSymbol interface {
+		Symbol
+		Base() string
+		Quote() string
+	}
+
 	OptionType int
 
 	OptionSymbol interface {

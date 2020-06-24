@@ -70,7 +70,13 @@ func (sym *OptionSymbol) String() string {
 	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
 }
 
-func ParseSpotSymbol(sym string) (exchange.Symbol, error) {
+func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+	return &SpotSymbol{
+		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote)),
+	}
+}
+
+func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
 	fields := strings.Split(strings.ToLower(sym), "_")
 	if len(fields) != 2 {
 		return nil, exchange.ErrBadSymbol
