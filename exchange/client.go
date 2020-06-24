@@ -42,3 +42,18 @@ func (c *Client) Run(ctx context.Context) error {
 	go c.Conn.Run(ctx, c)
 	return nil
 }
+
+//Done get notify if running loop closed
+func (c *Client) Done() <-chan struct{} {
+	return c.Conn.Done()
+}
+
+//Error return error if running loop closed due to error
+func (c *Client) Error() error {
+	return c.Conn.Error()
+}
+
+//Close the running loop
+func (c *Client) Close() error {
+	return c.Conn.Close()
+}
