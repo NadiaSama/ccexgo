@@ -24,7 +24,7 @@ var (
 )
 
 //instrument_name-settle_time-strike-type
-func PraseOptionSymbol(val string) (exchange.OptionSymbol, error) {
+func ParseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	fields := strings.Split(val, "-")
 	if len(fields) != 4 {
 		return nil, exchange.ErrBadSymbol

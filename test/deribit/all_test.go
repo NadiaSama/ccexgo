@@ -42,7 +42,7 @@ func TestAll(t *testing.T) {
 			continue
 		}
 		if i.Strike > index.Price {
-			sym, _ = deribit.PraseOptionSymbol(i.InstrumentName)
+			sym, _ = deribit.ParseOptionSymbol(i.InstrumentName)
 			break
 		}
 	}
