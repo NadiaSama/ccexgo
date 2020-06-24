@@ -26,30 +26,46 @@ var (
 //instrument_name-settle_time-strike-type
 func ParseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	fields := strings.Split(val, "-")
-	if len(fields) != 4 {
-		return nil, exchange.ErrBadSymbol
-	}
-	var typ exchange.OptionType
-	var strike float64
-	var st time.Time
+	failed := true
+	msg := "bad symbol"
+	var (
+		arg    interface{} = nil
+		typ    exchange.OptionType
+		strike float64
+		st     time.Time
+		err    error
+	)
 
-	if fields[0] != "BTC" && fields[0] != "ETH" {
-		return nil, exchange.ErrBadSymbol
+	for {
+		if len(fields) != 4 {
+			break
+		}
+		if fields[0] != "BTC" && fields[0] != "ETH" {
+			break
+		}
+		if fields[3] == "C" {
+			typ = exchange.OptionTypeCall
+		} else if fields[3] == "P" {
+			typ = exchange.OptionTypePut
+		} else {
+			break
+		}
+		strike, err = strconv.ParseFloat(fields[2], 64)
+		if err != nil {
+			msg = "parse float error"
+			arg = err
+		}
+		st, err = time.Parse(timeLayout, fields[1])
+		if err != nil {
+			msg = "parse time error"
+			arg = err
+		}
+		failed = false
+		break
 	}
-	if fields[3] == "C" {
-		typ = exchange.OptionTypeCall
-	} else if fields[3] == "P" {
-		typ = exchange.OptionTypePut
-	} else {
-		return nil, exchange.ErrBadSymbol
-	}
-	strike, err := strconv.ParseFloat(fields[2], 64)
-	if err != nil {
-		return nil, exchange.ErrBadSymbol
-	}
-	st, err = time.Parse(timeLayout, fields[1])
-	if err != nil {
-		return nil, exchange.ErrBadSymbol
+
+	if failed {
+		return nil, exchange.NewBadArg(msg, arg)
 	}
 	//deribit settle at utc 8:00
 	st = st.UTC()
@@ -79,7 +95,7 @@ func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
 	fields := strings.Split(strings.ToLower(sym), "_")
 	if len(fields) != 2 {
-		return nil, exchange.ErrBadSymbol
+		return nil, exchange.NewBadArg("bad spot symbol field len", len(fields))
 	}
 	return &SpotSymbol{
 		exchange.NewBaseSpotSymbol(fields[0], fields[1]),

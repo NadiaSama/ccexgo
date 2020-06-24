@@ -49,12 +49,12 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 			token["access_token"] = ac
 
 		default:
-			return fmt.Errorf("method %s private no access_token specific", method)
+			panic(fmt.Sprintf("method %s private no access_token specific", method))
 		}
 
 	}
 	err := c.Conn.Call(ctx, method, params, dest)
-	return err
+	return exchange.NewBadExResp(err)
 }
 
 func newDeribitConn(addr string) (rpc.Conn, error) {

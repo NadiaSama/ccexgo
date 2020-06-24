@@ -3,13 +3,16 @@ package rpc
 import "fmt"
 
 type (
-	//MsgError means Codec encode/decode stream data fail
+	//MsgError means the Msg format is not support by
+	//the Codec and encode/decode stream data fail
 	MsgError struct {
+		//Msg is the message return from/send to server
 		Msg []byte
 		Err error
 	}
 	//StreamError means there is something wrong with Stream
-	//underlying transport layer
+	//underlying transport layer. StreamError will make conn
+	//being closed
 	StreamError struct {
 		Err error
 	}

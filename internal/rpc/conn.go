@@ -96,8 +96,10 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 			return errors.Errorf("call %s error: %s, code: %d", method, rc.result.Error.Message,
 				rc.result.Error.Code)
 		}
-		err := json.Unmarshal(rc.result.Result, dest)
-		return err
+		if err := json.Unmarshal(rc.result.Result, dest); err != nil {
+			return errors.WithMessagef(err, "unmarshal %s error", string(rc.result.Result))
+		}
+		return nil
 
 	case <-ctx.Done():
 		return ctx.Err()
