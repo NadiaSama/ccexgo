@@ -34,6 +34,10 @@ func NewClient(key, secret string, test bool) *Client {
 	return ret
 }
 
+func (c *Client) Exchange() string {
+	return "deribit"
+}
+
 func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
 	if private {
 		ac, err := c.getToken(ctx)

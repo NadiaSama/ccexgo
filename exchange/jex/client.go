@@ -35,6 +35,10 @@ func NewClient(key, secret string) *Client {
 	}
 }
 
+func (c *Client) Exchange() string {
+	return "jex"
+}
+
 //request send a jex rest request
 func (c *Client) request(ctx context.Context, method string, uri string, param map[string]string,
 	dest interface{}, sign bool) (err error) {
