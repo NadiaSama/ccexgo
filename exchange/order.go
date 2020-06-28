@@ -15,7 +15,6 @@ type (
 		Type   OrderType
 		Price  float64
 		Amount float64
-		Opt    interface{}
 	}
 
 	Order struct {
@@ -31,6 +30,24 @@ type (
 		Side     OrderSide
 		Status   OrderStatus
 		Type     OrderType
+	}
+
+	//OrderReqOption specific option to create order
+	//each exchange support different options.
+	OrderReqOption interface {
+	}
+
+	//PostOnlyOption wether the order ensure maker
+	PostOnlyOption struct {
+		PostOnly bool
+	}
+
+	//TimeInForceFlag specific TimeInForceOption value
+	TimeInForceFlag string
+	//TimeInForceOption specific how long the order
+	//remains in effect
+	TimeInForceOption struct {
+		Flag TimeInForceFlag
 	}
 )
 
@@ -49,4 +66,23 @@ const (
 	OrderStatusDone
 	OrderStatusCancel
 	OrderStatusFailed
+
+	//TimeInForceGTC good_till_cancel
+	TimeInForceGTC = "gtc"
+	//TimeInForceFOK fill_or_kill
+	TimeInForceFOK = "fok"
+	//TimeInForceIOC immediate_or_cancel
+	TimeInForceIOC = "ioc"
 )
+
+func NewPostOnlyOption(postOnly bool) OrderReqOption {
+	return &PostOnlyOption{
+		PostOnly: postOnly,
+	}
+}
+
+func NewTimeInForceOption(flag TimeInForceFlag) OrderReqOption {
+	return &TimeInForceOption{
+		Flag: flag,
+	}
+}

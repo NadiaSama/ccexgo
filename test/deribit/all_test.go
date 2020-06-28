@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -28,7 +29,7 @@ func TestAll(t *testing.T) {
 
 	spot, _ := deribit.ParseSpotSymbol("btc_usd")
 	if err := client.Subscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
-		t.Fatalf("subscribe index fail %s", err.Error())
+		t.Fatalf("subscribe index fail %+v %v %s", err, reflect.TypeOf(err), err.Error())
 	}
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
 	if err != nil {
@@ -75,6 +76,7 @@ func TestAll(t *testing.T) {
 		Type:   exchange.OrderTypeLimit,
 		Side:   exchange.OrderSideBuy,
 	}
+	//create a order with price will not being executed
 	order, err := client.OptionCreateOrder(baseCtx, &req)
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
@@ -93,6 +95,16 @@ func TestAll(t *testing.T) {
 		if order.Status != exchange.OrderStatusCancel {
 			t.Errorf("test cancel fail %v", *order)
 		}
+	}
+
+	//test creat a fok order
+	if order, err = client.OptionCreateOrder(baseCtx, &req,
+		exchange.NewTimeInForceOption(exchange.TimeInForceFOK),
+		exchange.NewPostOnlyOption(false),
+	); err != nil {
+		t.Errorf("test create fok order fail %s", err.Error())
+	} else if order.Status != exchange.OrderStatusCancel {
+		t.Errorf("fok order executed %v", *order)
 	}
 
 	if err := client.UnSubscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {

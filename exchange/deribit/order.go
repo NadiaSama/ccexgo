@@ -8,15 +8,17 @@ import (
 )
 
 type (
-	OrderParam struct {
+	orderParam struct {
 		AuthToken
 		InstrumentName string  `json:"instrument_name"`
 		Amount         float64 `json:"amount"`
 		Price          float64 `json:"price"`
 		Type           string  `json:"limit"`
+		PostOnly       bool    `json:"post_only,omitempty"`
+		TimeInForce    string  `json:"time_in_force,omitempty"`
 	}
 
-	OrderResult struct {
+	orderResult struct {
 		Order Order `json:"order"`
 	}
 
@@ -54,9 +56,15 @@ var (
 		"buy":  exchange.OrderSideBuy,
 		"sell": exchange.OrderSideSell,
 	}
+
+	tifMap map[exchange.TimeInForceFlag]string = map[exchange.TimeInForceFlag]string{
+		exchange.TimeInForceFOK: "fill_or_kill",
+		exchange.TimeInForceGTC: "good_til_cancelled",
+		exchange.TimeInForceIOC: "immediate_or_cancel",
+	}
 )
 
-func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderRequest) (*exchange.Order, error) {
+func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderRequest, opts ...exchange.OrderReqOption) (*exchange.Order, error) {
 	var method string
 	if req.Side == exchange.OrderSideBuy {
 		method = "/private/buy"
@@ -64,13 +72,31 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 		method = "/private/sell"
 	}
 
-	param := &OrderParam{
+	param := &orderParam{
 		Amount:         req.Amount,
 		Price:          req.Price,
 		InstrumentName: req.Symbol.String(),
 		Type:           type2Str[req.Type],
 	}
-	var or OrderResult
+
+	for _, opt := range opts {
+		switch msg := opt.(type) {
+		case *exchange.PostOnlyOption:
+			param.PostOnly = msg.PostOnly
+
+		case *exchange.TimeInForceOption:
+			val, ok := tifMap[msg.Flag]
+			if !ok {
+				return nil, exchange.NewBadArg("invalid TimeInForceOption", msg)
+			}
+			param.TimeInForce = val
+
+		default:
+			return nil, exchange.NewBadArg("unsupport option value", msg)
+		}
+	}
+
+	var or orderResult
 	if err := c.call(ctx, method, param, &or, true); err != nil {
 		return nil, err
 	}
