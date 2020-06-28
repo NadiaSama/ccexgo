@@ -34,6 +34,9 @@ func (eba *ErrBadArg) Is(target error) bool {
 }
 
 func NewBadExResp(err error) error {
+	if err == nil {
+		return nil
+	}
 	return &ErrBadExResp{Err: err}
 }
 
