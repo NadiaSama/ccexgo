@@ -20,7 +20,7 @@ type (
 )
 
 var (
-	timeLayout = "02Jan06"
+	timeLayout = "2Jan06"
 )
 
 //instrument_name-settle_time-strike-type

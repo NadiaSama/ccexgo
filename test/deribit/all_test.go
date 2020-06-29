@@ -13,7 +13,7 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	baseCtx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	baseCtx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	key := os.Getenv("D_KEY")
@@ -22,7 +22,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("missing env D_KEY D_SECRET")
 	}
 
-	client := deribit.NewClient(key, secret, time.Second, true)
+	client := deribit.NewClient(key, secret, time.Second*5, true)
 	if err := client.Run(baseCtx); err != nil {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
@@ -42,17 +42,20 @@ func TestAll(t *testing.T) {
 		if i.SettlementPeriod != "day" {
 			continue
 		}
+
 		if i.Strike > index.Price {
 			sym, _ = deribit.ParseOptionSymbol(i.InstrumentName)
+			fmt.Printf("GOT SYMBOL %v %v\n", sym, i)
 			break
 		}
+
 	}
 
 	if err := client.Subscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
 	//wait goroutine handle orderbook update
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 	orderbook, err := client.OrderBook(sym)
 	if err != nil {
 		t.Fatalf("load order book fail %s", err.Error())
