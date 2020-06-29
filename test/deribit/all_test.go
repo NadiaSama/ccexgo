@@ -22,7 +22,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("missing env D_KEY D_SECRET")
 	}
 
-	client := deribit.NewClient(key, secret, true)
+	client := deribit.NewClient(key, secret, time.Second, true)
 	if err := client.Run(baseCtx); err != nil {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}

@@ -3,6 +3,7 @@ package exchange
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
@@ -16,18 +17,21 @@ type (
 		Addr    string
 		Key     string
 		Secret  string
-		SubMu   sync.Mutex
-		Sub     map[string]interface{}
+		Timeout time.Duration
+		//subscribe struct will be updated via rpc Conn notify message
+		Sub   map[string]interface{}
+		SubMu sync.Mutex
 	}
 )
 
 //NewClient got a new client instance
-func NewClient(cb ConnCB, addr, key, secret string) *Client {
+func NewClient(cb ConnCB, addr, key, secret string, timeout time.Duration) *Client {
 	return &Client{
 		NewConn: cb,
 		Addr:    addr,
 		Key:     key,
 		Secret:  secret,
+		Timeout: timeout,
 		Sub:     make(map[string]interface{}),
 	}
 }
