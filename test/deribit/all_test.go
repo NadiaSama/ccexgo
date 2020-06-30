@@ -84,7 +84,7 @@ func TestAll(t *testing.T) {
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
 	}
-	if order.Status != exchange.OrderStatusOpen || !order.Created.Equal(order.Updated) {
+	if order.Status != exchange.OrderStatusOpen || !order.Created.Equal(order.Updated) || order.Symbol.String() != sym.String() {
 		t.Errorf("bad order status %v", *order)
 	}
 

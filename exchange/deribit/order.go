@@ -5,6 +5,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/tconv"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -13,7 +14,7 @@ type (
 		InstrumentName string  `json:"instrument_name"`
 		Amount         float64 `json:"amount"`
 		Price          float64 `json:"price"`
-		Type           string  `json:"limit"`
+		Type           string  `json:"type"`
 		PostOnly       bool    `json:"post_only,omitempty"`
 		TimeInForce    string  `json:"time_in_force,omitempty"`
 	}
@@ -33,6 +34,7 @@ type (
 		Commision            float64 `json:"commision"`
 		Direction            string  `json:"direction"`
 		FilledAmont          float64 `json:"filled_amount"`
+		InstrumentName       string  `json:"instrument_name"`
 	}
 )
 
@@ -101,7 +103,7 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 		return nil, err
 	}
 
-	return or.Order.transform(), nil
+	return or.Order.transform()
 }
 
 func (c *Client) OptionFetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
@@ -113,7 +115,7 @@ func (c *Client) OptionFetchOrder(ctx context.Context, order *exchange.Order) (*
 		return nil, err
 	}
 
-	return r.transform(), nil
+	return r.transform()
 }
 
 func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
@@ -125,12 +127,16 @@ func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (
 	if err := c.call(ctx, "/private/cancel", param, &r, true); err != nil {
 		return nil, err
 	}
-	return r.transform(), nil
+	return r.transform()
 }
 
-func (order *Order) transform() *exchange.Order {
+func (order *Order) transform() (*exchange.Order, error) {
 	create := tconv.Milli2Time(order.CreationTimestamp)
 	update := tconv.Milli2Time(order.LastUpdatedTimestamp)
+	sym, err := ParseOptionSymbol(order.InstrumentName)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "parse symbol %s fail", order.InstrumentName)
+	}
 	return &exchange.Order{
 		ID:       order.OrderID,
 		Amount:   order.Amount,
@@ -140,6 +146,7 @@ func (order *Order) transform() *exchange.Order {
 		Side:     directionMap[order.Direction],
 		Created:  create,
 		Updated:  update,
+		Symbol:   sym,
 		Filled:   order.FilledAmont,
-	}
+	}, nil
 }
