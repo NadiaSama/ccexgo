@@ -1,6 +1,7 @@
 package deribit
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
@@ -21,11 +22,17 @@ func TestDecode(t *testing.T) {
 		"usDiff": 13356
 	}`
 	resp, err := cc.Decode([]byte(message))
+
 	if err != nil {
 		t.Fatalf("decode fail %s", err.Error())
 	}
 	result := resp.(*rpc.Result)
-	if result.ID.Num != 8163 || result.Error.Code != 11050 || result.Error.Message != "bad_request" {
+
+	var e *JRPCError
+	if !errors.As(result.Error, &e) {
+		t.Errorf("bad result error %v", result.Error)
+	}
+	if result.ID.Num != 8163 || e.Code != 11050 || e.Msg != "bad_request" {
 		t.Errorf("bad result %v", *result)
 	}
 }

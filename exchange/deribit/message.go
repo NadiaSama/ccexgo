@@ -74,12 +74,16 @@ func (cc *Codec) Decode(raw []byte) (rpc.Response, error) {
 		return resp, nil
 	}
 
+	var err error
+	if resp.Error.Code != 0 {
+		err = NewError(resp.Error.Code, resp.Error.Message)
+	} else {
+		err = nil
+	}
+
 	return &rpc.Result{
-		ID: rpc.ID{Num: resp.ID},
-		Error: rpc.Error{
-			Code:    resp.Error.Code,
-			Message: resp.Error.Message,
-		},
+		ID:     rpc.ID{Num: resp.ID},
+		Error:  err,
 		Result: resp.Result,
 	}, nil
 }
