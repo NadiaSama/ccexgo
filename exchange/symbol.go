@@ -4,11 +4,6 @@ import (
 	"time"
 )
 
-const (
-	OptionTypeCall = iota
-	OptionTypePut
-)
-
 type (
 	//Symbol is used to unit different exchange markets symbol
 	Symbol interface {
@@ -44,6 +39,11 @@ type (
 	}
 )
 
+const (
+	OptionTypeCall = iota
+	OptionTypePut
+)
+
 func NewBaseOptionSymbol(strike float64, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
 	return &BaseOptionSymbol{
 		strike:     strike,
@@ -64,6 +64,16 @@ func (bos *BaseOptionSymbol) SettleTime() time.Time {
 }
 func (bos *BaseOptionSymbol) Type() OptionType {
 	return bos.typ
+}
+
+func (ot OptionType) String() string {
+	if ot == OptionTypeCall {
+		return "CALL"
+	} else if ot == OptionTypePut {
+		return "PUT"
+	} else {
+		return "UNKOWN"
+	}
 }
 
 func NewBaseSpotSymbol(base, quote string) *BaseSpotSymbol {
