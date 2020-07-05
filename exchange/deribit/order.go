@@ -36,6 +36,8 @@ type (
 		FilledAmont          float64 `json:"filled_amount"`
 		InstrumentName       string  `json:"instrument_name"`
 	}
+
+	OrderID string
 )
 
 var (
@@ -138,7 +140,7 @@ func (order *Order) transform() (*exchange.Order, error) {
 		return nil, errors.WithMessagef(err, "parse symbol %s fail", order.InstrumentName)
 	}
 	return &exchange.Order{
-		ID:       order.OrderID,
+		ID:       NewOrderID(order.OrderID),
 		Amount:   order.Amount,
 		Price:    order.Price,
 		AvgPrice: order.AveragePrice,
@@ -149,4 +151,12 @@ func (order *Order) transform() (*exchange.Order, error) {
 		Symbol:   sym,
 		Filled:   order.FilledAmont,
 	}, nil
+}
+
+func NewOrderID(id string) OrderID {
+	return OrderID(id)
+}
+
+func (id OrderID) String() string {
+	return string(id)
 }

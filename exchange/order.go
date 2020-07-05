@@ -6,7 +6,10 @@ type (
 	OrderSide   int
 	OrderType   int
 	OrderStatus int
-	OrderID     interface{}
+
+	OrderID interface {
+		String() string
+	}
 
 	//OrderRequest carry field which used to create order
 	OrderRequest struct {

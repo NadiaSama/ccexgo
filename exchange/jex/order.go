@@ -12,6 +12,8 @@ import (
 )
 
 type (
+	OrderID int
+
 	OrderResult struct {
 		Symbol              string `json:"symbol"`
 		OrderID             int    `json:"orderId"`
@@ -98,7 +100,7 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
 	params := map[string]string{
 		"symbol":  order.Symbol.String(),
-		"orderId": id2Str(order.ID),
+		"orderId": order.ID.String(),
 	}
 
 	var or OrderResult
@@ -160,7 +162,7 @@ func (or *OrderResult) Transform() (*exchange.Order, error) {
 	}
 
 	return &exchange.Order{
-		ID:      or.OrderID,
+		ID:      NewOrderID(or.OrderID),
 		Side:    side,
 		Status:  status,
 		Symbol:  sym,
@@ -173,7 +175,10 @@ func (or *OrderResult) Transform() (*exchange.Order, error) {
 	}, nil
 }
 
-func id2Str(id exchange.OrderID) string {
-	val := id.(int)
-	return fmt.Sprintf("%d", val)
+func NewOrderID(id int) OrderID {
+	return OrderID(id)
+}
+
+func (id OrderID) String() string {
+	return fmt.Sprintf("%d", id)
 }
