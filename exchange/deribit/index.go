@@ -37,7 +37,7 @@ func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {
 		return nil, errors.WithMessagef(err, "unmarshal index result")
 	}
 
-	sym, err := ParseSpotSymbol(ir.IndexName)
+	sym, err := parseSpotSymbol(ir.IndexName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "bad indexName %s", ir.IndexName)
 	}

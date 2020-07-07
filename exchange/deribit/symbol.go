@@ -23,8 +23,18 @@ var (
 	timeLayout = "2Jan06"
 )
 
+func (c *Client) NewOptionSymbol(index string, st time.Time, strike float64, typ exchange.OptionType) exchange.OptionSymbol {
+	return &OptionSymbol{
+		exchange.NewBaseOptionSymbol(index, st, strike, typ),
+	}
+}
+
+func (c *Client) ParseOptionSymbol(val string) (exchange.OptionSymbol, error) {
+	return parseOptionSymbol(val)
+}
+
 //instrument_name-settle_time-strike-type
-func ParseOptionSymbol(val string) (exchange.OptionSymbol, error) {
+func parseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	fields := strings.Split(val, "-")
 	failed := true
 	msg := "bad symbol"
@@ -70,7 +80,7 @@ func ParseOptionSymbol(val string) (exchange.OptionSymbol, error) {
 	//deribit settle at utc 8:00
 	st = st.UTC()
 	st = st.Add(time.Hour * 8)
-	osym := exchange.NewBaseOptionSymbol(strike, fields[0], st, typ)
+	osym := exchange.NewBaseOptionSymbol(fields[0], st, strike, typ)
 	return &OptionSymbol{
 		osym,
 	}, nil
@@ -86,13 +96,25 @@ func (sym *OptionSymbol) String() string {
 	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
 }
 
-func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+func (c *Client) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+	return newSpotSymbol(base, quote)
+}
+
+func (c *Client) ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
+	return parseSpotSymbol(sym)
+}
+
+func newSpotSymbol(base, quote string) exchange.SpotSymbol {
 	return &SpotSymbol{
 		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote)),
 	}
 }
 
-func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
+func (sym *SpotSymbol) String() string {
+	return fmt.Sprintf("%s_%s", sym.Base(), sym.Quote())
+}
+
+func parseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
 	fields := strings.Split(strings.ToLower(sym), "_")
 	if len(fields) != 2 {
 		return nil, exchange.NewBadArg("bad spot symbol field len", len(fields))
@@ -100,8 +122,4 @@ func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
 	return &SpotSymbol{
 		exchange.NewBaseSpotSymbol(fields[0], fields[1]),
 	}, nil
-}
-
-func (sym *SpotSymbol) String() string {
-	return fmt.Sprintf("%s_%s", sym.Base(), sym.Quote())
 }

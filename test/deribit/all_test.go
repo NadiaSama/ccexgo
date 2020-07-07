@@ -27,7 +27,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
 
-	spot, _ := deribit.ParseSpotSymbol("btc_usd")
+	spot, _ := client.ParseSpotSymbol("btc_usd")
 	if err := client.Subscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
 		t.Fatalf("subscribe index fail %+v %v %s", err, reflect.TypeOf(err), err.Error())
 	}
@@ -44,7 +44,7 @@ func TestAll(t *testing.T) {
 		}
 
 		if i.Strike > index.Price {
-			sym, _ = deribit.ParseOptionSymbol(i.InstrumentName)
+			sym, _ = client.ParseOptionSymbol(i.InstrumentName)
 			fmt.Printf("GOT SYMBOL %v %v\n", sym, i)
 			break
 		}

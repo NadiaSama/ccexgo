@@ -5,7 +5,7 @@ import (
 )
 
 type (
-	//Symbol is used to unit different exchange markets symbol
+	//Symbol is used to unit different exchange markets symbol serialize
 	Symbol interface {
 		String() string
 	}
@@ -26,6 +26,7 @@ type (
 		Type() OptionType
 	}
 
+	//BaseOptionSymbol define common property of option symbol
 	BaseOptionSymbol struct {
 		strike     float64
 		index      string
@@ -33,6 +34,7 @@ type (
 		typ        OptionType
 	}
 
+	//BaseSpotSymbol define common property of spot symbol
 	BaseSpotSymbol struct {
 		base  string
 		quote string
@@ -44,7 +46,7 @@ const (
 	OptionTypePut
 )
 
-func NewBaseOptionSymbol(strike float64, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
+func NewBaseOptionSymbol(index string, st time.Time, strike float64, typ OptionType) *BaseOptionSymbol {
 	return &BaseOptionSymbol{
 		strike:     strike,
 		index:      index,
