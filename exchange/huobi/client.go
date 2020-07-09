@@ -24,6 +24,7 @@ const (
 	signatureVersion = "2"
 	scheme           = "https"
 	statusOK         = "ok"
+	codeOK           = 200
 )
 
 type (
@@ -32,13 +33,6 @@ type (
 		secret      string
 		apiHost     string
 		pair2Symbol map[string]exchange.SpotSymbol
-	}
-
-	respWrapper struct {
-		Status string          `json:"status"`
-		Ch     string          `json:"ch"`
-		Ts     int64           `json:"ts"`
-		Data   json.RawMessage `json:"data"`
 	}
 )
 
@@ -70,15 +64,8 @@ func (rc *RestClient) request(ctx context.Context, method string, endPoint strin
 			return err
 		}
 
-		var raw respWrapper
-		if err := json.Unmarshal(content, &raw); err != nil {
-			return err
-		}
-		if raw.Status != statusOK {
-			return newError(string(raw.Data))
-		}
-		if err := json.Unmarshal(raw.Data, dst); err != nil {
-			return err
+		if err := json.Unmarshal(content, dst); err != nil {
+			return errors.WithMessagef(err, "unmarshal %s fail", string(content))
 		}
 		return nil
 	})
@@ -94,11 +81,11 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 		ts := time.Now().UTC()
 		values.Add("AccessKeyId", rc.key)
 		values.Add("SignatureMethod", signatureMethod)
-		values.Add("SignatureVersion", signatureMethod)
+		values.Add("SignatureVersion", signatureVersion)
 		values.Add("Timestamp", ts.Format("2006-01-02T15:04:05"))
 		query = values.Encode()
 		sig := rc.signature(method, rc.apiHost, endPoint, query)
-		query = fmt.Sprintf("%s&signature=%s", query, url.QueryEscape(sig))
+		query = fmt.Sprintf("%s&Signature=%s", query, url.QueryEscape(sig))
 	} else {
 		query = values.Encode()
 	}

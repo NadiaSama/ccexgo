@@ -2,6 +2,7 @@ package huobi
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -20,15 +21,25 @@ type (
 		QuoteCurreny string `json:"quote-currency"`
 		Symbol       string `json:"symbol"`
 	}
+
+	SymbolResp struct {
+		Status string   `json:"status"`
+		Data   []Symbol `json:"data"`
+	}
 )
 
 func (rc *RestClient) initSymbol(ctx context.Context) error {
-	var syms []Symbol
-	if err := rc.request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &syms); err != nil {
+	var resp SymbolResp
+	if err := rc.request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &resp); err != nil {
 		return err
 	}
 
-	for _, sym := range syms {
+	if resp.Status != statusOK {
+		ret, _ := json.Marshal(&resp)
+		return newError(string(ret))
+	}
+
+	for _, sym := range resp.Data {
 		rc.pair2Symbol[sym.Symbol] = rc.NewSpotSymbol(sym.BaseCurrency, sym.QuoteCurreny)
 	}
 	return nil
