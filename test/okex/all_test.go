@@ -1,0 +1,28 @@
+package okex
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"testing"
+
+	"github.com/NadiaSama/ccexgo/exchange/okex"
+)
+
+func TestAll(t *testing.T) {
+	key := os.Getenv("O_KEY")
+	secret := os.Getenv("O_SECRET")
+	passphrase := os.Getenv("O_PASSPHRASE")
+	if key == "" || secret == "" || passphrase == "" {
+		t.Fatalf("missing auth message '%s' '%s' '%s'", key, secret, passphrase)
+	}
+
+	client := okex.NewRestClient(key, secret, passphrase, "www.okex.com")
+	ctx := context.Background()
+	fee, err := client.FeeRate(ctx)
+	if err != nil {
+		t.Fatalf("load fee fail %v", err.Error())
+	}
+
+	fmt.Printf("got fee %v", fee)
+}
