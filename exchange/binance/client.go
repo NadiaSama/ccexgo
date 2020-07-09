@@ -68,6 +68,7 @@ func (rc *RestClient) request(ctx context.Context, endPoint string, param map[st
 		if err != nil {
 			return err
 		}
+		defer resp.Body.Close()
 
 		if resp.StatusCode != 200 {
 			var ret error

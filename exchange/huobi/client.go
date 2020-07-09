@@ -63,6 +63,7 @@ func (rc *RestClient) request(ctx context.Context, method string, endPoint strin
 		if err != nil {
 			return err
 		}
+		defer resp.Body.Close()
 
 		if err := json.Unmarshal(content, dst); err != nil {
 			return errors.WithMessagef(err, "unmarshal %s fail", string(content))
