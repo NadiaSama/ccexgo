@@ -19,11 +19,14 @@ type (
 	}
 )
 
-func (rc *RestClient) FeeRate(ctx context.Context, sym exchange.SpotSymbol) ([]exchange.TradeFee, error) {
+func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.SpotSymbol) ([]exchange.TradeFee, error) {
 	var param map[string]string
-	if sym != nil {
+	if len(syms) != 0 && len(syms) != 1 {
+		return nil, exchange.NewBadArg("unsupport multi symbols", syms)
+	}
+	if len(syms) == 1 {
 		param = map[string]string{
-			"symbol": sym.String(),
+			"symbol": syms[0].String(),
 		}
 	}
 	var resp TradeFeeResp
