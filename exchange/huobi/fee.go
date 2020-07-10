@@ -64,11 +64,12 @@ func (rc *RestClient) parse(tfr *TransactFeeRate, dst *exchange.TradeFee) error 
 		return err
 	}
 
-	mf, err := strconv.ParseFloat(tfr.MakerFeeRate, 64)
+	//huobi basic fee rate is same for all user level
+	mf, err := strconv.ParseFloat(tfr.ActualMakerFeeRate, 64)
 	if err != nil {
 		return errors.WithMessagef(err, "parse float64 %s fail", tfr.MakerFeeRate)
 	}
-	tf, err := strconv.ParseFloat(tfr.TakerFeeRate, 64)
+	tf, err := strconv.ParseFloat(tfr.ActualMakerFeeRate, 64)
 	if err != nil {
 		return errors.WithMessagef(err, "parse float64 %s fail", tfr.TakerFeeRate)
 	}
