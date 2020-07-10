@@ -18,9 +18,6 @@ type (
 )
 
 func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.Symbol) ([]exchange.TradeFee, error) {
-	if len(syms) > 0 {
-		return nil, errors.New("okex trade fee do not symbols")
-	}
 	var result TradeFee
 	if err := rc.request(ctx, http.MethodGet, "/api/spot/v3/trade_fee", nil, nil, true, &result); err != nil {
 		return nil, err
@@ -36,7 +33,16 @@ func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.Symbol) ([]e
 		return nil, errors.WithMessagef(err, "parse taker fee %s fail", result.Taker)
 	}
 
-	return []exchange.TradeFee{
-		{Symbol: nil, Maker: mf, Taker: tf},
-	}, nil
+	if len(syms) == 0 {
+		return []exchange.TradeFee{
+			{Symbol: nil, Maker: mf, Taker: tf},
+		}, nil
+	}
+	ret := make([]exchange.TradeFee, len(syms))
+	for i := range syms {
+		ret[i].Symbol = syms[i]
+		ret[i].Maker = mf
+		ret[i].Taker = tf
+	}
+	return ret, nil
 }
