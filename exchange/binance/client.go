@@ -70,24 +70,14 @@ func (rc *RestClient) request(ctx context.Context, endPoint string, param map[st
 		}
 		defer resp.Body.Close()
 
-		if resp.StatusCode != 200 {
-			var ret error
-			if strings.HasPrefix(endPoint, "/wapi") {
-				var we WAPIError
-				if ret = json.Unmarshal(content, &we); ret != nil {
-					return ret
-				}
-				ret = &we
-				return ret
+		//if ip is not in apikey ip whilte list. binance will return statuscode 200 with error message
+		var ae APIError
+		if ret := json.Unmarshal(content, &ae); ret != nil {
+			return ret
+		}
 
-			} else {
-				var ae APIError
-				if ret := json.Unmarshal(content, &ae); ret != nil {
-					return ret
-				}
-				ret = &ae
-				return ret
-			}
+		if len(ae.Message) != 0 {
+			return &ae
 		}
 
 		if err := json.Unmarshal(content, dst); err != nil {
