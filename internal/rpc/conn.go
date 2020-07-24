@@ -92,12 +92,13 @@ func (c *connection) Call(ctx context.Context, method string, params interface{}
 			//handleMessage quit
 			return ErrClear
 		}
-		if rc.result.Error.Code != CodeOK {
-			return errors.Errorf("call %s error: %s, code: %d", method, rc.result.Error.Message,
-				rc.result.Error.Code)
+		if rc.result.Error != nil {
+			return errors.WithMessagef(rc.result.Error, "call %s fail", method)
 		}
-		err := json.Unmarshal(rc.result.Result, dest)
-		return err
+		if err := json.Unmarshal(rc.result.Result, dest); err != nil {
+			return errors.WithMessagef(err, "unmarshal %s error", string(rc.result.Result))
+		}
+		return nil
 
 	case <-ctx.Done():
 		return ctx.Err()

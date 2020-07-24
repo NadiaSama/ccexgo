@@ -33,7 +33,7 @@ func (c *Client) UnSubscribe(ctx context.Context, typ exchange.SubType, syms ...
 func (c *Client) subInternal(ctx context.Context, typ exchange.SubType, op string, syms ...exchange.Symbol) error {
 	cb, ok := subType2CB[typ]
 	if !ok {
-		return errors.WithMessagef(exchange.ErrUnsupport, "unsupport subtype %d", typ)
+		return exchange.NewBadArg("unsupport type", typ)
 	}
 	channels, err := cb(syms...)
 	if err != nil {

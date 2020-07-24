@@ -19,8 +19,7 @@ func TestRequest(t *testing.T) {
 	client := jex.NewClient(key, secret)
 
 	req := &exchange.OrderRequest{
-		Symbol: jex.NewOptionSymbol("EOS", 1.234,
-			time.Date(2020, 7, 6, 11, 0, 0, 0, time.UTC), exchange.OptionTypeCall),
+		Symbol: jex.NewOptionSymbol("EOS", time.Date(2020, 7, 6, 11, 0, 0, 0, time.UTC), 1.234, exchange.OptionTypeCall),
 		Price:  0.3,
 		Amount: 0.1,
 		Type:   exchange.OrderTypeLimit,

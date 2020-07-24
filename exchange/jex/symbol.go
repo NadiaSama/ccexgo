@@ -26,9 +26,9 @@ func SetSymbol(sym *JexOptionSymbol) {
 	symbolMap[sym.String()] = sym
 }
 
-func NewOptionSymbol(index string, strike float64, settle time.Time, typ exchange.OptionType) *JexOptionSymbol {
+func NewOptionSymbol(index string, settle time.Time, strike float64, typ exchange.OptionType) *JexOptionSymbol {
 	return &JexOptionSymbol{
-		exchange.NewBaseOptionSymbol(strike, index, settle, typ),
+		exchange.NewBaseOptionSymbol(index, settle, strike, typ),
 	}
 }
 

@@ -20,7 +20,7 @@ type (
 	}
 )
 
-func NewClient(key, secret string, test bool) *Client {
+func NewClient(key, secret string, timeout time.Duration, test bool) *Client {
 	var addr string
 	if test {
 		addr = WSTestAddr
@@ -29,9 +29,13 @@ func NewClient(key, secret string, test bool) *Client {
 	}
 
 	ret := &Client{
-		Client: exchange.NewClient(newDeribitConn, addr, key, secret),
+		Client: exchange.NewClient(newDeribitConn, addr, key, secret, timeout),
 	}
 	return ret
+}
+
+func (c *Client) Exchange() string {
+	return "deribit"
 }
 
 func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
@@ -49,12 +53,14 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 			token["access_token"] = ac
 
 		default:
-			return fmt.Errorf("method %s private no access_token specific", method)
+			panic(fmt.Sprintf("method %s private no access_token specific", method))
 		}
 
 	}
+	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
+	defer cancel()
 	err := c.Conn.Call(ctx, method, params, dest)
-	return err
+	return exchange.NewBadExResp(err)
 }
 
 func newDeribitConn(addr string) (rpc.Conn, error) {

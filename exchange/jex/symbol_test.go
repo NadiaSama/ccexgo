@@ -8,7 +8,7 @@ import (
 )
 
 func TestSymbol(t *testing.T) {
-	sym := NewOptionSymbol("EOS", 100.0, time.Date(2020, 3, 4, 0, 0, 0, 0, time.UTC), exchange.OptionTypePut)
+	sym := NewOptionSymbol("EOS", time.Date(2020, 3, 4, 0, 0, 0, 0, time.UTC), 100.0, exchange.OptionTypePut)
 	SetSymbol(sym)
 
 	if _, err := ParseSymbol("EOS0304PUT"); err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	baseCtx, cancel := context.WithTimeout(context.Background(), time.Second*20)
+	baseCtx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 
 	key := os.Getenv("D_KEY")
@@ -21,14 +22,14 @@ func TestAll(t *testing.T) {
 		t.Fatalf("missing env D_KEY D_SECRET")
 	}
 
-	client := deribit.NewClient(key, secret, true)
+	client := deribit.NewClient(key, secret, time.Second*5, true)
 	if err := client.Run(baseCtx); err != nil {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
 
-	spot, _ := deribit.ParseSpotSymbol("btc_usd")
+	spot, _ := client.ParseSpotSymbol("btc_usd")
 	if err := client.Subscribe(baseCtx, exchange.SubTypeIndex, spot); err != nil {
-		t.Fatalf("subscribe index fail %s", err.Error())
+		t.Fatalf("subscribe index fail %+v %v %s", err, reflect.TypeOf(err), err.Error())
 	}
 	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
 	if err != nil {
@@ -41,17 +42,20 @@ func TestAll(t *testing.T) {
 		if i.SettlementPeriod != "day" {
 			continue
 		}
+
 		if i.Strike > index.Price {
-			sym, _ = deribit.PraseOptionSymbol(i.InstrumentName)
+			sym, _ = client.ParseOptionSymbol(i.InstrumentName)
+			fmt.Printf("GOT SYMBOL %v %v\n", sym, i)
 			break
 		}
+
 	}
 
 	if err := client.Subscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {
 		t.Fatalf("subscribe orderbook fail %s", err.Error())
 	}
 	//wait goroutine handle orderbook update
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(2 * time.Second)
 	orderbook, err := client.OrderBook(sym)
 	if err != nil {
 		t.Fatalf("load order book fail %s", err.Error())
@@ -75,11 +79,12 @@ func TestAll(t *testing.T) {
 		Type:   exchange.OrderTypeLimit,
 		Side:   exchange.OrderSideBuy,
 	}
+	//create a order with price will not being executed
 	order, err := client.OptionCreateOrder(baseCtx, &req)
 	if err != nil {
 		t.Fatalf("create order fail %v", err.Error())
 	}
-	if order.Status != exchange.OrderStatusOpen || !order.Created.Equal(order.Updated) {
+	if order.Status != exchange.OrderStatusOpen || !order.Created.Equal(order.Updated) || order.Symbol.String() != sym.String() {
 		t.Errorf("bad order status %v", *order)
 	}
 
@@ -93,6 +98,16 @@ func TestAll(t *testing.T) {
 		if order.Status != exchange.OrderStatusCancel {
 			t.Errorf("test cancel fail %v", *order)
 		}
+	}
+
+	//test creat a fok order
+	if order, err = client.OptionCreateOrder(baseCtx, &req,
+		exchange.NewTimeInForceOption(exchange.TimeInForceFOK),
+		exchange.NewPostOnlyOption(false),
+	); err != nil {
+		t.Errorf("test create fok order fail %s", err.Error())
+	} else if order.Status != exchange.OrderStatusCancel {
+		t.Errorf("fok order executed %v", *order)
 	}
 
 	if err := client.UnSubscribe(baseCtx, exchange.SubTypeOrderBook, sym); err != nil {

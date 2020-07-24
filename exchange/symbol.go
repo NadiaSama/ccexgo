@@ -4,15 +4,16 @@ import (
 	"time"
 )
 
-const (
-	OptionTypeCall = iota
-	OptionTypePut
-)
-
 type (
-	//Symbol is used to unit different exchange markets symbol
+	//Symbol is used to unit different exchange markets symbol serialize
 	Symbol interface {
 		String() string
+	}
+
+	SpotSymbol interface {
+		Symbol
+		Base() string
+		Quote() string
 	}
 
 	OptionType int
@@ -25,6 +26,7 @@ type (
 		Type() OptionType
 	}
 
+	//BaseOptionSymbol define common property of option symbol
 	BaseOptionSymbol struct {
 		strike     float64
 		index      string
@@ -32,13 +34,19 @@ type (
 		typ        OptionType
 	}
 
+	//BaseSpotSymbol define common property of spot symbol
 	BaseSpotSymbol struct {
 		base  string
 		quote string
 	}
 )
 
-func NewBaseOptionSymbol(strike float64, index string, st time.Time, typ OptionType) *BaseOptionSymbol {
+const (
+	OptionTypeCall = iota
+	OptionTypePut
+)
+
+func NewBaseOptionSymbol(index string, st time.Time, strike float64, typ OptionType) *BaseOptionSymbol {
 	return &BaseOptionSymbol{
 		strike:     strike,
 		index:      index,
@@ -58,6 +66,16 @@ func (bos *BaseOptionSymbol) SettleTime() time.Time {
 }
 func (bos *BaseOptionSymbol) Type() OptionType {
 	return bos.typ
+}
+
+func (ot OptionType) String() string {
+	if ot == OptionTypeCall {
+		return "CALL"
+	} else if ot == OptionTypePut {
+		return "PUT"
+	} else {
+		return "UNKOWN"
+	}
 }
 
 func NewBaseSpotSymbol(base, quote string) *BaseSpotSymbol {

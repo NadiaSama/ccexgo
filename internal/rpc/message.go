@@ -2,10 +2,6 @@ package rpc
 
 import "encoding/json"
 
-const (
-	CodeOK = 0
-)
-
 type (
 	Message interface {
 	}
@@ -44,7 +40,7 @@ type (
 	//the Result field will be parsed via json.Unmarshal
 	Result struct {
 		ID     ID
-		Error  Error
+		Error  error
 		Result json.RawMessage
 	}
 

@@ -67,15 +67,23 @@ func (cc *Codec) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	if resp.Method == subscriptionMethod {
-		return parseNotify(&resp)
+		resp, err := parseNotify(&resp)
+		if err != nil {
+			return nil, errors.WithMessage(err, "parse response error")
+		}
+		return resp, nil
+	}
+
+	var err error
+	if resp.Error.Code != 0 {
+		err = NewError(resp.Error.Code, resp.Error.Message)
+	} else {
+		err = nil
 	}
 
 	return &rpc.Result{
-		ID: rpc.ID{Num: resp.ID},
-		Error: rpc.Error{
-			Code:    resp.Error.Code,
-			Message: resp.Error.Message,
-		},
+		ID:     rpc.ID{Num: resp.ID},
+		Error:  err,
 		Result: resp.Result,
 	}, nil
 }
@@ -94,12 +102,17 @@ func (cc *Codec) Encode(req rpc.Request) ([]byte, error) {
 func parseNotify(resp *Response) (rpc.Response, error) {
 	fields := strings.Split(resp.Params.Channel, ".")
 	if len(fields) == 0 {
-		return nil, errors.Errorf("bad message %v", resp.Params)
+		return nil, errors.Errorf("bad resp channel %v", resp.Params)
 	}
 
 	cb, ok := notifyParseMap[fields[0]]
 	if !ok {
 		return nil, errors.Errorf("unsupport channel %s", resp.Params.Channel)
 	}
-	return cb(&resp.Params)
+	r, err := cb(&resp.Params)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "parse notify channel=%s, data=%s",
+			resp.Params.Channel, string(resp.Params.Data))
+	}
+	return r, nil
 }

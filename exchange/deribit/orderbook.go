@@ -36,11 +36,11 @@ func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")
 	var bn BookData
 	if err := json.Unmarshal(resp.Data, &bn); err != nil {
-		return nil, errors.WithMessagef(err, "parse orderbookNotify fail %s", string(resp.Data))
+		return nil, errors.WithMessage(err, "unarshal orderbookNotify")
 	}
-	sym, err := PraseOptionSymbol(fields[1])
+	sym, err := parseOptionSymbol(fields[1])
 	if err != nil {
-		return nil, errors.WithMessage(err, "parse orderbookNotify symbol fail")
+		return nil, errors.WithMessagef(err, "parse orderbookNotify symbol %s", fields[1])
 	}
 	notify := &rpc.Notify{
 		Method: subscriptionMethod,

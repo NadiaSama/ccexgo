@@ -34,10 +34,10 @@ func indexChannel(syms ...exchange.Symbol) ([]string, error) {
 func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {
 	var ir IndexResult
 	if err := json.Unmarshal(resp.Data, &ir); err != nil {
-		return nil, errors.WithMessagef(err, "bad index %s", string(resp.Data))
+		return nil, errors.WithMessagef(err, "unmarshal index result")
 	}
 
-	sym, err := ParseSpotSymbol(ir.IndexName)
+	sym, err := parseSpotSymbol(ir.IndexName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "bad indexName %s", ir.IndexName)
 	}
