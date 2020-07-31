@@ -30,7 +30,7 @@ type (
 
 func (rc *RestClient) initSymbol(ctx context.Context) error {
 	var resp SymbolResp
-	if err := rc.request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &resp); err != nil {
+	if err := rc.Request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &resp); err != nil {
 		return err
 	}
 

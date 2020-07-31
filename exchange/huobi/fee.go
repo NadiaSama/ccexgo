@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -28,22 +29,21 @@ type (
 )
 
 func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.Symbol) ([]exchange.TradeFee, error) {
-	var param map[string]string
+	param := url.Values{}
 	if len(syms) != 0 {
 		symbols := make([]string, len(syms))
 		for i, sym := range syms {
 			symbols[i] = sym.String()
 		}
-		param = map[string]string{}
-		param["symbols"] = strings.Join(symbols, ",")
+		param.Add("symbols", strings.Join(symbols, ","))
 	}
 
 	var result TradeFeeResult
-	if err := rc.request(ctx, http.MethodGet, "/v2/reference/transact-fee-rate", param,
+	if err := rc.Request(ctx, http.MethodGet, "/v2/reference/transact-fee-rate", param,
 		nil, true, &result); err != nil {
 		return nil, err
 	}
-	if result.Code != codeOK {
+	if result.Code != CodeOK {
 		b, _ := json.Marshal(result)
 		return nil, newError(string(b))
 	}

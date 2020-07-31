@@ -1,13 +1,13 @@
 package huobi
 
 import (
-	"bytes"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -24,7 +24,7 @@ const (
 	signatureVersion = "2"
 	scheme           = "https"
 	statusOK         = "ok"
-	codeOK           = 200
+	CodeOK           = 200
 )
 
 type (
@@ -49,8 +49,9 @@ func (rc *RestClient) Init(ctx context.Context) error {
 	return rc.initSymbol(ctx)
 }
 
-func (rc *RestClient) request(ctx context.Context, method string, endPoint string, param map[string]string, data interface{}, sign bool, dst interface{}) error {
-	req, err := rc.buildRequest(ctx, method, endPoint, param, data, sign)
+//Request build and send huobi raw request
+func (rc *RestClient) Request(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
+	req, err := rc.buildRequest(ctx, method, endPoint, param, body, sign)
 	if err != nil {
 		return err
 	}
@@ -72,12 +73,8 @@ func (rc *RestClient) request(ctx context.Context, method string, endPoint strin
 	})
 }
 
-func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, param map[string]string, data interface{}, sign bool) (*http.Request, error) {
+func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {
 	var query string
-	values := url.Values{}
-	for k, v := range param {
-		values.Add(k, v)
-	}
 	if sign {
 		ts := time.Now().UTC()
 		values.Add("AccessKeyId", rc.key)
@@ -92,12 +89,7 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 	}
 	u := url.URL{Scheme: scheme, Path: endPoint, RawQuery: query, Host: rc.apiHost}
 
-	if method == http.MethodPost {
-		buf, err := json.Marshal(data)
-		if err != nil {
-			return nil, err
-		}
-		body := bytes.NewBuffer(buf)
+	if method == http.MethodPost || method == http.MethodPut {
 		req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 		if err != nil {
 			return nil, err
