@@ -61,7 +61,7 @@ func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ..
 	}
 
 	for _, s := range fsym {
-		//huobi ws subscribe do not send response.
+		//huobi ws subscribe do not send response, so just write one subid.
 		cp := &callParam{
 			ID:  "s1",
 			Sub: fmt.Sprintf("market.%s.trade.detail", s.WSSub()),
