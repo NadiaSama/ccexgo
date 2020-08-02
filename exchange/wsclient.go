@@ -1,4 +1,4 @@
-package huobi
+package exchange
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 
 type (
 	WSClient struct {
-		conn  rpc.Conn
-		data  chan interface{}
-		codec *CodeC
-		addr  string
+		handler rpc.Handler
+		conn    rpc.Conn
+		codec   rpc.Codec
+		addr    string
 	}
 
 	NotifyTrade struct {
@@ -26,11 +26,11 @@ type (
 	}
 )
 
-func NewWSClient(addr string, data chan interface{}, futureCodeMap map[string]string) *WSClient {
+func NewWSClient(addr string, codec rpc.Codec, handler rpc.Handler) *WSClient {
 	return &WSClient{
-		addr:  addr,
-		data:  data,
-		codec: NewCodeC(futureCodeMap),
+		addr:    addr,
+		codec:   codec,
+		handler: handler,
 	}
 }
 
@@ -42,7 +42,7 @@ func (wc *WSClient) Run(ctx context.Context) error {
 
 	conn := rpc.NewConn(stream)
 	wc.conn = conn
-	go wc.conn.Run(ctx, wc)
+	go wc.conn.Run(ctx, wc.handler)
 	return nil
 }
 
