@@ -15,14 +15,6 @@ type (
 		codeMap map[string]string
 	}
 
-	//Response format for huobi future websocket
-	Response struct {
-		Ping int             `json:"ping"`
-		Ch   string          `json:"ch"`
-		TS   int             `json:"ts"`
-		Tick json.RawMessage `json:"tick"`
-	}
-
 	//callParam carry params which used by huobi websocket sub and pong
 	callParam struct {
 		Pong int    `json:"pong,omitempty"`
@@ -48,37 +40,20 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, err
 	}
 
-	var resp Response
+	var resp huobi.Response
 	if err := json.Unmarshal(data, &resp); err != nil {
 		return nil, errors.WithMessagef(err, "bad response '%s'", data)
 	}
 
-	if resp.Ping != 0 {
-		return &rpc.Notify{
-			Method: huobi.MethodPing,
-			Params: resp.Ping,
-		}, nil
-	}
-
 	fields := strings.Split(resp.Ch, ".")
-	if len(fields) != 4 || fields[0] != "market" || fields[2] != "trade" || fields[3] != "detail" {
-		return nil, errors.Errorf("bad response channel %s", resp.Ch)
+	if len(fields) == 4 && fields[0] == "market" && fields[2] == "trade" && fields[3] == "detail" {
+		code, ok := cc.codeMap[fields[1]]
+		if !ok {
+			return nil, errors.Errorf("bad response channel %s", resp.Ch)
+		}
+		f := []string{fields[0], code, fields[1], fields[2], fields[3]}
+		resp.Ch = strings.Join(f, ".")
 	}
 
-	code, ok := cc.codeMap[fields[1]]
-	if !ok {
-		return nil, errors.Errorf("bad response channel %s", resp.Ch)
-	}
-	f := []string{fields[0], code, fields[1], fields[2], fields[3]}
-	ch := strings.Join(f, ".")
-
-	trades, err := huobi.ParseTrades(resp.Tick)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rpc.Notify{
-		Method: ch,
-		Params: trades,
-	}, nil
+	return resp.Parse()
 }

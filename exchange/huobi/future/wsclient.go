@@ -15,6 +15,7 @@ type (
 		*WSClientDeriv
 	}
 
+	//WSClientDeriv define common logic used by huobi future swap ws
 	WSClientDeriv struct {
 		*exchange.WSClient
 		data chan interface{}
@@ -77,6 +78,7 @@ func (ws *WSClientDeriv) Handle(ctx context.Context, notify *rpc.Notify) {
 	if notify.Method == huobi.MethodPing {
 		p := notify.Params.(int)
 		ws.Call(ctx, huobi.MethodPong, &callParam{Pong: p}, nil)
+		return
 	}
 
 	ws.data <- &exchange.WSNotify{

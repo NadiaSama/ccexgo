@@ -45,9 +45,19 @@ type (
 		Index() string
 		SettleTime() time.Time
 	}
+	//BaseFutureSymbol define common property of future symbol
 	BaseFutureSymbol struct {
 		index      string
 		settleTime time.Time
+	}
+
+	SwapSymbol interface {
+		Symbol
+		Index() string
+	}
+
+	BaseSwapSymbol struct {
+		index string
 	}
 )
 
@@ -115,4 +125,13 @@ func (bfs *BaseFutureSymbol) Index() string {
 
 func (bfs *BaseFutureSymbol) SettleTime() time.Time {
 	return bfs.settleTime
+}
+
+func NewBaseSwapSymbol(index string) *BaseSwapSymbol {
+	return &BaseSwapSymbol{
+		index: index,
+	}
+}
+func (bsw *BaseSwapSymbol) Index() string {
+	return bsw.index
 }
