@@ -1,4 +1,4 @@
-package huobi
+package future
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
@@ -29,21 +30,19 @@ func TestDecodeTrades(t *testing.T) {
 	b := gzip.NewWriter(&buf)
 	b.Write([]byte(raw))
 	b.Close()
-	cc := CodeC{
-		codeMap: map[string]string{
-			"BTC_NW": "btc1234",
-		},
-	}
+	cc := NewCodeC(map[string]string{
+		"BTC_NW": "btc1234",
+	})
 
 	if resp, err := cc.Decode(buf.Bytes()); err != nil {
 		t.Errorf("parse error %s", err.Error())
 	} else {
 		notify := resp.(*rpc.Notify)
-		if notify.Method != "market.BTC_NW.btc1234.trade.detail" {
+		if notify.Method != "market.btc1234.BTC_NW.trade.detail" {
 			t.Errorf("bad method %s", notify.Method)
 		}
 
-		if trade := notify.Params.([]Trade); trade[0].Amount != 20.0 || trade[0].Direction != "buy" ||
+		if trade := notify.Params.([]huobi.Trade); trade[0].Amount != 20.0 || trade[0].Direction != "buy" ||
 			trade[0].Price != 6742.25 || trade[0].TS != 1539831709001 {
 			t.Errorf("bad value %v", trade)
 		}
@@ -57,7 +56,7 @@ func TestEncodeCallParam(t *testing.T) {
 	}
 	req := rpc.NewCall(0, "", cp)
 
-	cc := CodeC{}
+	cc := NewCodeC(nil)
 	raw, err := cc.Encode(req)
 	if err != nil {
 		t.Fatalf("encode fail %s", err.Error())

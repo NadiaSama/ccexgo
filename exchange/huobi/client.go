@@ -14,55 +14,37 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
 	"github.com/pkg/errors"
 )
 
 const (
+	Huobi            = "huobi"
 	signatureMethod  = "HmacSHA256"
 	signatureVersion = "2"
 	scheme           = "https"
-	statusOK         = "ok"
+	StatusOK         = "ok"
 	CodeOK           = 200
-
-	SpotHost   = "api.huobi.pro"
-	FutureHost = "api.hbdm.com"
 )
 
 type (
 	RestClient struct {
-		key             string
-		secret          string
-		apiHost         string
-		pair2Symbol     map[string]exchange.SpotSymbol
-		contract2Symbol map[string]*FutureSymbol
+		key     string
+		secret  string
+		apiHost string
 	}
 )
 
 func NewRestClient(key, secret, host string) *RestClient {
 	return &RestClient{
-		key:         key,
-		secret:      secret,
-		apiHost:     host,
-		pair2Symbol: make(map[string]exchange.SpotSymbol),
+		key:     key,
+		secret:  secret,
+		apiHost: host,
 	}
 }
 
-func (rc *RestClient) Init(ctx context.Context) error {
-	if err := rc.initSymbol(ctx); err != nil {
-		return err
-	}
-
-	return rc.initFutureSymbol(ctx)
-}
-
-//Request build and send huobi raw spot request
 func (rc *RestClient) Request(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
-	return rc.request(ctx, method, SpotHost, endPoint, param, body, sign, dst)
-}
-func (rc *RestClient) request(ctx context.Context, method string, host string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
-	req, err := rc.buildRequest(ctx, method, host, endPoint, param, body, sign)
+	req, err := rc.buildRequest(ctx, method, rc.apiHost, endPoint, param, body, sign)
 	if err != nil {
 		return err
 	}
@@ -81,10 +63,6 @@ func (rc *RestClient) request(ctx context.Context, method string, host string, e
 		}
 		return nil
 	})
-}
-
-func (rc *RestClient) FutureRequest(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
-	return rc.request(ctx, method, FutureHost, endPoint, param, body, sign, dst)
 }
 
 func (rc *RestClient) buildRequest(ctx context.Context, method, host string, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {

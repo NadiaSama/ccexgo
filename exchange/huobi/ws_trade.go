@@ -21,9 +21,14 @@ type (
 		TS   int64   `json:"ts"`
 		Data []Trade `json:"data"`
 	}
+
+	NotifyTrade struct {
+		Trades []Trade
+		Chan   string
+	}
 )
 
-func parseTrades(raw json.RawMessage) ([]Trade, error) {
+func ParseTrades(raw json.RawMessage) ([]Trade, error) {
 	var tick Tick
 	if err := json.Unmarshal(raw, &tick); err != nil {
 		return nil, errors.WithMessagef(err, "bad trades data %s", string(raw))

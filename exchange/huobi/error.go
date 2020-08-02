@@ -6,8 +6,8 @@ type (
 	}
 )
 
-func newError(msg string) error {
-	return &Error{ msg }
+func NewError(msg string) error {
+	return &Error{msg}
 }
 
 func (e *Error) Error() string {

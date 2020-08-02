@@ -1,4 +1,4 @@
-package huobi
+package spot
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
 )
 
@@ -43,9 +44,9 @@ func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.Symbol) ([]e
 		nil, true, &result); err != nil {
 		return nil, err
 	}
-	if result.Code != CodeOK {
+	if result.Code != huobi.CodeOK {
 		b, _ := json.Marshal(result)
-		return nil, newError(string(b))
+		return nil, huobi.NewError(string(b))
 	}
 
 	ret := make([]exchange.TradeFee, len(result.Data))
