@@ -39,6 +39,16 @@ type (
 		base  string
 		quote string
 	}
+
+	FuturesSymbol interface {
+		Symbol
+		Index() string
+		SettleTime() time.Time
+	}
+	BaseFutureSymbol struct {
+		index      string
+		settleTime time.Time
+	}
 )
 
 const (
@@ -90,4 +100,19 @@ func (bss *BaseSpotSymbol) Base() string {
 
 func (bss *BaseSpotSymbol) Quote() string {
 	return bss.quote
+}
+
+func NewBaseFutureSymbol(index string, st time.Time) *BaseFutureSymbol {
+	return &BaseFutureSymbol{
+		index:      index,
+		settleTime: st,
+	}
+}
+
+func (bfs *BaseFutureSymbol) Index() string {
+	return bfs.index
+}
+
+func (bfs *BaseFutureSymbol) SettleTime() time.Time {
+	return bfs.settleTime
 }

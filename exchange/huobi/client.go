@@ -25,14 +25,18 @@ const (
 	scheme           = "https"
 	statusOK         = "ok"
 	CodeOK           = 200
+
+	SpotHost   = "api.huobi.pro"
+	FutureHost = "api.hbdm.com"
 )
 
 type (
 	RestClient struct {
-		key         string
-		secret      string
-		apiHost     string
-		pair2Symbol map[string]exchange.SpotSymbol
+		key             string
+		secret          string
+		apiHost         string
+		pair2Symbol     map[string]exchange.SpotSymbol
+		contract2Symbol map[string]*FutureSymbol
 	}
 )
 
@@ -46,16 +50,22 @@ func NewRestClient(key, secret, host string) *RestClient {
 }
 
 func (rc *RestClient) Init(ctx context.Context) error {
-	return rc.initSymbol(ctx)
-}
-
-//Request build and send huobi raw request
-func (rc *RestClient) Request(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
-	req, err := rc.buildRequest(ctx, method, endPoint, param, body, sign)
-	if err != nil {
+	if err := rc.initSymbol(ctx); err != nil {
 		return err
 	}
 
+	return rc.initFutureSymbol(ctx)
+}
+
+//Request build and send huobi raw spot request
+func (rc *RestClient) Request(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
+	return rc.request(ctx, method, SpotHost, endPoint, param, body, sign, dst)
+}
+func (rc *RestClient) request(ctx context.Context, method string, host string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
+	req, err := rc.buildRequest(ctx, method, host, endPoint, param, body, sign)
+	if err != nil {
+		return err
+	}
 	return request.DoReqWithCtx(req, func(resp *http.Response, ierr error) error {
 		if ierr != nil {
 			return ierr
@@ -73,7 +83,11 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 	})
 }
 
-func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {
+func (rc *RestClient) FutureRequest(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
+	return rc.request(ctx, method, FutureHost, endPoint, param, body, sign, dst)
+}
+
+func (rc *RestClient) buildRequest(ctx context.Context, method, host string, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {
 	var query string
 	if sign {
 		ts := time.Now().UTC()
@@ -82,12 +96,12 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 		values.Add("SignatureVersion", signatureVersion)
 		values.Add("Timestamp", ts.Format("2006-01-02T15:04:05"))
 		query = values.Encode()
-		sig := rc.signature(method, rc.apiHost, endPoint, query)
+		sig := rc.signature(method, host, endPoint, query)
 		query = fmt.Sprintf("%s&Signature=%s", query, url.QueryEscape(sig))
 	} else {
 		query = values.Encode()
 	}
-	u := url.URL{Scheme: scheme, Path: endPoint, RawQuery: query, Host: rc.apiHost}
+	u := url.URL{Scheme: scheme, Path: endPoint, RawQuery: query, Host: host}
 
 	if method == http.MethodPost || method == http.MethodPut {
 		req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
