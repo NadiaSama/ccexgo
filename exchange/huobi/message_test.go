@@ -3,12 +3,13 @@ package huobi
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"testing"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
-func TestTrades(t *testing.T) {
+func TestDecodeTrades(t *testing.T) {
 	raw := `{
     "ch": "market.BTC_NW.trade.detail",
     "ts": 1539831709042,
@@ -38,7 +39,7 @@ func TestTrades(t *testing.T) {
 		t.Errorf("parse error %s", err.Error())
 	} else {
 		notify := resp.(*rpc.Notify)
-		if notify.Method != "market.btc1234.trade.detail" {
+		if notify.Method != "market.BTC_NW.btc1234.trade.detail" {
 			t.Errorf("bad method %s", notify.Method)
 		}
 
@@ -46,5 +47,24 @@ func TestTrades(t *testing.T) {
 			trade[0].Price != 6742.25 || trade[0].TS != 1539831709001 {
 			t.Errorf("bad value %v", trade)
 		}
+	}
+}
+
+func TestEncodeCallParam(t *testing.T) {
+	cp := &callParam{
+		ID:  "i1",
+		Sub: "sub1",
+	}
+	req := rpc.NewCall(0, "", cp)
+
+	cc := CodeC{}
+	raw, err := cc.Encode(req)
+	if err != nil {
+		t.Fatalf("encode fail %s", err.Error())
+	}
+	var rcp callParam
+	json.Unmarshal(raw, &rcp)
+	if rcp.ID != cp.ID || rcp.Sub != cp.Sub || rcp.Pong != 0 {
+		t.Errorf("encode bad data %s %v", string(raw), rcp)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -24,28 +23,49 @@ type (
 		ID  string `json:"id"`
 	}
 
-	//Response format for huobi
+	Pong struct {
+		Pong int `json:"pong"`
+	}
+
+	//Response format for huobi websocket
 	Response struct {
 		Ping int             `json:"ping"`
 		Ch   string          `json:"ch"`
 		TS   int             `json:"ts"`
 		Tick json.RawMessage `json:"tick"`
 	}
+
+	//callParam carry params which used by huobi websocket sub and pong
+	callParam struct {
+		Pong int    `json:"pong,omitempty"`
+		Sub  string `json:"sub,omitempty"`
+		ID   string `json:"id,omitempty"`
+	}
 	responseParseCB func(*Response) (*rpc.Notify, error)
 )
 
 const (
-	huobiPING = "ping"
+	methodPING     = "ping"
+	methodPONG     = "pong"
+	methodSubscibe = "sub"
 )
 
-func (CodeC) Encode(req rpc.Request) ([]byte, error) {
-	return json.Marshal(&Request{
-		Sub: req.Method(),
-		ID:  fmt.Sprintf("id%d", req.ID().Num),
-	})
+func NewCodeC(cm map[string]string) *CodeC {
+	c := make(map[string]string, len(cm))
+	for k, v := range cm {
+		c[k] = v
+	}
+	return &CodeC{
+		codeMap: c,
+	}
 }
 
-//Decode huobi response current
+func (CodeC) Encode(req rpc.Request) ([]byte, error) {
+	cm := req.Params().(*callParam)
+	return json.Marshal(cm)
+}
+
+//Decode huobi response current only futures Trade and pong is support
 func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	buf := bytes.NewBuffer(raw)
 	if cc.decoder == nil {
@@ -72,7 +92,7 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 
 	if resp.Ping != 0 {
 		return &rpc.Notify{
-			Method: huobiPING,
+			Method: methodPING,
 			Params: resp.Ping,
 		}, nil
 	}
@@ -86,8 +106,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	if !ok {
 		return nil, errors.Errorf("bad response channel %s", resp.Ch)
 	}
-	fields[1] = code
-	ch := strings.Join(fields, ".")
+	f := []string{fields[0], code, fields[1], fields[2], fields[3]}
+	ch := strings.Join(f, ".")
 
 	trades, err := parseTrades(resp.Tick)
 	if err != nil {

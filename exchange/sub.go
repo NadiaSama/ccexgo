@@ -19,8 +19,9 @@ type (
 )
 
 const (
-	SubTypeOrderBook = iota
+	SubTypeOrderBook SubType = iota
 	SubTypeIndex
+	SubTypeTrade
 )
 
 var (

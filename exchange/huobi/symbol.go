@@ -124,8 +124,6 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 		rc.contract2Symbol[fmt.Sprintf("%s%s", fsym.Symbol, suffix)] = sym
 	}
 
-	fmt.Printf("%v\n", rc.contract2Symbol)
-
 	return nil
 }
 
