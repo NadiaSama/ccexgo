@@ -11,6 +11,7 @@ type (
 		Amount    float64 `json:"amount"`
 		TS        int64   `json:"ts"`
 		ID        int64   `json:"id"`
+		TradeID   int64   `json:"tradeId"`
 		Price     float64 `json:"price"`
 		Direction string  `json:"direction"`
 	}
