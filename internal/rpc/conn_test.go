@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -12,7 +13,7 @@ import (
 type (
 	testStream struct {
 		result []string
-		lastID ID
+		lastID string
 		closed bool
 		cond   *sync.Cond
 		wait   bool
@@ -69,7 +70,7 @@ func TestCall(t *testing.T) {
 	conn.Run(ctx, nil)
 	var arr []int
 	for i := 1; i < 5; i++ {
-		conn.Call(ctx, "", nil, &arr)
+		conn.Call(ctx, strconv.Itoa(i), "", nil, &arr)
 		if arr[0] != i {
 			t.Errorf("bad value %v", arr)
 		}
@@ -77,9 +78,9 @@ func TestCall(t *testing.T) {
 	//read error ctx will timeout
 	ctx2, cancel := context.WithTimeout(ctx, time.Millisecond*100)
 	defer cancel()
-	conn.Call(ctx2, "", nil, &arr)
+	conn.Call(ctx2, "", "", nil, &arr)
 	conn.Close()
-	if err := conn.Call(ctx2, "", nil, &arr); !errors.Is(err, &StreamError{}) {
+	if err := conn.Call(ctx2, "", "", nil, &arr); !errors.Is(err, &StreamError{}) {
 		t.Errorf("bad expect error %v", err)
 	}
 	c := conn.(*connection)
@@ -113,7 +114,7 @@ func TestHadleMessagQuit(t *testing.T) {
 	ctx := context.Background()
 	conn.Run(ctx, nil)
 
-	if err := conn.Call(ctx, "", nil, result); err != ErrClear {
+	if err := conn.Call(ctx, "id1", "", nil, result); err != ErrClear {
 		t.Errorf("bad error %v", err)
 	}
 }

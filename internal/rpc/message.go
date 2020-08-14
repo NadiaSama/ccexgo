@@ -8,7 +8,7 @@ type (
 
 	Request interface {
 		Message
-		ID() ID
+		ID() string
 		Method() string
 		Params() interface{}
 	}
@@ -18,14 +18,9 @@ type (
 		responseMessag() bool
 	}
 
-	//ID field for messages
-	ID struct {
-		Num int64
-	}
-
 	//Call request message send from client to server
 	Call struct {
-		id     ID
+		id     string
 		method string
 		params interface{}
 	}
@@ -39,7 +34,7 @@ type (
 	//Result call result reply from server
 	//the Result field will be parsed via json.Unmarshal
 	Result struct {
-		ID     ID
+		ID     string
 		Error  error
 		Result json.RawMessage
 	}
@@ -51,15 +46,15 @@ type (
 	}
 )
 
-func NewCall(id int64, method string, params interface{}) *Call {
+func NewCall(id string, method string, params interface{}) *Call {
 	return &Call{
-		id:     ID{id},
+		id:     id,
 		method: method,
 		params: params,
 	}
 }
 
-func (c *Call) ID() ID {
+func (c *Call) ID() string {
 	return c.id
 }
 func (c *Call) Method() string {

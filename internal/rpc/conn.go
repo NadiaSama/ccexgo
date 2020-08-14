@@ -18,7 +18,7 @@ type (
 	Conn interface {
 		//Call send request from client to server. if r is not nil the
 		//Call will be waiting for the server return and set dest via json.Unmarshal
-		Call(ctx context.Context, method string, params interface{}, dest interface{}) error
+		Call(ctx context.Context, id string, method string, params interface{}, dest interface{}) error
 		//Run start a gorotuine loop for notify message from server
 		//and call handler for each message
 		Run(ctx context.Context, handler Handler)
@@ -32,7 +32,7 @@ type (
 
 	connection struct {
 		stream    Stream
-		pending   map[ID]chan *rpcCall
+		pending   map[string]chan *rpcCall
 		done      chan struct{}
 		err       atomic.Value
 		seq       int64
@@ -52,15 +52,15 @@ var (
 func NewConn(stream Stream) Conn {
 	return &connection{
 		stream:  stream,
-		pending: make(map[ID]chan *rpcCall),
+		pending: make(map[string]chan *rpcCall),
 		done:    make(chan struct{}),
 	}
 }
 
-func (c *connection) Call(ctx context.Context, method string, params interface{}, dest interface{}) error {
+func (c *connection) Call(ctx context.Context, id string, method string, params interface{}, dest interface{}) error {
 	var err error
 	var rchan chan *rpcCall
-	call := NewCall(atomic.AddInt64(&c.seq, 1), method, params)
+	call := NewCall(id, method, params)
 
 	if dest != nil {
 		rchan = make(chan *rpcCall, 1)
