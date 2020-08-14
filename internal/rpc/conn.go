@@ -35,7 +35,6 @@ type (
 		pending   map[string]chan *rpcCall
 		done      chan struct{}
 		err       atomic.Value
-		seq       int64
 		streamMu  sync.Mutex
 		pendingMu sync.Mutex
 	}
