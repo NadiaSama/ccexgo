@@ -54,7 +54,7 @@ func TestEncodeCallParam(t *testing.T) {
 		ID:  "i1",
 		Sub: "sub1",
 	}
-	req := rpc.NewCall(0, "", cp)
+	req := rpc.NewCall("", "", cp)
 
 	cc := NewCodeC(nil)
 	raw, err := cc.Encode(req)

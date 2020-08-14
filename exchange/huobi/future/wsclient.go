@@ -67,7 +67,7 @@ func (ws *WSClientDeriv) DoSubscribe(ctx context.Context, channels []string) err
 			Sub: ch,
 		}
 
-		if err := ws.WSClient.Call(ctx, huobi.MethodSubscibe, cp, nil); err != nil {
+		if err := ws.WSClient.Call(ctx, cp.ID, huobi.MethodSubscibe, cp, nil); err != nil {
 			return errors.WithMessagef(err, "subscribe fail")
 		}
 	}
@@ -77,7 +77,7 @@ func (ws *WSClientDeriv) DoSubscribe(ctx context.Context, channels []string) err
 func (ws *WSClientDeriv) Handle(ctx context.Context, notify *rpc.Notify) {
 	if notify.Method == huobi.MethodPing {
 		p := notify.Params.(int)
-		ws.Call(ctx, huobi.MethodPong, &callParam{Pong: p}, nil)
+		ws.Call(ctx, huobi.MethodPong, "", &callParam{Pong: p}, nil)
 		return
 	}
 
