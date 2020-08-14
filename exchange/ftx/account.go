@@ -10,11 +10,6 @@ type (
 		Cost       float64 `json:"cost"`
 		EntryPrice float64 `json:"entryPrice"`
 	}
-
-	Wrap struct {
-		Success bool        `json:"success"`
-		Result  interface{} `json:"result"`
-	}
 )
 
 func (client *RestClient) Positions(ctx context.Context) ([]Position, error) {
