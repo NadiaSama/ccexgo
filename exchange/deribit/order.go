@@ -6,6 +6,7 @@ import (
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -24,17 +25,17 @@ type (
 	}
 
 	Order struct {
-		Price                float64 `json:"price"`
-		Amount               float64 `json:"amount"`
-		AveragePrice         float64 `json:"average_price"`
-		OrderState           string  `json:"order_state"`
-		OrderID              string  `json:"order_id"`
-		LastUpdatedTimestamp int64   `json:"last_update_timestamp"`
-		CreationTimestamp    int64   `json:"creation_timestamp"`
-		Commision            float64 `json:"commision"`
-		Direction            string  `json:"direction"`
-		FilledAmont          float64 `json:"filled_amount"`
-		InstrumentName       string  `json:"instrument_name"`
+		Price                decimal.Decimal `json:"price"`
+		Amount               decimal.Decimal `json:"amount"`
+		AveragePrice         decimal.Decimal `json:"average_price"`
+		OrderState           string          `json:"order_state"`
+		OrderID              string          `json:"order_id"`
+		LastUpdatedTimestamp int64           `json:"last_update_timestamp"`
+		CreationTimestamp    int64           `json:"creation_timestamp"`
+		Commision            decimal.Decimal `json:"commision"`
+		Direction            string          `json:"direction"`
+		FilledAmont          decimal.Decimal `json:"filled_amount"`
+		InstrumentName       string          `json:"instrument_name"`
 	}
 
 	OrderID string
@@ -75,10 +76,12 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 	} else {
 		method = "/private/sell"
 	}
+	a, _ := req.Amount.Float64()
+	p, _ := req.Price.Float64()
 
 	param := &orderParam{
-		Amount:         req.Amount,
-		Price:          req.Price,
+		Amount:         a,
+		Price:          p,
 		InstrumentName: req.Symbol.String(),
 		Type:           type2Str[req.Type],
 	}

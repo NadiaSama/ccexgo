@@ -1,6 +1,11 @@
 package exchange
 
-import "time"
+import (
+	"strconv"
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type (
 	OrderSide   int
@@ -16,23 +21,24 @@ type (
 		Symbol Symbol
 		Side   OrderSide
 		Type   OrderType
-		Price  float64
-		Amount float64
+		Price  decimal.Decimal
+		Amount decimal.Decimal
 	}
 
 	Order struct {
 		ID       OrderID
 		Symbol   Symbol
-		Amount   float64
-		Filled   float64
-		Price    float64
-		AvgPrice float64
-		Fee      float64
+		Amount   decimal.Decimal
+		Filled   decimal.Decimal
+		Price    decimal.Decimal
+		AvgPrice decimal.Decimal
+		Fee      decimal.Decimal
 		Created  time.Time
 		Updated  time.Time
 		Side     OrderSide
 		Status   OrderStatus
 		Type     OrderType
+		Raw      interface{} `json:"omitempty"`
 	}
 
 	//OrderReqOption specific option to create order
@@ -51,6 +57,10 @@ type (
 	//remains in effect
 	TimeInForceOption struct {
 		Flag TimeInForceFlag
+	}
+
+	IntID struct {
+		ID int64
 	}
 )
 
@@ -88,4 +98,12 @@ func NewTimeInForceOption(flag TimeInForceFlag) OrderReqOption {
 	return &TimeInForceOption{
 		Flag: flag,
 	}
+}
+
+func NewIntID(id int64) IntID {
+	return IntID{id}
+}
+
+func (sid IntID) String() string {
+	return strconv.FormatInt(sid.ID, 10)
 }
