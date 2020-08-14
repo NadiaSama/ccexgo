@@ -81,7 +81,7 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 			body = bytes.NewBuffer(data)
 		}
 
-		signature := rc.signature(encStr)
+		signature := signature(rc.secret, encStr)
 		req, err = http.NewRequestWithContext(ctx, method, uStr, body)
 		req.Header.Add("FTX-KEY", rc.key)
 		req.Header.Add("FTX-SIGN", signature)
@@ -94,8 +94,8 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 	return req, err
 }
 
-func (rc *RestClient) signature(param string) string {
-	h := hmac.New(sha256.New, []byte(rc.secret))
+func signature(secret string, param string) string {
+	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(param))
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
