@@ -32,7 +32,7 @@ func TestDecode(t *testing.T) {
 	if !errors.As(result.Error, &e) {
 		t.Errorf("bad result error %v", result.Error)
 	}
-	if result.ID.Num != 8163 || e.Code != 11050 || e.Msg != "bad_request" {
+	if result.ID != "8163" || e.Code != 11050 || e.Msg != "bad_request" {
 		t.Errorf("bad result %v", *result)
 	}
 }

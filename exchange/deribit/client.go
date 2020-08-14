@@ -3,7 +3,9 @@ package deribit
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -17,6 +19,7 @@ type (
 		tokenMu     sync.Mutex
 		accessToken string
 		expire      time.Time
+		seq         int64
 	}
 )
 
@@ -59,7 +62,8 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 	}
 	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
 	defer cancel()
-	err := c.Conn.Call(ctx, method, params, dest)
+	id := atomic.AddInt64(&c.seq, 1)
+	err := c.Conn.Call(ctx, strconv.FormatInt(id, 10), method, params, dest)
 	return exchange.NewBadExResp(err)
 }
 

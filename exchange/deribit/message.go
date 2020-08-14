@@ -3,6 +3,7 @@ package deribit
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
@@ -82,15 +83,19 @@ func (cc *Codec) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	return &rpc.Result{
-		ID:     rpc.ID{Num: resp.ID},
+		ID:     strconv.FormatInt(resp.ID, 10),
 		Error:  err,
 		Result: resp.Result,
 	}, nil
 }
 
 func (cc *Codec) Encode(req rpc.Request) ([]byte, error) {
+	id, err := strconv.ParseInt(req.ID(), 10, 64)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "bad req id '%s'", req.ID())
+	}
 	r := Request{
-		ID:      req.ID().Num,
+		ID:      id,
 		Method:  req.Method(),
 		Params:  req.Params(),
 		JsonRPC: JsonRPCVersion,
