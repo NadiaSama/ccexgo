@@ -19,15 +19,30 @@ type (
 		key    string
 		secret string
 		prefix string
+
+		futureSymbols map[string]*FuturesSymbol
+		swapSymbols   map[string]*SwapSymbol
+	}
+
+	Wrap struct {
+		Success bool        `json:"success"`
+		Result  interface{} `json:"result"`
+		Error   string      `json:"error"`
 	}
 )
 
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
-		key:    key,
-		secret: secret,
-		prefix: "https://ftx.com/api",
+		key:           key,
+		secret:        secret,
+		prefix:        "https://ftx.com/api",
+		futureSymbols: make(map[string]*FuturesSymbol),
+		swapSymbols:   map[string]*SwapSymbol{},
 	}
+}
+
+func (rc *RestClient) Init(ctx context.Context) error {
+	return rc.initFutureSymbol(ctx)
 }
 
 func (rc *RestClient) request(ctx context.Context, method string, endPoint string, params url.Values, body io.Reader, sign bool, dst interface{}) error {
