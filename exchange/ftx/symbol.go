@@ -3,7 +3,6 @@ package ftx
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -18,30 +17,6 @@ type (
 	SwapSymbol struct {
 		*exchange.BaseSwapSymbol
 	}
-
-	FutureInfo struct {
-		Ask               float64 `json:"ask"`
-		Bid               float64 `json:"bid"`
-		Change1H          float64 `json:"change1h"`
-		Change24H         float64 `json:"change24h"`
-		ChangeBod         float64 `json:"changeBod"`
-		Description       string  `json:"description"`
-		Enabled           bool    `json:"enabled"`
-		Expired           bool    `json:"expired"`
-		Expiry            string  `json:"expiry"`
-		ExpiryDescription string  `json:"expiryDescription"`
-		Group             string  `json:"group"`
-		ImfFactor         float64 `json:"imfFactor"`
-		Index             float64 `json:"index"`
-		Last              float64 `json:"last"`
-		LowerBound        float64 `json:"lowerBound"`
-		MarginPrice       float64 `json:"marginPrice"`
-		Mark              float64 `json:"mark"`
-		Name              string  `json:"name"`
-		Perpetual         bool    `json:"perpetual"`
-		Type              string  `json:"type"`
-		Underlying        string  `json:"underlying"`
-	}
 )
 
 const (
@@ -50,11 +25,10 @@ const (
 )
 
 func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
-	var infos []FutureInfo
-	if err := rc.request(ctx, http.MethodGet, "/futures", nil, nil, false, &infos); err != nil {
+	infos, err := rc.Futures(ctx)
+	if err != nil {
 		return err
 	}
-
 	for _, info := range infos {
 		if !info.Enabled {
 			continue
@@ -62,7 +36,7 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 
 		if info.Type == typeFuture && !info.Expired {
 			name := info.Name
-			st, err := time.Parse("2006-01-02T15:04:05Z", info.Expiry)
+			st, err := time.Parse("2006-01-02T15:04:05Z07:00", info.Expiry)
 			if err != nil {
 				return errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
 			}
