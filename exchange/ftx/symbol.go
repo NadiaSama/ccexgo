@@ -51,16 +51,8 @@ const (
 
 func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 	var infos []FutureInfo
-	w := Wrap{
-		Result: infos,
-	}
-
-	if err := rc.request(ctx, http.MethodGet, "/futures", nil, nil, false, &w); err != nil {
+	if err := rc.request(ctx, http.MethodGet, "/futures", nil, nil, false, &infos); err != nil {
 		return err
-	}
-
-	if w.Success == false {
-		return errors.Errorf("load symbols fail %s", w.Error)
 	}
 
 	for _, info := range infos {
@@ -74,13 +66,13 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 			if err != nil {
 				return errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
 			}
-			rc.futureSymbols[name] = newFutureSymbol(info.Underlying, st)
+			rc.symbols[name] = newFutureSymbol(info.Underlying, st)
 			continue
 		}
 
 		if info.Type == typeSwap {
 			name := info.Name
-			rc.swapSymbols[name] = newSwapSymbol(info.Underlying)
+			rc.symbols[name] = newSwapSymbol(info.Underlying)
 			continue
 		}
 	}
@@ -88,18 +80,28 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 }
 
 func (rc *RestClient) ParseFutureSymbol(symbol string) (exchange.FuturesSymbol, error) {
-	ret, ok := rc.futureSymbols[symbol]
+	sym, ok := rc.symbols[symbol]
 	if !ok {
 		return nil, errors.Errorf("unkown future symbol '%s'", symbol)
+	}
+
+	ret, ok := sym.(exchange.FuturesSymbol)
+	if !ok {
+		return nil, errors.Errorf("bad symbol for '%s'", symbol)
 	}
 
 	return ret, nil
 }
 
 func (rc *RestClient) ParseSwapSymbol(symbol string) (exchange.SwapSymbol, error) {
-	ret, ok := rc.swapSymbols[symbol]
+	sym, ok := rc.symbols[symbol]
 	if !ok {
 		return nil, errors.Errorf("unkown swap symbol '%s'", symbol)
+	}
+
+	ret, ok := sym.(exchange.SwapSymbol)
+	if !ok {
+		return nil, errors.Errorf("bad symbol for '%s'", symbol)
 	}
 	return ret, nil
 }
