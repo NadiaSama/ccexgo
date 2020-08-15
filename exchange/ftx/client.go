@@ -12,6 +12,9 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -20,24 +23,22 @@ type (
 		secret string
 		prefix string
 
-		futureSymbols map[string]*FuturesSymbol
-		swapSymbols   map[string]*SwapSymbol
+		symbols map[string]exchange.Symbol
 	}
 
 	Wrap struct {
-		Success bool        `json:"success"`
-		Result  interface{} `json:"result"`
-		Error   string      `json:"error"`
+		Success bool            `json:"success"`
+		Result  json.RawMessage `json:"result"`
+		Error   string          `json:"error"`
 	}
 )
 
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
-		key:           key,
-		secret:        secret,
-		prefix:        "https://ftx.com/api",
-		futureSymbols: make(map[string]*FuturesSymbol),
-		swapSymbols:   map[string]*SwapSymbol{},
+		key:     key,
+		secret:  secret,
+		prefix:  "https://ftx.com/api",
+		symbols: make(map[string]exchange.Symbol),
 	}
 }
 
@@ -62,7 +63,15 @@ func (rc *RestClient) request(ctx context.Context, method string, endPoint strin
 	}
 	defer resp.Body.Close()
 
-	if err := json.Unmarshal(data, &dst); err != nil {
+	var r Wrap
+	if err := json.Unmarshal(data, &r); err != nil {
+		return err
+	}
+	if !r.Success {
+		return errors.Errorf("response error %v", r)
+	}
+
+	if err := json.Unmarshal(r.Result, &dst); err != nil {
 		return err
 	}
 	return nil

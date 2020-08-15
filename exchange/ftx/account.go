@@ -13,11 +13,8 @@ type (
 )
 
 func (client *RestClient) Positions(ctx context.Context) ([]Position, error) {
-	var w Wrap
 	var ret []Position
-
-	w.Result = ret
-	if err := client.request(ctx, http.MethodGet, "/positions", nil, nil, true, &w); err != nil {
+	if err := client.request(ctx, http.MethodGet, "/positions", nil, nil, true, &ret); err != nil {
 		return nil, err
 	}
 

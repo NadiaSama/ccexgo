@@ -29,6 +29,7 @@ const (
 func NewWSClient() *WSClient {
 	return &WSClient{
 		exchange.NewWSClient(ftxWSAddr, nil, nil),
+		nil,
 	}
 }
 

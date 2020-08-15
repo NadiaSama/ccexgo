@@ -42,8 +42,8 @@ type (
 )
 
 const (
-	typeError = "error"
-	typeSubscribed = "subscribed"
+	typeError        = "error"
+	typeSubscribed   = "subscribed"
 	typeUnSubscribed = "unsubscribed"
 )
 
@@ -63,7 +63,7 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	if cr.Type == typeError {
 		ret := &rpc.Result{
 			ID:     id,
-			Error:  errors.Errorf("error msg: %s code: %d", cr.Msg, cr.Code)
+			Error:  errors.Errorf("error msg: %s code: %d", cr.Msg, cr.Code),
 			Result: raw,
 		}
 		return ret, nil
