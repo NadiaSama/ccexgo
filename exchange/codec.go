@@ -1,6 +1,10 @@
 package exchange
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/NadiaSama/ccexgo/internal/rpc"
+)
 
 type (
 	//CodeC define base encode method
@@ -13,6 +17,6 @@ func NewCodeC() *CodeC {
 }
 
 //Encode encode req with json.Marshal
-func (cc *CodeC) Encode(req interface{}) ([]byte, error) {
-	return json.Marshal(req)
+func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
+	return json.Marshal(req.Params())
 }
