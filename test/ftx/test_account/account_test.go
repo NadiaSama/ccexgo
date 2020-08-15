@@ -10,8 +10,8 @@ import (
 )
 
 func TestAccountLeverage(t *testing.T) {
-	key := os.Getenv("KEY")
-	secret := os.Getenv("SECRET")
+	key := os.Getenv("F_KEY")
+	secret := os.Getenv("F_SECRET")
 	if len(key) == 0 || len(secret) == 0 {
 		t.Fatalf("missing env key, secret")
 	}
