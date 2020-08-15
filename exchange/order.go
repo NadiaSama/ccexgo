@@ -107,3 +107,13 @@ func NewIntID(id int64) IntID {
 func (sid IntID) String() string {
 	return strconv.FormatInt(sid.ID, 10)
 }
+
+//Equal check whether o equal o2 mainly used for test
+func (o *Order) Equal(o2 *Order) bool {
+	return o.ID.String() == o2.ID.String() &&
+		o.Amount.Equal(o2.Amount) && o.Filled.Equal(o2.Filled) &&
+		o.Price.Equal(o2.Price) && o.AvgPrice.Equal(o2.AvgPrice) && o.Fee.Equal(o2.Fee) &&
+		o.Created.Equal(o2.Created) && o.Updated.Equal(o2.Updated) &&
+		o.Status == o2.Status && o.Type == o2.Type && o.Side == o2.Side &&
+		o.Symbol.String() == o2.Symbol.String()
+}

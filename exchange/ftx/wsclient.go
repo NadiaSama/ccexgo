@@ -2,7 +2,6 @@ package ftx
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -28,9 +27,10 @@ const (
 	ftxWSAddr = "wss://ftx.com/ws/"
 )
 
-func NewWSClient(cm map[string]exchange.Symbol) *WSClient {
+func (rc *RestClient) NewWSClient(data chan interface{}) *WSClient {
 	ret := &WSClient{}
-	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(cm), ret)
+	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(rc.symbols), ret)
+	ret.data = data
 	return ret
 }
 
@@ -76,5 +76,9 @@ func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
 		return
 	}
 
-	fmt.Printf("%s %s\n", notify.Method, string(notify.Params.(json.RawMessage)))
+	ws.data <- &exchange.WSNotify{
+		Exchange: ftxExchange,
+		Chan:     notify.Method,
+		Data:     notify.Params,
+	}
 }

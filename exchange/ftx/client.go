@@ -33,6 +33,10 @@ type (
 	}
 )
 
+const (
+	ftxExchange = "ftx"
+)
+
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
 		key:     key,
