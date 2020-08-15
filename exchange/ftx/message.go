@@ -45,6 +45,10 @@ const (
 	typeError        = "error"
 	typeSubscribed   = "subscribed"
 	typeUnSubscribed = "unsubscribed"
+	typePong         = "pong"
+	typeInfo         = "info"
+
+	codeReconnet = 20001
 )
 
 func NewCodeC() *CodeC {
@@ -69,17 +73,37 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return ret, nil
 	}
 
-	if cr.Type == typeSubscribed || cr.Type == typeUnSubscribed {
+	switch cr.Type {
+	case typeSubscribed:
+		fallthrough
+	case typeUnSubscribed:
 		ret := &rpc.Result{
 			ID:     id,
 			Result: raw,
 		}
 		return ret, nil
-	}
 
-	ret := &rpc.Notify{
-		Method: id,
-		Params: cr.Data,
+	case typePong:
+		ret := &rpc.Notify{
+			Method: typePong,
+		}
+		return ret, nil
+
+	case typeInfo:
+		if cr.Code == codeReconnet {
+			return nil, rpc.NewStreamError(errors.Errorf("ftx ws reset info %s", string(raw)))
+		}
+		ret := &rpc.Notify{
+			Method: id,
+			Params: cr.Data,
+		}
+		return ret, nil
+
+	default:
+		ret := &rpc.Notify{
+			Method: id,
+			Params: cr.Data,
+		}
+		return ret, nil
 	}
-	return ret, nil
 }
