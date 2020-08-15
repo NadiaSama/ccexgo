@@ -28,9 +28,9 @@ const (
 	ftxWSAddr = "wss://ftx.com/ws/"
 )
 
-func NewWSClient() *WSClient {
+func NewWSClient(cm map[string]exchange.Symbol) *WSClient {
 	ret := &WSClient{}
-	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(), ret)
+	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(cm), ret)
 	return ret
 }
 
