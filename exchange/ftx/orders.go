@@ -170,3 +170,11 @@ func (rc *RestClient) OrderFetch(ctx context.Context, order *exchange.Order) (*e
 	}
 	return rc.parseOrder(&resp)
 }
+
+func parseTime(ts string) (time.Time, error) {
+	ct, err := time.Parse("2006-01-02T15:04:05.000000Z07:00", ts)
+	if err != nil {
+		return time.Time{}, errors.WithMessagef(err, "bad create time '%s'", ts)
+	}
+	return ct, nil
+}

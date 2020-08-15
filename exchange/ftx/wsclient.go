@@ -27,6 +27,13 @@ const (
 	ftxWSAddr = "wss://ftx.com/ws/"
 )
 
+var (
+	subMaps map[exchange.SubType]string = map[exchange.SubType]string{
+		exchange.SubTypePrivateOrder: "orders",
+		exchange.SubTypePrivateTrade: "fills",
+	}
+)
+
 func (rc *RestClient) NewWSClient(data chan interface{}) *WSClient {
 	ret := &WSClient{}
 	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(rc.symbols), ret)
@@ -77,13 +84,14 @@ func (ws *WSClient) Auth(ctx context.Context, key string, secret string) error {
 }
 
 func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
-	if typ != exchange.SubTypePrivateOrder {
+	channel, ok := subMaps[typ]
+	if !ok {
 		return errors.Errorf("unsupport subtype '%d'", typ)
 	}
 
 	var result subscribeResult
 	req := callParam{
-		Channel: "orders",
+		Channel: channel,
 		OP:      "subscribe",
 	}
 	if err := ws.Conn.Call(ctx, req.Channel, req.OP, &req, &result); err != nil {
