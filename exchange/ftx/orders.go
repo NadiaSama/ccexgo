@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -143,6 +144,26 @@ func (rc *RestClient) parseOrder(o *Order) (*exchange.Order, error) {
 		Status:   os,
 		Side:     side,
 		Type:     typ,
+		Raw:      o,
 	}
 	return order, nil
+}
+
+func (rc *RestClient) OrderCancel(ctx context.Context, order *exchange.Order) error {
+	endPoint := fmt.Sprintf("%s/%s", orderEndPoint, order.ID.String())
+
+	if err := rc.request(ctx, http.MethodDelete, endPoint, nil, nil, true, nil); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rc *RestClient) OrderFetch(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+	endPoint := fmt.Sprintf("%s/%s", orderEndPoint, order.ID.String())
+
+	var resp Order
+	if err := rc.request(ctx, http.MethodGet, endPoint, nil, nil, true, &resp); err != nil {
+		return nil, err
+	}
+	return rc.parseOrder(&resp)
 }

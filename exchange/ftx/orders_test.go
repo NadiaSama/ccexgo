@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/jarcoal/httpmock"
@@ -80,5 +81,51 @@ func TestOrdersNew(t *testing.T) {
 		resp.Side != exchange.OrderSideSell {
 		t.Errorf("bad order %v", *resp)
 	}
+}
 
+func TestOrderFetch(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.Deactivate()
+
+	data := []byte(`
+	{
+  "success": true,
+  "result": {
+    "createdAt": "2019-03-05T09:56:55.728933+00:00",
+    "filledSize": 10,
+    "future": "XRP-PERP",
+    "id": 9596912,
+    "market": "XRP-PERP",
+    "price": 0.306525,
+    "avgFillPrice": 0.306526,
+    "remainingSize": 31421,
+    "side": "sell",
+    "size": 31431,
+    "status": "closed",
+    "type": "limit",
+    "reduceOnly": false,
+    "ioc": false,
+    "postOnly": false,
+    "clientId": null
+  }
+}`)
+
+	httpmock.RegisterResponder(http.MethodGet, "https://ftx.com/api/orders/9596912", httpmock.NewBytesResponder(200, data))
+
+	ctx := context.Background()
+	client := NewRestClient("", "")
+	client.symbols["XRP-PERP"] = newSwapSymbol("XRP")
+
+	order, err := client.OrderFetch(ctx, &exchange.Order{
+		ID: exchange.NewIntID(9596912),
+	})
+	if err != nil {
+		t.Fatalf("cancel order fail %s", err.Error())
+	}
+
+	if order.Status != exchange.OrderStatusCancel || !order.AvgPrice.Equal(decimal.NewFromFloat(0.306526)) ||
+		!order.Amount.Equal(decimal.NewFromInt(31431)) || !order.Filled.Equal(decimal.NewFromInt(10)) ||
+		!order.Created.Equal(time.Date(2019, 3, 5, 9, 56, 55, 728933000, time.UTC)) {
+		t.Errorf("bad fetch order %v", *order)
+	}
 }
