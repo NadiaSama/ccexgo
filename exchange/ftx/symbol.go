@@ -53,10 +53,18 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 	return nil
 }
 
-func (rc *RestClient) ParseFutureSymbol(symbol string) (exchange.FuturesSymbol, error) {
+func (rc *RestClient) ParseSymbol(symbol string) (exchange.Symbol, error) {
 	sym, ok := rc.symbols[symbol]
 	if !ok {
 		return nil, errors.Errorf("unkown future symbol '%s'", symbol)
+	}
+	return sym, nil
+}
+
+func (rc *RestClient) ParseFutureSymbol(symbol string) (exchange.FuturesSymbol, error) {
+	sym, err := rc.ParseSymbol(symbol)
+	if err != nil {
+		return nil, err
 	}
 
 	ret, ok := sym.(exchange.FuturesSymbol)
@@ -68,9 +76,9 @@ func (rc *RestClient) ParseFutureSymbol(symbol string) (exchange.FuturesSymbol, 
 }
 
 func (rc *RestClient) ParseSwapSymbol(symbol string) (exchange.SwapSymbol, error) {
-	sym, ok := rc.symbols[symbol]
-	if !ok {
-		return nil, errors.Errorf("unkown swap symbol '%s'", symbol)
+	sym, err := rc.ParseSymbol(symbol)
+	if err != nil {
+		return nil, err
 	}
 
 	ret, ok := sym.(exchange.SwapSymbol)
