@@ -54,6 +54,7 @@ const (
 	codeReconnet = 20001
 
 	channelOrders = "orders"
+	channelFills  = "fills"
 )
 
 func NewCodeC(codeMap map[string]exchange.Symbol) *CodeC {
@@ -108,21 +109,30 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	case typePartial:
 		fallthrough
 	case typeUpdate:
+		var param interface{}
 		switch cr.Channel {
 		case channelOrders:
 			o, err := cc.parseOrder(cr.Data)
 			if err != nil {
 				return nil, err
 			}
-			ret := &rpc.Notify{
-				Method: id,
-				Params: o,
+			param = o
+
+		case channelFills:
+			f, err := cc.parseFills(cr.Data)
+			if err != nil {
+				return nil, err
 			}
-			return ret, nil
+			param = f
 
 		default:
 			return nil, errors.Errorf("unsupport channel '%s'", cr.Channel)
 		}
+		ret := &rpc.Notify{
+			Method: id,
+			Params: param,
+		}
+		return ret, nil
 
 	default:
 		return nil, errors.Errorf("unsupport type '%s'", cr.Type)
@@ -135,4 +145,13 @@ func (cc *CodeC) parseOrder(raw []byte) (*exchange.Order, error) {
 		return nil, err
 	}
 	return parseOrderInternal(&order, cc.codeMap)
+}
+
+func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
+	var fill FillNotify
+	if err := json.Unmarshal(raw, &fill); err != nil {
+		return nil, err
+	}
+
+	return parseFillInternal(&fill, cc.codeMap)
 }
