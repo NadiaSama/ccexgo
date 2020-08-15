@@ -34,6 +34,31 @@ func (rc *RestClient) NewWSClient(data chan interface{}) *WSClient {
 	return ret
 }
 
+func (ws *WSClient) Run(ctx context.Context) error {
+	if err := ws.WSClient.Run(ctx); err != nil {
+		return err
+	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second * 15)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+
+			case <-ws.Done():
+				return
+
+			case <-ticker.C:
+				param := &callParam{
+					OP: "ping",
+				}
+				ws.Call(ctx, "", "ping", &param, nil)
+			}
+		}
+	}()
+	return nil
+}
 func (ws *WSClient) Auth(ctx context.Context, key string, secret string) error {
 	ts := time.Now().UnixNano() / 1e6
 	es := fmt.Sprintf("%dwebsocket_login", ts)
@@ -72,7 +97,7 @@ func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ..
 }
 
 func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
-	if notify.Method == typePong {
+	if notify.Method == typePong || notify.Method == typeInfo {
 		return
 	}
 
