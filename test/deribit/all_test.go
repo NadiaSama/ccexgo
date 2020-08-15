@@ -10,6 +10,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/deribit"
+	"github.com/shopspring/decimal"
 )
 
 func TestAll(t *testing.T) {
@@ -74,8 +75,8 @@ func TestAll(t *testing.T) {
 	fmt.Printf("ORDER %s %f\n", sym.String(), price)
 	req := exchange.OrderRequest{
 		Symbol: sym,
-		Price:  price,
-		Amount: 0.1,
+		Price:  decimal.NewFromFloat(price),
+		Amount: decimal.NewFromFloat(0.1),
 		Type:   exchange.OrderTypeLimit,
 		Side:   exchange.OrderSideBuy,
 	}

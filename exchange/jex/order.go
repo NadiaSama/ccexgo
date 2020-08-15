@@ -9,6 +9,7 @@ import (
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -166,12 +167,13 @@ func (or *OrderResult) Transform() (*exchange.Order, error) {
 		Side:    side,
 		Status:  status,
 		Symbol:  sym,
-		Price:   price,
-		Amount:  amount,
-		Filled:  exec,
+		Price:   decimal.NewFromFloat(price),
+		Amount:  decimal.NewFromFloat(amount),
+		Filled:  decimal.NewFromFloat(exec),
 		Created: created,
 		Updated: updated,
 		Type:    typ,
+		Raw:     or,
 	}, nil
 }
 

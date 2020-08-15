@@ -153,6 +153,7 @@ func (order *Order) transform() (*exchange.Order, error) {
 		Updated:  update,
 		Symbol:   sym,
 		Filled:   order.FilledAmont,
+		Raw:      order,
 	}, nil
 }
 

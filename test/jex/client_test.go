@@ -9,6 +9,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/jex"
+	"github.com/shopspring/decimal"
 )
 
 func TestRequest(t *testing.T) {
@@ -20,8 +21,8 @@ func TestRequest(t *testing.T) {
 
 	req := &exchange.OrderRequest{
 		Symbol: jex.NewOptionSymbol("EOS", time.Date(2020, 7, 6, 11, 0, 0, 0, time.UTC), 1.234, exchange.OptionTypeCall),
-		Price:  0.3,
-		Amount: 0.1,
+		Price:  decimal.NewFromFloat(0.3),
+		Amount: decimal.NewFromFloat(0.1),
 		Type:   exchange.OrderTypeLimit,
 		Side:   exchange.OrderSideBuy,
 	}
