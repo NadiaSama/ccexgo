@@ -22,7 +22,8 @@ const (
 	SubTypeOrderBook SubType = iota
 	SubTypeIndex
 	SubTypeTrade
-	SubTypeOrder
+	SubTypePrivateOrder
+	SubTypePrivateTrade
 )
 
 var (

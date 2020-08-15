@@ -58,7 +58,7 @@ func TestOrder(t *testing.T) {
 		t.Fatalf("auth fail %s", err.Error())
 	}
 
-	if err := client.Subscribe(ctx, exchange.SubTypeOrder); err != nil {
+	if err := client.Subscribe(ctx, exchange.SubTypePrivateOrder); err != nil {
 		t.Fatalf("subscribe order fail %s", err.Error())
 	}
 

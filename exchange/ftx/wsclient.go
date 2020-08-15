@@ -77,7 +77,7 @@ func (ws *WSClient) Auth(ctx context.Context, key string, secret string) error {
 }
 
 func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
-	if typ != exchange.SubTypeOrder {
+	if typ != exchange.SubTypePrivateOrder {
 		return errors.Errorf("unsupport subtype '%d'", typ)
 	}
 
