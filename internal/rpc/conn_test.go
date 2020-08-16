@@ -118,3 +118,29 @@ func TestHadleMessagQuit(t *testing.T) {
 		t.Errorf("bad error %v", err)
 	}
 }
+
+func TestClose(t *testing.T) {
+	stream := &testStreamH{
+		testStream: testStream{
+			result: []string{},
+			closed: false,
+			cond:   sync.NewCond(&sync.Mutex{}),
+			wait:   true,
+		},
+	}
+
+	conn := NewConn(stream)
+	ctx, cancel := context.WithCancel(context.Background())
+	conn.Run(ctx, nil)
+
+	select {
+	case <-time.After(time.Second * 2):
+		cancel()
+	}
+
+	select {
+	case <-conn.Done():
+	case <-time.After(time.Second):
+		t.Fatalf("context close timeout")
+	}
+}

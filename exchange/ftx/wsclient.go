@@ -41,6 +41,20 @@ func (rc *RestClient) NewWSClient(data chan interface{}) *WSClient {
 	return ret
 }
 
+func (rc *RestClient) NewAuthWSClient(ctx context.Context, data chan interface{}) (*WSClient, error) {
+	client := rc.NewWSClient(data)
+	if err := client.Run(ctx); err != nil {
+		return nil, errors.WithMessagef(err, "client run fail")
+	}
+
+	if err := client.Auth(ctx, rc.key, rc.secret); err != nil {
+		client.Close()
+		return nil, errors.WithMessagef(err, "auth wsclient fail")
+	}
+
+	return client, nil
+}
+
 func (ws *WSClient) Run(ctx context.Context) error {
 	if err := ws.WSClient.Run(ctx); err != nil {
 		return err

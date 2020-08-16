@@ -20,7 +20,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("missing H_KEY, H_SECRET")
 	}
 	client := future.NewRestClient(key, secret)
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	if err := client.Init(ctx); err != nil {
 		t.Fatalf("future client init fail %s", err.Error())
 	}
@@ -62,7 +62,7 @@ func TestAll(t *testing.T) {
 					t.Errorf("no %s data", k)
 				}
 			}
-			ws.Close()
+			cancel()
 
 		case <-ws.Done():
 			return

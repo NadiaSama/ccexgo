@@ -148,6 +148,15 @@ func (c *connection) clear() {
 func (c *connection) handleMessages(ctx context.Context, handler Handler) {
 	defer close(c.done)
 	defer c.clear()
+	go func() {
+		select {
+		case <-ctx.Done():
+			c.Close()
+		case <-c.done:
+			return
+		}
+	}()
+
 	for {
 		response, err := c.stream.Read()
 		if err != nil {
