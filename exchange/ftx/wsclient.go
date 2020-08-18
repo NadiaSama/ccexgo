@@ -29,8 +29,9 @@ const (
 
 var (
 	subMaps map[exchange.SubType]string = map[exchange.SubType]string{
-		exchange.SubTypePrivateOrder: "orders",
-		exchange.SubTypePrivateTrade: "fills",
+		exchange.SubTypePrivateOrder: channelOrders,
+		exchange.SubTypePrivateTrade: channelFills,
+		exchange.SubTypeOrderBook:    channelOrderBook,
 	}
 )
 
@@ -104,10 +105,23 @@ func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ..
 	}
 
 	var result subscribeResult
-	req := callParam{
-		Channel: channel,
-		OP:      "subscribe",
+	var req callParam
+	if channel == channelOrderBook {
+		if len(syms) != 1 {
+			return errors.Errorf("ftx multi subscribe not support")
+		}
+		req = callParam{
+			Channel: channel,
+			OP:      "subscribe",
+			Market:  syms[0].String(),
+		}
+	} else {
+		req = callParam{
+			Channel: channel,
+			OP:      "subscribe",
+		}
 	}
+
 	if err := ws.Conn.Call(ctx, req.Channel, req.OP, &req, &result); err != nil {
 		return errors.WithMessagef(err, "subscribe orders fail")
 	}
@@ -128,4 +142,5 @@ func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
 		Chan:     notify.Method,
 		Data:     notify.Params,
 	}
+	fmt.Printf("GOT NOTIFY %v\n", *notify)
 }

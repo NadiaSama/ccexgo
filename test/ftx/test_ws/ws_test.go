@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/ftx"
@@ -50,4 +51,35 @@ func TestOrderWS(t *testing.T) {
 		}
 	}
 
+}
+
+func TestOrderBookWS(t *testing.T) {
+	ctx := context.Background()
+	client := ftx.NewRestClient("", "")
+	if err := client.Init(ctx); err != nil {
+		t.Fatalf("init fail %s", err.Error())
+	}
+
+	data := make(chan interface{}, 4)
+	ws := client.NewWSClient(data)
+
+	if err := ws.Run(ctx); err != nil {
+		t.Fatalf("run ws client fail %s", err.Error())
+	}
+
+	sym, _ := client.ParseSymbol("BTC-PERP")
+	if err := ws.Subscribe(ctx, exchange.SubTypeOrderBook, sym); err != nil {
+		t.Fatalf("subscribe fail %s", err.Error())
+	}
+
+	ticker := time.NewTicker(time.Second * 3)
+	for {
+		select {
+		case r := <-data:
+			fmt.Printf("GOT-NOTIFY %v\n", r)
+
+		case <-ticker.C:
+			fmt.Printf("Got ticker %d\n", len(data))
+		}
+	}
 }

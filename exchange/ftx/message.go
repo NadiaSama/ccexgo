@@ -12,7 +12,8 @@ import (
 type (
 	CodeC struct {
 		*exchange.CodeC
-		codeMap map[string]exchange.Symbol
+		codeMap   map[string]exchange.Symbol
+		orderBook map[string]*OrderBook
 	}
 
 	callParam struct {
@@ -53,14 +54,16 @@ const (
 
 	codeReconnet = 20001
 
-	channelOrders = "orders"
-	channelFills  = "fills"
+	channelOrderBook = "orderbook"
+	channelOrders    = "orders"
+	channelFills     = "fills"
 )
 
 func NewCodeC(codeMap map[string]exchange.Symbol) *CodeC {
 	return &CodeC{
 		exchange.NewCodeC(),
 		codeMap,
+		make(map[string]*OrderBook),
 	}
 }
 
@@ -70,7 +73,12 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, err
 	}
 
-	id := fmt.Sprintf("%s%s", cr.Channel, cr.Market)
+	var id string
+	if cr.Market == "" {
+		id = cr.Channel
+	} else {
+		id = fmt.Sprintf("%s.%s", cr.Channel, cr.Market)
+	}
 	if cr.Type == typeError {
 		ret := &rpc.Result{
 			ID:     id,
@@ -107,7 +115,25 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return ret, nil
 
 	case typePartial:
-		fallthrough
+		if cr.Channel == channelOrderBook {
+			sym, ok := cc.codeMap[cr.Market]
+			if !ok {
+				return nil, errors.Errorf("unknow market '%s'", cr.Market)
+			}
+			ob := NewOrderBook(sym)
+			notify, err := ob.Init(&cr)
+			if err != nil {
+				return nil, err
+			}
+			cc.orderBook[cr.Market] = ob
+
+			return &rpc.Notify{
+				Method: id,
+				Params: notify,
+			}, nil
+		}
+		return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
+
 	case typeUpdate:
 		var param interface{}
 		switch cr.Channel {
@@ -120,6 +146,17 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 
 		case channelFills:
 			f, err := cc.parseFills(cr.Data)
+			if err != nil {
+				return nil, err
+			}
+			param = f
+
+		case channelOrderBook:
+			ob, ok := cc.orderBook[cr.Market]
+			if !ok {
+				return nil, errors.Errorf("unkown market '%s'", cr.Market)
+			}
+			f, err := ob.Update(&cr)
 			if err != nil {
 				return nil, err
 			}
