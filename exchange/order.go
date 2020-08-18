@@ -38,7 +38,7 @@ type (
 		Side     OrderSide
 		Status   OrderStatus
 		Type     OrderType
-		Raw      interface{} `json:"omitempty"`
+		Raw      interface{} `json:"-"`
 	}
 
 	//OrderReqOption specific option to create order
@@ -97,6 +97,17 @@ func NewPostOnlyOption(postOnly bool) OrderReqOption {
 func NewTimeInForceOption(flag TimeInForceFlag) OrderReqOption {
 	return &TimeInForceOption{
 		Flag: flag,
+	}
+}
+
+func NewOrderRequest(sym Symbol, side OrderSide, typ OrderType,
+	price float64, amount float64) *OrderRequest {
+	return &OrderRequest{
+		Symbol: sym,
+		Side:   side,
+		Type:   typ,
+		Price:  decimal.NewFromFloat(price),
+		Amount: decimal.NewFromFloat(amount),
 	}
 }
 
