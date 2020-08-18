@@ -122,7 +122,7 @@ func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ..
 		}
 	}
 
-	if err := ws.Conn.Call(ctx, req.Channel, req.OP, &req, &result); err != nil {
+	if err := ws.Conn.Call(ctx, subID(req.Channel, req.Market), req.OP, &req, &result); err != nil {
 		return errors.WithMessagef(err, "subscribe orders fail")
 	}
 
@@ -142,5 +142,4 @@ func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
 		Chan:     notify.Method,
 		Data:     notify.Params,
 	}
-	fmt.Printf("GOT NOTIFY %v\n", *notify)
 }
