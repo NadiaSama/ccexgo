@@ -47,6 +47,10 @@ func NewRestClient(key, secret string) *RestClient {
 }
 
 func (rc *RestClient) Init(ctx context.Context) error {
+	if err := rc.initSpotSymbol(ctx); err != nil {
+		return err
+	}
+
 	return rc.initFutureSymbol(ctx)
 }
 

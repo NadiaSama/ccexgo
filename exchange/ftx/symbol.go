@@ -17,11 +17,16 @@ type (
 	SwapSymbol struct {
 		*exchange.BaseSwapSymbol
 	}
+
+	SpotSymbol struct {
+		*exchange.BaseSpotSymbol
+	}
 )
 
 const (
 	typeFuture = "future"
 	typeSwap   = "perpetual"
+	typeSpot   = "spot"
 )
 
 func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
@@ -49,6 +54,21 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 			rc.symbols[name] = newSwapSymbol(info.Underlying)
 			continue
 		}
+	}
+	return nil
+}
+
+func (rc *RestClient) initSpotSymbol(ctx context.Context) error {
+	markets, err := rc.Markets(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, m := range markets {
+		if m.Type != typeSpot {
+			continue
+		}
+		rc.symbols[m.Name] = newSpotSymbol(m.BaseCurrency, m.QuoteCurrency)
 	}
 	return nil
 }
@@ -86,6 +106,16 @@ func (rc *RestClient) ParseSwapSymbol(symbol string) (exchange.SwapSymbol, error
 		return nil, errors.Errorf("bad symbol for '%s'", symbol)
 	}
 	return ret, nil
+}
+
+func newSpotSymbol(base string, quote string) *SpotSymbol {
+	return &SpotSymbol{
+		exchange.NewBaseSpotSymbol(base, quote),
+	}
+}
+
+func (ss *SpotSymbol) String() string {
+	return fmt.Sprintf("%s/%s", ss.Base(), ss.Quote())
 }
 
 func newFutureSymbol(index string, st time.Time) *FuturesSymbol {
