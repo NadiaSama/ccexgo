@@ -73,12 +73,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, err
 	}
 
-	var id string
-	if cr.Market == "" {
-		id = cr.Channel
-	} else {
-		id = fmt.Sprintf("%s.%s", cr.Channel, cr.Market)
-	}
+	id := subID(cr.Channel, cr.Market)
+
 	if cr.Type == typeError {
 		ret := &rpc.Result{
 			ID:     id,
@@ -191,4 +187,12 @@ func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
 	}
 
 	return parseFillInternal(&fill, cc.codeMap)
+}
+
+func subID(channel string, market string) string {
+	if len(market) == 0 {
+		return channel
+	}
+
+	return fmt.Sprintf("%s.%s", channel, market)
 }

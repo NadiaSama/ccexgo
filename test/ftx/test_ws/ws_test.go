@@ -76,7 +76,9 @@ func TestOrderBookWS(t *testing.T) {
 	for {
 		select {
 		case r := <-data:
-			fmt.Printf("GOT-NOTIFY %v\n", r)
+			notify := r.(*exchange.WSNotify)
+			ob := notify.Data.(*exchange.OrderBook)
+			fmt.Printf("%v\n", *ob)
 
 		case <-ticker.C:
 			fmt.Printf("Got ticker %d\n", len(data))
