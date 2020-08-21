@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -34,11 +35,12 @@ type (
 	}
 
 	OrderReq struct {
-		Market string  `json:"market"`
-		Side   string  `json:"side"`
-		Price  float64 `json:"price"`
-		Type   string  `json:"type"`
-		Size   float64 `json:"size"`
+		Market   string  `json:"market"`
+		Side     string  `json:"side"`
+		Price    float64 `json:"price"`
+		Type     string  `json:"type"`
+		Size     float64 `json:"size"`
+		ClientID string  `json:"clientId,omitempty"`
 	}
 )
 
@@ -84,12 +86,17 @@ func (rc *RestClient) OrderNew(ctx context.Context, req *exchange.OrderRequest, 
 
 	p, _ := req.Price.Float64()
 	a, _ := req.Amount.Float64()
+	cid := ""
+	if req.ClientID != nil {
+		cid = req.ClientID.String()
+	}
 	or := OrderReq{
-		Market: req.Symbol.String(),
-		Price:  p,
-		Size:   a,
-		Side:   side,
-		Type:   typ,
+		Market:   req.Symbol.String(),
+		Price:    p,
+		Size:     a,
+		Side:     side,
+		Type:     typ,
+		ClientID: cid,
 	}
 	b, _ := json.Marshal(or)
 	buf := bytes.NewBuffer(b)
@@ -152,6 +159,7 @@ func parseOrderInternal(o *Order, cm map[string]exchange.Symbol) (*exchange.Orde
 	return order, nil
 }
 
+//OrderCancel only ID field is required
 func (rc *RestClient) OrderCancel(ctx context.Context, order *exchange.Order) error {
 	endPoint := fmt.Sprintf("%s/%s", orderEndPoint, order.ID.String())
 
@@ -161,6 +169,7 @@ func (rc *RestClient) OrderCancel(ctx context.Context, order *exchange.Order) er
 	return nil
 }
 
+//OrderFetch only ID field is required
 func (rc *RestClient) OrderFetch(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
 	endPoint := fmt.Sprintf("%s/%s", orderEndPoint, order.ID.String())
 
@@ -169,6 +178,30 @@ func (rc *RestClient) OrderFetch(ctx context.Context, order *exchange.Order) (*e
 		return nil, err
 	}
 	return rc.parseOrder(&resp)
+}
+
+//Orders return open orders
+func (rc *RestClient) Orders(ctx context.Context, symbol exchange.Symbol) ([]*exchange.Order, error) {
+	var orders []Order
+	var param url.Values
+	if symbol != nil {
+		param = url.Values{}
+		param.Add("markets", symbol.String())
+	}
+	if err := rc.request(ctx, http.MethodGet, "/orders", param, nil, true, &orders); err != nil {
+		return nil, err
+	}
+
+	ret := make([]*exchange.Order, len(orders))
+	for i, o := range orders {
+		to, e := rc.parseOrder(&o)
+		if e != nil {
+			return nil, e
+		}
+		ret[i] = to
+	}
+
+	return ret, nil
 }
 
 func parseTime(ts string) (time.Time, error) {

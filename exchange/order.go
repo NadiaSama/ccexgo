@@ -18,15 +18,17 @@ type (
 
 	//OrderRequest carry field which used to create order
 	OrderRequest struct {
-		Symbol Symbol
-		Side   OrderSide
-		Type   OrderType
-		Price  decimal.Decimal
-		Amount decimal.Decimal
+		Symbol   Symbol
+		ClientID OrderID
+		Side     OrderSide
+		Type     OrderType
+		Price    decimal.Decimal
+		Amount   decimal.Decimal
 	}
 
 	Order struct {
 		ID       OrderID
+		ClientID OrderID
 		Symbol   Symbol
 		Amount   decimal.Decimal
 		Filled   decimal.Decimal
@@ -62,6 +64,8 @@ type (
 	IntID struct {
 		ID int64
 	}
+
+	StrID string
 )
 
 const (
@@ -100,21 +104,28 @@ func NewTimeInForceOption(flag TimeInForceFlag) OrderReqOption {
 	}
 }
 
-func NewOrderRequest(sym Symbol, side OrderSide, typ OrderType,
+func NewOrderRequest(sym Symbol, cid OrderID, side OrderSide, typ OrderType,
 	price float64, amount float64) *OrderRequest {
 	return &OrderRequest{
-		Symbol: sym,
-		Side:   side,
-		Type:   typ,
-		Price:  decimal.NewFromFloat(price),
-		Amount: decimal.NewFromFloat(amount),
+		Symbol:   sym,
+		ClientID: cid,
+		Side:     side,
+		Type:     typ,
+		Price:    decimal.NewFromFloat(price),
+		Amount:   decimal.NewFromFloat(amount),
 	}
+}
+
+func NewStrID(id string) StrID {
+	return StrID(id)
+}
+func (sid StrID) String() string {
+	return string(sid)
 }
 
 func NewIntID(id int64) IntID {
 	return IntID{id}
 }
-
 func (sid IntID) String() string {
 	return strconv.FormatInt(sid.ID, 10)
 }
