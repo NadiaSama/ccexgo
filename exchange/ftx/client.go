@@ -103,7 +103,11 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 
 	if sign {
 		ts := time.Now().UnixNano() / 1e6
-		encStr := fmt.Sprintf("%d%s%s%s", ts, method, u.Path, u.RawQuery)
+		encStr := fmt.Sprintf("%d%s%s", ts, method, u.Path)
+		if u.RawQuery != "" {
+			encStr += "?" + u.RawQuery
+		}
+
 		if body != nil {
 			data, err := ioutil.ReadAll(body)
 			if err != nil {
