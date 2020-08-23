@@ -68,6 +68,9 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 func (rc *RestClient) buildRequest(ctx context.Context, method, host string, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {
 	var query string
 	if sign {
+		if values == nil {
+			values = url.Values{}
+		}
 		ts := time.Now().UTC()
 		values.Add("AccessKeyId", rc.key)
 		values.Add("SignatureMethod", signatureMethod)
