@@ -45,7 +45,8 @@ const (
 )
 
 var (
-	rcbMap map[string]ResponseParseCB = map[string]ResponseParseCB{}
+	rcbMap      map[string]ResponseParseCB = map[string]ResponseParseCB{}
+	pingMessage                            = &pingReq{}
 )
 
 func NewCodeC() *CodeC {
@@ -60,7 +61,7 @@ func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
 	}
 
 	if _, ok := param.(*pingReq); ok {
-		return []byte("ping"), nil
+		return []byte{'p', 'i', 'n', 'g'}, nil
 	}
 
 	return json.Marshal(param)
