@@ -3,7 +3,6 @@ package spot
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,20 +10,21 @@ import (
 	"github.com/NadiaSama/ccexgo/exchange/okex"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
 	depth5Raw struct {
-		Asks         [][3]interface{} `json:"asks"`
-		Bids         [][3]interface{} `json:"bids"`
-		InstrumentID string           `json:"instrument_id"`
-		Timestamp    string           `json:"timestamp"`
+		Asks         [][3]decimal.Decimal `json:"asks"`
+		Bids         [][3]decimal.Decimal `json:"bids"`
+		InstrumentID string               `json:"instrument_id"`
+		Timestamp    string               `json:"timestamp"`
 	}
 
 	DepthElem struct {
-		Price  float64
-		Amount float64
-		Orders int
+		Price  decimal.Decimal
+		Amount decimal.Decimal
+		Orders decimal.Decimal
 	}
 
 	//Depth5
@@ -80,36 +80,13 @@ func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify,
 	var client *okex.RestClient
 	sym := client.NewSpotSymbol(fields[0], fields[1])
 
-	processArr := func(src [][3]interface{}, dst []DepthElem) error {
+	processArr := func(src [][3]decimal.Decimal, dst []DepthElem) error {
 		for i, v := range src {
-			p, ok := v[0].(string)
-			if !ok {
-				return errors.Errorf("bad price value %v", v[0])
-			}
-			price, err := strconv.ParseFloat(p, 64)
-			if err != nil {
-				return errors.WithMessagef(err, "bad price '%s'", p)
-			}
-
-			a, ok := v[1].(string)
-			if !ok {
-				return errors.Errorf("bad amount value %v", v[1])
-			}
-			amount, err := strconv.ParseFloat(a, 64)
-			if err != nil {
-				return errors.WithMessagef(err, "bad amount '%s'", a)
-			}
-
-			o, ok := v[2].(string)
-			if !ok {
-				return errors.Errorf("bad orders value %v", v[2])
-			}
-			orders, err := strconv.Atoi(o)
 
 			dst[i] = DepthElem{
-				Amount: amount,
-				Price:  price,
-				Orders: orders,
+				Price:  v[0],
+				Amount: v[1],
+				Orders: v[2],
 			}
 		}
 		return nil

@@ -73,7 +73,9 @@ func TestParseDepth5(t *testing.T) {
 	}
 
 	d5 := p.Params.(*Depth5)
-	if d5.Symbol.String() != "BTC-USDT" || d5.Bids[0].Price != 11645.7 || d5.Bids[0].Amount != 8.82299797 || d5.Bids[0].Orders != 18 {
-		t.Fatalf("compare fail %s %v", d5.Symbol.String(), d5.Bids[0])
+	o, _ := d5.Bids[0].Orders.Float64()
+	if d5.Symbol.String() != "BTC-USDT" || d5.Bids[0].Price.String() != "11645.7" || d5.Bids[0].Amount.String() != "8.82299797" || int(o) != int(18) {
+		t.Fatalf("compare fail %s %v %v %s %s", d5.Symbol.String(), d5.Bids[0].Price.String() != "11645.7",
+			d5.Bids[0].Amount.String() != "8.82299797", d5.Bids[0].Price.String(), d5.Bids[0].Amount.String())
 	}
 }
