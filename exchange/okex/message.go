@@ -37,13 +37,11 @@ type (
 )
 
 const (
-	eventError    = "error"
-	opSubscribe   = "subscribe"
-	opUnSubscribe = "unsubscribe"
-	idPingPong    = "ping-pong"
-	pingMsg       = "ping"
-	pongMsg       = "pong"
-	timeFMT       = "2006-01-02T15:04:05.000Z"
+	eventError = "error"
+	idPingPong = "ping-pong"
+	pingMsg    = "ping"
+	pongMsg    = "pong"
+	timeFMT    = "2006-01-02T15:04:05.000Z"
 )
 
 var (
@@ -78,6 +76,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	if len(resp) == 4 && string(resp) == "pong" {
 		return &rpc.Result{
 			ID: idPingPong,
+			//return a empty json for json.Unmarshal work
+			Result: []byte(`{}`),
 		}, nil
 	}
 
@@ -95,7 +95,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 
 	if r.Event == opSubscribe || r.Event == opUnSubscribe {
 		return &rpc.Result{
-			ID: r.Event,
+			ID:     r.Event,
+			Result: resp,
 		}, nil
 	}
 

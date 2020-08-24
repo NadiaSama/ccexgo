@@ -2,6 +2,7 @@ package spot
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -33,10 +34,28 @@ type (
 		Symbol exchange.SpotSymbol
 		Time   time.Time
 	}
+
+	Depth5Channel struct {
+		sym exchange.SpotSymbol
+	}
+)
+
+const (
+	depth5Table = "spot/depth5"
 )
 
 func init() {
-	okex.SubscribeCB("spot/depth5", parseDepth5)
+	okex.SubscribeCB(depth5Table, parseDepth5)
+}
+
+func NewDepth5Channel(sym exchange.SpotSymbol) exchange.Channel {
+	return &Depth5Channel{
+		sym: sym,
+	}
+}
+
+func (dc *Depth5Channel) String() string {
+	return fmt.Sprintf("%s:%s", depth5Table, dc.sym.String())
 }
 
 func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify, error) {
@@ -47,7 +66,7 @@ func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify,
 
 	ts, err := okex.ParseTime(d.Timestamp)
 	if err != nil {
-		return nil, errors.WithMessagef(err, "new okex timestamp '%s'", d.Timestamp)
+		return nil, errors.WithMessagef(err, "bad okex timestamp '%s'", d.Timestamp)
 	}
 
 	fields := strings.Split(d.InstrumentID, "-")

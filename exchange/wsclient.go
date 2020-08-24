@@ -19,6 +19,11 @@ type (
 		Chan     string
 		Data     interface{}
 	}
+
+	//Channel a subscribe channel
+	Channel interface {
+		String() string
+	}
 )
 
 func NewWSClient(addr string, codec rpc.Codec, handler rpc.Handler) *WSClient {
