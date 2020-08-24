@@ -67,7 +67,7 @@ func (ws *WSClient) Run(ctx context.Context) error {
 
 			case <-ticker.C:
 				var msg map[string]interface{}
-				if err := ws.Call(ctx, idPingPong, pingMsg, pingMsg, &msg); err != nil {
+				if err := ws.Call(ctx, idPingPong, pingMsg, pingMessage, &msg); err != nil {
 					//TODO make rpc.Conn fail method public?
 					ws.WSClient.Close()
 					return
