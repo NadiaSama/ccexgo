@@ -54,7 +54,7 @@ func (ws *WSClient) Subscribe(ctx context.Context, channel ...exchange.Channel) 
 
 func (ws *WSClient) Run(ctx context.Context) error {
 	if err := ws.WSClient.Run(ctx); err != nil {
-		return nil
+		return err
 	}
 
 	//period send ping message check the ws conn is correct
@@ -79,7 +79,7 @@ func (ws *WSClient) Run(ctx context.Context) error {
 }
 
 func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
-	data := exchange.WSNotify{
+	data := &exchange.WSNotify{
 		Exchange: OKEX,
 		Chan:     notify.Method,
 		Data:     notify.Params,

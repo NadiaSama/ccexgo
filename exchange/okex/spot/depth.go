@@ -59,10 +59,14 @@ func (dc *Depth5Channel) String() string {
 }
 
 func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify, error) {
-	var d depth5Raw
-	if err := json.Unmarshal(raw, &d); err != nil {
+	var ds []depth5Raw
+	if err := json.Unmarshal(raw, &ds); err != nil {
 		return nil, err
 	}
+	if len(ds) != 1 {
+		return nil, errors.Errorf("invalid dpth5 len")
+	}
+	d := ds[0]
 
 	ts, err := okex.ParseTime(d.Timestamp)
 	if err != nil {
@@ -96,15 +100,16 @@ func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify,
 				return errors.WithMessagef(err, "bad amount '%s'", a)
 			}
 
-			o, ok := v[2].(int)
+			o, ok := v[2].(string)
 			if !ok {
 				return errors.Errorf("bad orders value %v", v[2])
 			}
+			orders, err := strconv.Atoi(o)
 
 			dst[i] = DepthElem{
 				Amount: amount,
 				Price:  price,
-				Orders: o,
+				Orders: orders,
 			}
 		}
 		return nil

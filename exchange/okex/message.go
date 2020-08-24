@@ -63,7 +63,7 @@ func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
 		return []byte("ping"), nil
 	}
 
-	return json.Marshal(req)
+	return json.Marshal(param)
 }
 
 func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
@@ -101,10 +101,7 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	if len(r.Table) != 0 {
-		return &rpc.Notify{
-			Method: r.Table,
-			Params: &r,
-		}, nil
+		return r.transfer()
 	}
 	return nil, errors.Errorf("unkown message '%s'", string(resp))
 }
