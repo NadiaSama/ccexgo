@@ -32,7 +32,7 @@ type (
 	}
 
 	Ticker struct {
-		Symbol         exchange.SpotSymbol
+		Symbol         exchange.SwapSymbol
 		Last           decimal.Decimal
 		LastQty        decimal.Decimal
 		BestBid        decimal.Decimal
@@ -49,22 +49,22 @@ type (
 	}
 
 	TickerChannel struct {
-		symbol exchange.SpotSymbol
+		symbol exchange.SwapSymbol
 	}
 )
 
 const (
-	tickerTable = "spot/ticker"
+	tickerTable = "swap/ticker"
 )
 
-func NewTickerChannel(sym exchange.SpotSymbol) exchange.Channel {
+func NewTickerChannel(sym exchange.SwapSymbol) exchange.Channel {
 	return &TickerChannel{
 		symbol: sym,
 	}
 }
 
 func (tc *TickerChannel) String() string {
-	return fmt.Sprintf("spot/ticker:%s", tc.symbol.String())
+	return fmt.Sprintf("%s:%s", tickerTable, tc.symbol.String())
 }
 
 func init() {
@@ -83,11 +83,11 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 	}
 
 	fields := strings.Split(r.InstrumentID, "-")
-	if len(fields) != 2 {
+	if len(fields) != 3 {
 		return nil, errors.Errorf("bad symbol '%s'", r.InstrumentID)
 	}
 	var client *okex.RestClient
-	sym := client.NewSpotSymbol(fields[0], fields[1])
+	sym := client.NewSwapSymbol(fmt.Sprintf("%s-%s", fields[0], fields[1]))
 
 	return &rpc.Notify{
 		Method: table,
