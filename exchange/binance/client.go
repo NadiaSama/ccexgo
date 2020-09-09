@@ -46,6 +46,10 @@ func (rc *RestClient) signature(param string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
+func (rc *RestClient) Request(ctx context.Context, endPoint string, param map[string]string, signed bool, dst interface{}) error {
+	return rc.request(ctx, endPoint, param, signed, dst)
+}
+
 func (rc *RestClient) request(ctx context.Context, endPoint string, param map[string]string, signed bool, dst interface{}) error {
 	if signed {
 		ts := timeStamp()
