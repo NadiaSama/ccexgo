@@ -2,6 +2,7 @@ package okex
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
@@ -19,14 +20,13 @@ func TestAll(t *testing.T) {
 	client := okex.NewRestClient(key, secret, passphrase, "www.okex.com")
 	ctx := context.Background()
 	sym1 := client.NewSpotSymbol("btc", "usdt")
-	sym2 := client.NewSpotSymbol("eth", "usdt")
-	fee, err := client.FeeRate(ctx, sym1, sym2)
+	fee, err := client.FeeRate(ctx, sym1)
 	if err != nil {
 		t.Fatalf("load fee fail %v", err.Error())
 	}
 
-	if len(fee) != 2 || fee[0].Symbol.String() != "BTC-USDT" || fee[1].Symbol.String() != "ETH-USDT" ||
-		fee[1].Maker != fee[0].Maker || fee[1].Taker != fee[0].Taker {
+	if len(fee) != 1 || fee[0].Symbol.String() != "BTC-USDT" {
 		t.Errorf("test feerate fail %v", fee)
 	}
+	fmt.Printf("%s %f %f\n", fee[0].Symbol.String(), fee[0].Maker, fee[0].Taker)
 }
