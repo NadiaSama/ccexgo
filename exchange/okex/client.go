@@ -63,12 +63,12 @@ func (rc *RestClient) request(ctx context.Context, method, endPoint string, para
 
 func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, param map[string]string, data interface{}, sign bool) (*http.Request, error) {
 	var (
-		body   string
-		req    *http.Request
-		values url.Values
-		err    error
+		body string
+		req  *http.Request
+		err  error
 	)
 
+	values := url.Values{}
 	for k, v := range param {
 		values.Add(k, v)
 	}
@@ -94,8 +94,12 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 	}
 
 	if sign {
+		p := u.Path
+		if u.RawQuery != "" {
+			p = fmt.Sprintf("%s?%s", u.Path, u.RawQuery)
+		}
 		ts := time.Now().UTC().Format(time.RFC3339)
-		raw := fmt.Sprintf("%s%s%s%s", ts, method, endPoint, body)
+		raw := fmt.Sprintf("%s%s%s%s", ts, method, p, body)
 		h := hmac.New(sha256.New, []byte(rc.secret))
 		h.Write([]byte(raw))
 		signature := base64.StdEncoding.EncodeToString(h.Sum(nil))

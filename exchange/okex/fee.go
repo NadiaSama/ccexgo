@@ -18,8 +18,13 @@ type (
 )
 
 func (rc *RestClient) FeeRate(ctx context.Context, syms ...exchange.Symbol) ([]exchange.TradeFee, error) {
+	if len(syms) != 1 {
+		return nil, errors.Errorf("only 1 symbol support")
+	}
+
 	var result TradeFee
-	if err := rc.request(ctx, http.MethodGet, "/api/spot/v3/trade_fee", nil, nil, true, &result); err != nil {
+	//if err := rc.request(ctx, http.MethodGet, "/api/spot/v3/trade_fee", map[string]string{"instrument_id": syms[0].String()}, nil, true, &result); err != nil {
+	if err := rc.request(ctx, http.MethodGet, "/api/spot/v3/trade_fee", map[string]string{"category": "1"}, nil, true, &result); err != nil {
 		return nil, err
 	}
 
