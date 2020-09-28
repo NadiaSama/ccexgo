@@ -8,6 +8,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -35,8 +36,19 @@ func NewRestClient(key, secret, passPhrase, apiHost string) *RestClient {
 	}
 }
 
-func (rc *RestClient) request(ctx context.Context, method, endPoint string, param map[string]string, data interface{}, sign bool, dst interface{}) error {
-	req, err := rc.buildRequest(ctx, method, endPoint, param, data, sign)
+func (rc *RestClient) Request(ctx context.Context, method, endPoint string, params url.Values, body io.Reader, sign bool, dst interface{}) error {
+	p := map[string]string{}
+	for k, v := range params {
+		if len(v) != 0 {
+			p[k] = v[0]
+		}
+	}
+
+	return rc.request(ctx, method, endPoint, p, body, sign, dst)
+}
+
+func (rc *RestClient) request(ctx context.Context, method, endPoint string, param map[string]string, body io.Reader, sign bool, dst interface{}) error {
+	req, err := rc.buildRequest(ctx, method, endPoint, param, body, sign)
 	if err != nil {
 		return err
 	}
@@ -61,7 +73,7 @@ func (rc *RestClient) request(ctx context.Context, method, endPoint string, para
 	})
 }
 
-func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, param map[string]string, data interface{}, sign bool) (*http.Request, error) {
+func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, param map[string]string, data io.Reader, sign bool) (*http.Request, error) {
 	var (
 		body string
 		req  *http.Request
@@ -74,7 +86,7 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 	}
 	u := url.URL{Scheme: "https", Host: rc.apiHost, Path: endPoint, RawQuery: values.Encode()}
 	if method == http.MethodPost {
-		b, e := json.Marshal(data)
+		b, e := ioutil.ReadAll(data)
 		if e != nil {
 			return nil, errors.WithMessagef(err, "build request fail")
 		}

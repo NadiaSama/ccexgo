@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -46,8 +48,16 @@ func (rc *RestClient) signature(param string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (rc *RestClient) Request(ctx context.Context, endPoint string, param map[string]string, signed bool, dst interface{}) error {
-	return rc.request(ctx, endPoint, param, signed, dst)
+func (rc *RestClient) Request(ctx context.Context, method, endPoint string, param url.Values, data io.Reader, signed bool, dst interface{}) error {
+	if method != http.MethodGet {
+		return errors.Errorf("bad method '%s'", method)
+	}
+	p := map[string]string{}
+	for k, v := range param {
+		p[k] = v[0]
+	}
+
+	return rc.request(ctx, endPoint, p, signed, dst)
 }
 
 func (rc *RestClient) request(ctx context.Context, endPoint string, param map[string]string, signed bool, dst interface{}) error {
@@ -76,12 +86,10 @@ func (rc *RestClient) request(ctx context.Context, endPoint string, param map[st
 
 		//if ip is not in apikey ip whilte list. binance will return statuscode 200 with error message
 		var ae APIError
-		if ret := json.Unmarshal(content, &ae); ret != nil {
-			return ret
-		}
-
-		if len(ae.Message) != 0 {
-			return &ae
+		if ret := json.Unmarshal(content, &ae); ret == nil {
+			if len(ae.Message) != 0 {
+				return &ae
+			}
 		}
 
 		if err := json.Unmarshal(content, dst); err != nil {

@@ -2,6 +2,7 @@ package swap
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/shopspring/decimal"
@@ -62,7 +63,7 @@ const (
 
 func (rc *RestClient) loadSymbol(ctx context.Context) error {
 	var info exchangeInfo
-	if err := rc.Request(ctx, "/fapi/v1/exchangeInfo", nil, false, &info); err != nil {
+	if err := rc.Request(ctx, http.MethodGet, "/fapi/v1/exchangeInfo", nil, nil, false, &info); err != nil {
 		return err
 	}
 
