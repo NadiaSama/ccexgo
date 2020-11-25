@@ -86,8 +86,7 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 	if len(fields) != 3 {
 		return nil, errors.Errorf("bad symbol '%s'", r.InstrumentID)
 	}
-	var client *okex.RestClient
-	sym := client.NewSwapSymbol(fmt.Sprintf("%s-%s", fields[0], fields[1]))
+	sym := okex.NewSwapSymbol(fmt.Sprintf("%s-%s", fields[0], fields[1]))
 
 	return &rpc.Notify{
 		Method: table,

@@ -19,7 +19,7 @@ func TestAll(t *testing.T) {
 
 	client := okex.NewRestClient(key, secret, passphrase, "www.okex.com")
 	ctx := context.Background()
-	sym1 := client.NewSpotSymbol("btc", "usdt")
+	sym1 := okex.NewSpotSymbol("btc", "usdt")
 	fee, err := client.FeeRate(ctx, sym1)
 	if err != nil {
 		t.Fatalf("load fee fail %v", err.Error())

@@ -17,19 +17,28 @@ type (
 )
 
 const (
-	okexWSAddr    = "wss://real.okex.com:8443/ws/v3"
-	OKEX          = "okex"
-	opSubscribe   = "subscribe"
-	opUnSubscribe = "unsubscribe"
+	OkexWSAddr     = "wss://real.okex.com:8443/ws/v3"
+	OkexTESTWSAddr = "wss://real.okex.com:8443/ws/v3?brokerId=9999"
+	OKEX           = "okex"
+	opSubscribe    = "subscribe"
+	opUnSubscribe  = "unsubscribe"
 )
 
 func NewWSClient(data chan interface{}) *WSClient {
+	return newWSClient(OkexWSAddr, data)
+}
+
+//NewTESTWSClient return a wsclient for okex testnet
+func NewTESTWSClient(data chan interface{}) *WSClient {
+	return newWSClient(OkexTESTWSAddr, data)
+}
+
+func newWSClient(addr string, data chan interface{}) *WSClient {
 	ret := &WSClient{
 		data: data,
 	}
 	codec := NewCodeC()
-
-	ret.WSClient = exchange.NewWSClient(okexWSAddr, codec, ret)
+	ret.WSClient = exchange.NewWSClient(addr, codec, ret)
 	return ret
 }
 
@@ -52,6 +61,8 @@ func (ws *WSClient) Subscribe(ctx context.Context, channel ...exchange.Channel) 
 	return nil
 }
 
+//Run start the websocket loop and create a goroutine which
+//will send ping message to okex server periodically
 func (ws *WSClient) Run(ctx context.Context) error {
 	if err := ws.WSClient.Run(ctx); err != nil {
 		return err

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -17,7 +18,7 @@ type (
 	}
 )
 
-func (c *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	return &SpotSymbol{
 		exchange.NewBaseSpotSymbol(strings.ToUpper(base), strings.ToUpper(quote)),
 	}
@@ -27,7 +28,15 @@ func (ss *SpotSymbol) String() string {
 	return fmt.Sprintf("%s-%s", ss.Base(), ss.Quote())
 }
 
-func (ss *RestClient) NewSwapSymbol(index string) exchange.SwapSymbol {
+func ParseSwapSymbol(sym string) (exchange.SwapSymbol, error) {
+	if !strings.HasSuffix(sym, "-SWAP") {
+		return nil, errors.Errorf("bad okex swap symbol %s", sym)
+	}
+
+	l := len(sym)
+	return NewSwapSymbol(sym[:l-5]), nil
+}
+func NewSwapSymbol(index string) exchange.SwapSymbol {
 	return &SwapSymbol{
 		exchange.NewBaseSwapSymbol(index),
 	}
