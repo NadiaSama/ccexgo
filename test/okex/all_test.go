@@ -17,7 +17,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("missing auth message '%s' '%s' '%s'", key, secret, passphrase)
 	}
 
-	client := okex.NewRestClient(key, secret, passphrase, "www.okex.com")
+	client := okex.NewRestClient(key, secret, passphrase)
 	ctx := context.Background()
 	sym1 := okex.NewSpotSymbol("btc", "usdt")
 	fee, err := client.FeeRate(ctx, sym1)
