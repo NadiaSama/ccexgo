@@ -24,15 +24,31 @@ type (
 		secret     string
 		passPhrase string
 		apiHost    string
+		test       bool
 	}
 )
 
-func NewRestClient(key, secret, passPhrase, apiHost string) *RestClient {
+const (
+	okexRestHost = "www.okex.com"
+)
+
+func NewRestClient(key, secret, passPhrase string) *RestClient {
 	return &RestClient{
 		key:        key,
 		secret:     secret,
 		passPhrase: passPhrase,
-		apiHost:    apiHost,
+		apiHost:    okexRestHost,
+		test:       false,
+	}
+}
+
+func NewTESTRestClient(key, secret, passPhrase string) *RestClient {
+	return &RestClient{
+		key:        key,
+		secret:     secret,
+		passPhrase: passPhrase,
+		apiHost:    okexRestHost,
+		test:       true,
 	}
 }
 
@@ -119,6 +135,10 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 		req.Header.Add("OK-ACCESS-SIGN", signature)
 		req.Header.Add("OK-ACCESS-TIMESTAMP", ts)
 		req.Header.Add("OK-ACCESS-PASSPHRASE", rc.passPhrase)
+	}
+
+	if rc.test {
+		req.Header.Add("x-simulated-trading", "1")
 	}
 	return req, nil
 }
