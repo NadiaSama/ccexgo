@@ -2,6 +2,10 @@ package okex
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
+	"strconv"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -12,7 +16,10 @@ import (
 type (
 	WSClient struct {
 		*exchange.WSClient
-		data chan interface{}
+		data       chan interface{}
+		Key        string
+		Secret     string
+		PassPhrase string
 	}
 )
 
@@ -22,20 +29,24 @@ const (
 	OKEX           = "okex"
 	opSubscribe    = "subscribe"
 	opUnSubscribe  = "unsubscribe"
+	opLogin        = "login"
 )
 
-func NewWSClient(data chan interface{}) *WSClient {
-	return newWSClient(OkexWSAddr, data)
+func NewWSClient(key, secret, passPhrase string, data chan interface{}) *WSClient {
+	return newWSClient(OkexWSAddr, key, secret, passPhrase, data)
 }
 
 //NewTESTWSClient return a wsclient for okex testnet
-func NewTESTWSClient(data chan interface{}) *WSClient {
-	return newWSClient(OkexTESTWSAddr, data)
+func NewTESTWSClient(key, secret, passPhrase string, data chan interface{}) *WSClient {
+	return newWSClient(OkexTESTWSAddr, key, secret, passPhrase, data)
 }
 
-func newWSClient(addr string, data chan interface{}) *WSClient {
+func newWSClient(addr, key, secret, passPhrase string, data chan interface{}) *WSClient {
 	ret := &WSClient{
-		data: data,
+		data:       data,
+		Key:        key,
+		Secret:     secret,
+		PassPhrase: passPhrase,
 	}
 	codec := NewCodeC()
 	ret.WSClient = exchange.NewWSClient(addr, codec, ret)
@@ -100,4 +111,22 @@ func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
 	default:
 		return
 	}
+}
+
+func (ws *WSClient) Auth(ctx context.Context) error {
+	timestamp := strconv.FormatFloat(float64(time.Now().UnixNano()/1e6/1000), 'f', -1, 64)
+	h := hmac.New(sha256.New, []byte(ws.Secret))
+	h.Write([]byte(timestamp + "GET/users/self/verify"))
+	sign := base64.StdEncoding.EncodeToString(h.Sum(nil))
+
+	cm := callParam{
+		OP:   opLogin,
+		Args: []string{ws.Key, ws.PassPhrase, timestamp, sign},
+	}
+
+	var msg map[string]interface{}
+	if err := ws.Call(ctx, opLogin, opLogin, &cm, &msg); err != nil {
+		return errors.WithMessage(err, "okex login error")
+	}
+	return nil
 }

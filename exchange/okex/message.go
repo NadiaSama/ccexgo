@@ -28,6 +28,7 @@ type (
 		Data      json.RawMessage `json:"data"`
 		Message   string          `json:"message"`
 		ErrorCode int             `json:"errorCode"`
+		Success   bool            `json:"success"` //login response
 	}
 
 	pingReq struct {
@@ -97,6 +98,13 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	if r.Event == opSubscribe || r.Event == opUnSubscribe {
 		return &rpc.Result{
 			ID:     r.Event,
+			Result: resp,
+		}, nil
+	}
+
+	if r.Event == opLogin {
+		return &rpc.Result{
+			ID:     opLogin,
 			Result: resp,
 		}, nil
 	}
