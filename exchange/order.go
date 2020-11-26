@@ -71,6 +71,8 @@ type (
 const (
 	OrderSideBuy = iota
 	OrderSideSell
+	OrderSideCloseLong
+	OrderSideCloseShort
 
 	OrderTypeLimit = iota
 	OrderTypeMarket
