@@ -141,3 +141,29 @@ func (o *Order) Equal(o2 *Order) bool {
 		o.Status == o2.Status && o.Type == o2.Type && o.Side == o2.Side &&
 		o.Symbol.String() == o2.Symbol.String()
 }
+
+var (
+	osMap map[OrderSide]string = map[OrderSide]string{
+		OrderSideBuy:        "buy",
+		OrderSideSell:       "sell",
+		OrderSideCloseLong:  "closeLong",
+		OrderSideCloseShort: "closeShort",
+	}
+
+	otMap map[OrderType]string = map[OrderType]string{
+		OrderTypeLimit:      "limit",
+		OrderTypeMarket:     "market",
+		OrderTypeStopLimit:  "stopLimit",
+		OrderTypeStopMarket: "stopMarket",
+	}
+)
+
+func (s OrderSide) String() string {
+	r, _ := osMap[s]
+	return r
+}
+
+func (t OrderType) String() string {
+	r, _ := otMap[t]
+	return r
+}
