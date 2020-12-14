@@ -45,7 +45,14 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 			if err != nil {
 				return errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
 			}
-			rc.symbols[name] = newFutureSymbol(info.Underlying, st)
+			var typ exchange.FutureType
+			now := time.Now()
+			if st.Sub(now).Hours() > 3*30*24 {
+				typ = exchange.FutureTypeNQ
+			} else {
+				typ = exchange.FutureTypeCQ
+			}
+			rc.symbols[name] = newFutureSymbol(info.Underlying, st, typ)
 			continue
 		}
 
@@ -118,9 +125,9 @@ func (ss *SpotSymbol) String() string {
 	return fmt.Sprintf("%s/%s", ss.Base(), ss.Quote())
 }
 
-func newFutureSymbol(index string, st time.Time) *FuturesSymbol {
+func newFutureSymbol(index string, st time.Time, typ exchange.FutureType) *FuturesSymbol {
 	return &FuturesSymbol{
-		exchange.NewBaseFutureSymbol(index, st),
+		exchange.NewBaseFutureSymbol(index, st, typ),
 	}
 }
 

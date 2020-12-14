@@ -14,11 +14,8 @@ import (
 )
 
 type (
-	FutureSymbolType int
-
 	FutureSymbol struct {
 		*exchange.BaseFutureSymbol
-		typ FutureSymbolType
 	}
 
 	FutureSymbolResp struct {
@@ -37,13 +34,7 @@ type (
 
 const (
 	ContractStatusOnline = 1
-
-	FutureSymbolCW FutureSymbolType = iota
-	FutureSymbolNW
-	FutureSymbolCQ
-	FutureSymbolNQ
-
-	timeFmt = "20060102"
+	timeFmt              = "20060102"
 )
 
 func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
@@ -70,19 +61,19 @@ func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
 		}
 		var (
 			suffix string
-			typ    FutureSymbolType
+			typ    exchange.FutureType
 		)
 		if fsym.ContractType == "this_week" {
-			typ = FutureSymbolCW
+			typ = exchange.FutureTypeCW
 			suffix = "_CW"
 		} else if fsym.ContractType == "next_week" {
-			typ = FutureSymbolNW
+			typ = exchange.FutureTypeNW
 			suffix = "_NW"
 		} else if fsym.ContractType == "quarter" {
-			typ = FutureSymbolCQ
+			typ = exchange.FutureTypeCQ
 			suffix = "_CQ"
 		} else if fsym.ContractType == "next_quarter" {
-			typ = FutureSymbolNQ
+			typ = exchange.FutureTypeNQ
 			suffix = "_NQ"
 		} else {
 			return errors.Errorf("unkown contract_type '%s'", fsym.ContractType)
@@ -106,10 +97,9 @@ func (rc *RestClient) GetFutureSymbols(index string) []*FutureSymbol {
 	}
 	return ret
 }
-func newFutureSymbol(base string, st time.Time, typ FutureSymbolType) *FutureSymbol {
+func newFutureSymbol(base string, st time.Time, typ exchange.FutureType) *FutureSymbol {
 	return &FutureSymbol{
-		typ:              typ,
-		BaseFutureSymbol: exchange.NewBaseFutureSymbol(strings.ToUpper(base), st),
+		BaseFutureSymbol: exchange.NewBaseFutureSymbol(strings.ToUpper(base), st, typ),
 	}
 }
 
@@ -119,15 +109,15 @@ func (fs *FutureSymbol) String() string {
 
 //WSSub return symbol which used by websocket subscribe
 func (fs *FutureSymbol) WSSub() string {
-	return fmt.Sprintf("%s_%s", fs.Index(), fs.typ.String())
+	return fmt.Sprintf("%s_%s", fs.Index(), TypeString(fs.Type()))
 }
 
-func (ft FutureSymbolType) String() string {
-	m := map[FutureSymbolType]string{
-		FutureSymbolCW: "CW",
-		FutureSymbolNW: "NW",
-		FutureSymbolCQ: "CQ",
-		FutureSymbolNQ: "NQ",
+func TypeString(ft exchange.FutureType) string {
+	m := map[exchange.FutureType]string{
+		exchange.FutureTypeCW: "CW",
+		exchange.FutureTypeNW: "NW",
+		exchange.FutureTypeCQ: "CQ",
+		exchange.FutureTypeNQ: "NQ",
 	}
 
 	return m[ft]
