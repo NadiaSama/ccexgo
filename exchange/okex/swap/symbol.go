@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/NadiaSama/ccexgo/exchange/okex"
+
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -42,7 +44,9 @@ var (
 )
 
 func Init(ctx context.Context) error {
-	var client RestClient
+	client := RestClient{
+		okex.NewRestClient("", "", ""),
+	}
 	syms, err := client.Symbols(ctx)
 	if err != nil {
 		return err
