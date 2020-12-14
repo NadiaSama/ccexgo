@@ -89,7 +89,7 @@ func (rc *RestClient) FetchPosition(ctx context.Context, sym ...exchange.Symbol)
 }
 
 func (pos *Position) Transform(posMode exchange.PositionMode) (*exchange.Position, error) {
-	sym, err := okex.ParseSwapSymbol(pos.InstrumentID)
+	sym, err := ParseSymbol(pos.InstrumentID)
 	if err != nil {
 		return nil, err
 	}

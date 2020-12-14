@@ -4,11 +4,13 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
 
 type (
-	Symbol struct {
+	OkexSymbol struct {
 		InstrumentID        string          `json:"instrument_id"`
 		Underlying          string          `json:"underlying"`
 		BaseCurrency        string          `json:"base_currency"`
@@ -24,19 +26,69 @@ type (
 		ContractValCurrency string          `json:"contract_val_currency"`
 		CurrencyIndex       string          `json:"currency_index"`
 	}
+
+	Symbol struct {
+		*exchange.BaseSwapSymbol
+		instrumentID string
+	}
 )
 
 const (
 	symbolEndPoint = "/api/swap/v3/instruments"
 )
 
-//Symbols return swap symbol
-func (rc *RestClient) Symbols(ctx context.Context) ([]Symbol, error) {
-	var ret []Symbol
+var (
+	symbolMap map[string]*Symbol = map[string]*Symbol{}
+)
 
-	if err := rc.Request(ctx, http.MethodGet, symbolEndPoint, nil, nil, false, &ret); err != nil {
+func Init(ctx context.Context) error {
+	var client RestClient
+	syms, err := client.Symbols(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, s := range syms {
+		symbolMap[s.String()] = s.(*Symbol)
+	}
+	return nil
+}
+
+//Symbols return swap symbol
+func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SwapSymbol, error) {
+	var oss []OkexSymbol
+
+	if err := rc.Request(ctx, http.MethodGet, symbolEndPoint, nil, nil, false, &oss); err != nil {
 		return nil, err
 	}
 
+	ret := make([]exchange.SwapSymbol, len(oss))
+	for i, os := range oss {
+		s, err := os.Parse()
+		if err != nil {
+			return nil, err
+		}
+
+		ret[i] = s
+	}
 	return ret, nil
+}
+
+func (os *OkexSymbol) Parse() (*Symbol, error) {
+	return &Symbol{
+		exchange.NewBaseSwapSymbol(os.Underlying),
+		os.InstrumentID,
+	}, nil
+}
+func (s *Symbol) String() string {
+	return s.instrumentID
+}
+
+func ParseSymbol(symbol string) (exchange.SwapSymbol, error) {
+	sym, ok := symbolMap[symbol]
+	if !ok {
+		return nil, errors.Errorf("unkown symbol=%s", symbol)
+	}
+
+	return sym, nil
 }

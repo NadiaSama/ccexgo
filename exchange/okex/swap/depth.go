@@ -3,7 +3,6 @@ package swap
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -74,11 +73,10 @@ func parseDepth5(table string, action string, raw json.RawMessage) (*rpc.Notify,
 		return nil, errors.WithMessagef(err, "bad okex timestamp '%s'", d.Timestamp)
 	}
 
-	fields := strings.Split(d.InstrumentID, "-")
-	if len(fields) != 3 {
-		return nil, errors.Errorf("bad instrumetID '%s'", d.InstrumentID)
+	sym, err := ParseSymbol(d.InstrumentID)
+	if err != nil {
+		return nil, err
 	}
-	sym := okex.NewSwapSymbol(fmt.Sprintf("%s-%s", fields[0], fields[1]))
 
 	processArr := func(src [][4]decimal.Decimal, dst []DepthElem) error {
 		for i, v := range src {

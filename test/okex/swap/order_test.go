@@ -44,7 +44,10 @@ func TestSwapOrder(t *testing.T) {
 		t.Fatalf("auth fail error=%s", err.Error())
 	}
 
-	symbol := okex.NewSwapSymbol("MNBTC-USDT")
+	symbol, err := swap.ParseSymbol("MNBTC-USDT-SWAP")
+	if err != nil {
+		t.Fatalf("parse symbol error=%s", err.Error())
+	}
 
 	if err := ws.Subscribe(ctx, swap.NewOrderChannel(symbol)); err != nil {
 		t.Fatalf("subscribe order fail error=%s", err.Error())

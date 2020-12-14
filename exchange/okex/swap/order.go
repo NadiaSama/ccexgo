@@ -126,7 +126,7 @@ func parseOrderCB(table string, action string, raw json.RawMessage) (*rpc.Notify
 }
 
 func (o *Order) Transform() (*exchange.Order, error) {
-	sym, err := okex.ParseSwapSymbol(o.InstrumentID)
+	sym, err := ParseSymbol(o.InstrumentID)
 	if err != nil {
 		return nil, err
 	}

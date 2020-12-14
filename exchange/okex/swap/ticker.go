@@ -3,7 +3,6 @@ package swap
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -54,7 +53,7 @@ type (
 )
 
 const (
-	tickerTable = "swap/ticker"
+	TickerTable = "swap/ticker"
 )
 
 func NewTickerChannel(sym exchange.SwapSymbol) exchange.Channel {
@@ -64,11 +63,11 @@ func NewTickerChannel(sym exchange.SwapSymbol) exchange.Channel {
 }
 
 func (tc *TickerChannel) String() string {
-	return fmt.Sprintf("%s:%s", tickerTable, tc.symbol.String())
+	return fmt.Sprintf("%s:%s", TickerTable, tc.symbol.String())
 }
 
 func init() {
-	okex.SubscribeCB(tickerTable, parseTickerCB)
+	okex.SubscribeCB(TickerTable, parseTickerCB)
 }
 func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notify, error) {
 	var rt []rawTicker
@@ -82,11 +81,10 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 		return nil, errors.WithMessagef(err, "parse timestamp '%s'", r.Timestamp)
 	}
 
-	fields := strings.Split(r.InstrumentID, "-")
-	if len(fields) != 3 {
-		return nil, errors.Errorf("bad symbol '%s'", r.InstrumentID)
+	sym, err := ParseSymbol(r.InstrumentID)
+	if err != nil {
+		return nil, err
 	}
-	sym := okex.NewSwapSymbol(fmt.Sprintf("%s-%s", fields[0], fields[1]))
 
 	return &rpc.Notify{
 		Method: table,
