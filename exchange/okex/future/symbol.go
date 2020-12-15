@@ -93,7 +93,7 @@ func (os *OkexSymbol) Parse() (*Symbol, error) {
 	}
 
 	return &Symbol{
-		exchange.NewBaseFutureSymbol(os.UnderlyingIndex, st, typ),
+		exchange.NewBaseFutureSymbol(os.Underlying, st, typ),
 	}, nil
 }
 
@@ -138,8 +138,21 @@ func ParseSymbol(symbol string) (exchange.FuturesSymbol, error) {
 	return sym, nil
 }
 
+func FetchSymbolByIndex(index string) []exchange.FuturesSymbol {
+	var ret []exchange.FuturesSymbol
+	symbolMapMu.Lock()
+	defer symbolMapMu.Unlock()
+
+	for _, s := range symbolMap {
+		if s.Index() == index {
+			ret = append(ret, s)
+		}
+	}
+	return ret
+}
+
 func updateSymbolMap(ctx context.Context) (time.Time, error) {
-	client := RestClient{}
+	client := NewRestClient("", "", "")
 	symbols, err := client.Symbols(ctx)
 	if err != nil {
 		return time.Time{}, err
