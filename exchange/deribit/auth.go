@@ -41,8 +41,8 @@ func (c *Client) getToken(ctx context.Context) (string, error) {
 
 	var r AuthResult
 	param := &AuthParam{
-		ClientID:     c.Key,
-		ClientSecret: c.Secret,
+		ClientID:     c.key,
+		ClientSecret: c.secret,
 		GrantType:    "client_credentials",
 	}
 	if err := c.call(ctx, "public/auth", param, &r, false); err != nil {

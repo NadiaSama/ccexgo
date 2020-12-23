@@ -2,7 +2,6 @@ package deribit
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -15,30 +14,56 @@ import (
 
 type (
 	Client struct {
-		*exchange.Client
+		*exchange.WSClient
 		tokenMu     sync.Mutex
 		accessToken string
 		expire      time.Time
 		seq         int64
+		key         string
+		secret      string
+		data        chan interface{}
 	}
 )
 
-func NewClient(key, secret string, timeout time.Duration, test bool) *Client {
-	var addr string
-	if test {
-		addr = WSTestAddr
-	} else {
-		addr = WSAddr
-	}
+func NewWSClient(key, secret string, data chan interface{}) *Client {
+	return newWSClient(WSAddr, key, secret, data)
+}
 
+func NewTestWSClient(key, secret string, data chan interface{}) *Client {
+	return newWSClient(WSTestAddr, key, secret, data)
+}
+
+func newWSClient(addr, key, secret string, data chan interface{}) *Client {
+	codec := &Codec{}
 	ret := &Client{
-		Client: exchange.NewClient(newDeribitConn, addr, key, secret, timeout),
+		key:    key,
+		secret: secret,
+		data:   data,
 	}
+	ret.WSClient = exchange.NewWSClient(addr, codec, ret)
 	return ret
 }
 
 func (c *Client) Exchange() string {
 	return "deribit"
+}
+
+func (c *Client) Handle(ctx context.Context, notify *rpc.Notify) {
+	data := &exchange.WSNotify{
+		Exchange: c.Exchange(),
+		Chan:     notify.Method,
+		Data:     notify.Params,
+	}
+	select {
+	case c.data <- data:
+	default:
+		return
+	}
+}
+
+//Auth is done by client.call
+func (c *Client) Auth(ctx context.Context) error {
+	return nil
 }
 
 func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
@@ -56,22 +81,11 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 			token["access_token"] = ac
 
 		default:
-			panic(fmt.Sprintf("method %s private no access_token specific", method))
+			return errors.Errorf("method %s private no access_token specific", method)
 		}
 
 	}
-	ctx, cancel := context.WithTimeout(ctx, c.Timeout)
-	defer cancel()
 	id := atomic.AddInt64(&c.seq, 1)
 	err := c.Conn.Call(ctx, strconv.FormatInt(id, 10), method, params, dest)
 	return exchange.NewBadExResp(err)
-}
-
-func newDeribitConn(addr string) (rpc.Conn, error) {
-	stream, err := rpc.NewWebsocketStream(addr, &Codec{})
-	if err != nil {
-		return nil, err
-	}
-	conn := rpc.NewConn(stream)
-	return conn, nil
 }

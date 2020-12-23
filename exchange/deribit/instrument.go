@@ -3,6 +3,22 @@ package deribit
 import (
 	"context"
 	"strings"
+	"time"
+
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
+)
+
+const (
+	OptionTypeCall = "call"
+	OptionTypePut  = "put"
+)
+
+var (
+	opMap = map[string]exchange.OptionType{
+		OptionTypeCall: exchange.OptionTypeCall,
+		OptionTypePut:  exchange.OptionTypePut,
+	}
 )
 
 type (
@@ -21,6 +37,7 @@ type (
 		ExpirationTimestamp int64   `json:"expeiration_timestamp"`
 		CreationTimestamp   int64   `json:"creation_timestamp"`
 		ContractSize        float64 `json:"contract_size"`
+		OptionType          string  `json:"option_type"`
 	}
 )
 
@@ -36,4 +53,23 @@ func (c *Client) OptionFetchInstruments(ctx context.Context, currency string) ([
 	}
 
 	return ir, nil
+}
+
+func (c *Client) OptionSymbols(ctx context.Context, currency string) ([]exchange.OptionSymbol, error) {
+	ir, err := c.OptionFetchInstruments(ctx, currency)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]exchange.OptionSymbol, len(ir))
+	for i, inst := range ir {
+		ot, ok := opMap[inst.OptionType]
+		if !ok {
+			return nil, errors.Errorf("unkown option type '%s'", inst.OptionType)
+		}
+		st := time.Unix(inst.ExpirationTimestamp/1000, 0)
+		sym := c.NewOptionSymbol(inst.BaseCurreny, st, inst.Strike, ot)
+		ret[i] = sym
+	}
+	return ret, nil
 }

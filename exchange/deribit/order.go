@@ -69,7 +69,7 @@ var (
 	}
 )
 
-func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderRequest, opts ...exchange.OrderReqOption) (*exchange.Order, error) {
+func (c *Client) CreateOrder(ctx context.Context, req *exchange.OrderRequest, opts ...exchange.OrderReqOption) (*exchange.Order, error) {
 	var method string
 	if req.Side == exchange.OrderSideBuy {
 		method = "/private/buy"
@@ -111,7 +111,7 @@ func (c *Client) OptionCreateOrder(ctx context.Context, req *exchange.OrderReque
 	return or.Order.transform()
 }
 
-func (c *Client) OptionFetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+func (c *Client) FetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
 	param := map[string]interface{}{
 		"order_id": order.ID,
 	}
@@ -123,7 +123,7 @@ func (c *Client) OptionFetchOrder(ctx context.Context, order *exchange.Order) (*
 	return r.transform()
 }
 
-func (c *Client) OptionCancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+func (c *Client) CancelOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
 	param := map[string]interface{}{
 		"order_id": order.ID,
 	}

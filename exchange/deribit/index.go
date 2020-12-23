@@ -16,19 +16,24 @@ type (
 		Price     float64 `json:"price"`
 		Timestamp int64   `json:"timestamp"`
 	}
+
+	ChIndex struct {
+		sym exchange.Symbol
+	}
 )
 
 func init() {
 	reigisterCB("deribit_price_index", parseNotifyIndex)
-	registerSubTypeCB(exchange.SubTypeIndex, indexChannel)
 }
 
-func indexChannel(syms ...exchange.Symbol) ([]string, error) {
-	ret := make([]string, len(syms))
-	for i, sym := range syms {
-		ret[i] = fmt.Sprintf("deribit_price_index.%s", sym.String())
+func NewIndexChannel(sym exchange.Symbol) exchange.Channel {
+	return &ChIndex{
+		sym: sym,
 	}
-	return ret, nil
+}
+
+func (ci *ChIndex) String() string {
+	return fmt.Sprintf("deribit_price_index.%s", ci.sym.String())
 }
 
 func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {

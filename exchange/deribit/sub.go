@@ -22,22 +22,18 @@ var (
 	subType2CB map[exchange.SubType]subTypeCB = make(map[exchange.SubType]subTypeCB)
 )
 
-func (c *Client) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
-	return c.subInternal(ctx, typ, methodSubscribe, syms...)
+func (c *Client) Subscribe(ctx context.Context, chs ...exchange.Channel) error {
+	return c.subInternal(ctx, methodSubscribe, chs...)
 }
 
-func (c *Client) UnSubscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
-	return c.subInternal(ctx, typ, methodUnSubscribe, syms...)
+func (c *Client) UnSubscribe(ctx context.Context, chs ...exchange.Channel) error {
+	return c.subInternal(ctx, methodUnSubscribe, chs...)
 }
 
-func (c *Client) subInternal(ctx context.Context, typ exchange.SubType, op string, syms ...exchange.Symbol) error {
-	cb, ok := subType2CB[typ]
-	if !ok {
-		return exchange.NewBadArg("unsupport type", typ)
-	}
-	channels, err := cb(syms...)
-	if err != nil {
-		return err
+func (c *Client) subInternal(ctx context.Context, op string, chs ...exchange.Channel) error {
+	channels := []string{}
+	for _, c := range chs {
+		channels = append(channels, c.String())
 	}
 
 	var result []string
@@ -62,8 +58,4 @@ func (c *Client) subInternal(ctx context.Context, typ exchange.SubType, op strin
 		}
 	}
 	return nil
-}
-
-func registerSubTypeCB(typ exchange.SubType, cb subTypeCB) {
-	subType2CB[typ] = cb
 }

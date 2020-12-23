@@ -18,20 +18,26 @@ type (
 		Bids           [][3]interface{} `json:"bids"`
 		Asks           [][3]interface{} `json:"asks"`
 	}
+
+	ChOrderBook struct {
+		sym exchange.Symbol
+	}
 )
 
 func init() {
 	reigisterCB("book", parseNotifyBook)
-	registerSubTypeCB(exchange.SubTypeOrderBook, orderBookChannel)
 }
 
-func orderBookChannel(syms ...exchange.Symbol) ([]string, error) {
-	ret := make([]string, len(syms))
-	for i, sym := range syms {
-		ret[i] = fmt.Sprintf("book.%s.raw", sym.String())
+func NewOrderBookChannel(sym exchange.Symbol) exchange.Channel {
+	return &ChOrderBook{
+		sym: sym,
 	}
-	return ret, nil
 }
+
+func (co *ChOrderBook) String() string {
+	return fmt.Sprintf("book.%s.raw", co.sym.String())
+}
+
 func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")
 	var bn BookData
