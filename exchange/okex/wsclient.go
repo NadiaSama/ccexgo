@@ -87,6 +87,9 @@ func (ws *WSClient) Run(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 
+			case <-ws.Done():
+				return
+
 			case <-ticker.C:
 				var msg map[string]interface{}
 				if err := ws.Call(ctx, idPingPong, pingMsg, pingMessage, &msg); err != nil {
