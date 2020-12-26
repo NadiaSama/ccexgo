@@ -104,12 +104,11 @@ func (s *Symbol) String() string {
 
 //Init start a background goroutine which used to update symbol map
 func Init(ctx context.Context) error {
-	next, err := updateSymbolMap(ctx)
-	if err != nil {
+	if err := updateSymbolMap(ctx); err != nil {
 		return err
 	}
 
-	updateTimer := time.NewTimer(time.Until(next))
+	timer := time.NewTicker(time.Minute)
 
 	go func() {
 		for {
@@ -117,10 +116,8 @@ func Init(ctx context.Context) error {
 			case <-ctx.Done():
 				return
 
-			case <-updateTimer.C:
-				if n, err := updateSymbolMap(ctx); err == nil {
-					updateTimer = time.NewTimer(time.Until(n))
-				}
+			case <-timer.C:
+				updateSymbolMap(ctx)
 			}
 		}
 	}()
@@ -151,11 +148,11 @@ func FetchSymbolByIndex(index string) []exchange.FuturesSymbol {
 	return ret
 }
 
-func updateSymbolMap(ctx context.Context) (time.Time, error) {
+func updateSymbolMap(ctx context.Context) error {
 	client := NewRestClient("", "", "")
 	symbols, err := client.Symbols(ctx)
 	if err != nil {
-		return time.Time{}, err
+		return err
 	}
 
 	sort.Slice(symbols, func(i, j int) bool {
@@ -172,5 +169,5 @@ func updateSymbolMap(ctx context.Context) (time.Time, error) {
 	defer symbolMapMu.Unlock()
 	symbolMap = m
 
-	return symbols[0].SettleTime(), nil
+	return nil
 }
