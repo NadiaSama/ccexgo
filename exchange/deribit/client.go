@@ -66,6 +66,11 @@ func (c *Client) Auth(ctx context.Context) error {
 	return nil
 }
 
+//Call genetic method
+func (c *Client) Call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
+	return c.call(ctx, method, params, dest, private)
+}
+
 func (c *Client) call(ctx context.Context, method string, params interface{}, dest interface{}, private bool) error {
 	if private {
 		ac, err := c.getToken(ctx)
