@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/shopspring/decimal"
 )
 
 func TestIndex(t *testing.T) {
@@ -23,7 +24,7 @@ func TestIndex(t *testing.T) {
 		t.Errorf("parse message fail %s", err.Error())
 	}
 	in := notify.Params.(*exchange.IndexNotify)
-	if in.Price != 1.23 || in.Symbol.String() != "abc_cba" {
+	if !in.Price.Equal(decimal.NewFromFloat(1.23)) || in.Symbol.String() != "abc_cba" {
 		t.Errorf("bad notify %v", *in)
 	}
 }

@@ -1,21 +1,47 @@
 package deribit
 
-import "testing"
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/shopspring/decimal"
+)
 
 func TestSymbol(t *testing.T) {
-	v := "BTC-19JUN20-10250-C"
-	sym, err := parseOptionSymbol(v)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	if err := initSymbol(ctx); err != nil {
+		t.Fatalf("init symbol error=%s", err.Error())
+	}
+
+	client := NewWSClient("", "", nil)
+	if err := client.Run(ctx); err != nil {
+		t.Fatalf("run client fail error=%s", err.Error())
+	}
+
+	inst, err := client.OptionFetchInstruments(ctx, Currencies[0])
 	if err != nil {
-		t.Fatalf("parse error %s", err.Error())
+		t.Fatalf("load instrument fail error=%s", err.Error())
 	}
 
-	if sym.String() != v {
-		t.Errorf("bad symbol %s", sym.String())
+	for _, i := range inst {
+		sym, err := ParseOptionSymbol(i.InstrumentName)
+		if err != nil {
+			t.Fatalf("parse instrument fail err=%s", err.Error())
+		}
+
+		if sym.String() != i.InstrumentName {
+			t.Fatalf("bad sym string %s", sym.String())
+		}
 	}
 
-	v2 := "BTC-1JUL20-9875-P"
-	sym2, err := parseOptionSymbol(v2)
-	if sym2.String() != v2 {
-		t.Errorf("bad symbol %s", sym2.String())
+	sym, _ := ParseOptionSymbol(inst[0].InstrumentName)
+
+	amount := decimal.NewFromFloat(1.212345)
+	if !exchange.Round(amount, sym.PricePrecision()).Equal(decimal.NewFromFloat(1.212)) {
+		t.Errorf("bad round value %s", exchange.Round(amount, sym.PricePrecision()))
 	}
 }

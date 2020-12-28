@@ -44,7 +44,7 @@ func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	if err := json.Unmarshal(resp.Data, &bn); err != nil {
 		return nil, errors.WithMessage(err, "unarshal orderbookNotify")
 	}
-	sym, err := parseOptionSymbol(fields[1])
+	sym, err := ParseOptionSymbol(fields[1])
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parse orderbookNotify symbol %s", fields[1])
 	}

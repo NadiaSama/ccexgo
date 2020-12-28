@@ -8,13 +8,14 @@ import (
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
 	IndexResult struct {
-		IndexName string  `json:"index_name"`
-		Price     float64 `json:"price"`
-		Timestamp int64   `json:"timestamp"`
+		IndexName string          `json:"index_name"`
+		Price     decimal.Decimal `json:"price"`
+		Timestamp int64           `json:"timestamp"`
 	}
 
 	ChIndex struct {

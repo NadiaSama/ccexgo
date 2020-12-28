@@ -18,6 +18,10 @@ func TestAll(t *testing.T) {
 	ch := make(chan interface{}, 4)
 	defer cancel()
 
+	if err := deribit.Init(baseCtx); err != nil {
+		t.Fatalf("init fail error=%s", err.Error())
+	}
+
 	var (
 		mu    sync.Mutex
 		index exchange.IndexNotify
@@ -71,14 +75,14 @@ func TestAll(t *testing.T) {
 	mu.Lock()
 	indexPrice := index.Price
 	mu.Unlock()
-	fmt.Printf("got index price %f\n", indexPrice)
+	fmt.Printf("got index price %s\n", indexPrice)
 	for _, i := range instruments {
 		if i.SettlementPeriod != "day" {
 			continue
 		}
 
-		if i.Strike > indexPrice {
-			sym, _ = client.ParseOptionSymbol(i.InstrumentName)
+		if i.Strike.GreaterThan(indexPrice) {
+			sym, _ = deribit.ParseOptionSymbol(i.InstrumentName)
 			fmt.Printf("GOT SYMBOL %v %v\n", sym, i)
 			break
 		}

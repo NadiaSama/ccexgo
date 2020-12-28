@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
 	//Index price
 	Index struct {
-		Price   float64
+		Price   decimal.Decimal
 		Created time.Time
 		Symbol  Symbol
 	}

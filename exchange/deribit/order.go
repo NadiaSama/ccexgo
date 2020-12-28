@@ -138,7 +138,7 @@ func (c *Client) CancelOrder(ctx context.Context, order *exchange.Order) (*excha
 func (order *Order) transform() (*exchange.Order, error) {
 	create := tconv.Milli2Time(order.CreationTimestamp)
 	update := tconv.Milli2Time(order.LastUpdatedTimestamp)
-	sym, err := parseOptionSymbol(order.InstrumentName)
+	sym, err := ParseOptionSymbol(order.InstrumentName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parse symbol %s fail", order.InstrumentName)
 	}

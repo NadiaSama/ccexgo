@@ -2,11 +2,18 @@ package exchange
 
 import (
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 type (
 	//Symbol is used to unit different exchange markets symbol serialize
 	Symbol interface {
+		AmountPrecision() decimal.Decimal
+		PricePrecision() decimal.Decimal
+		AmountMax() decimal.Decimal
+		AmountMin() decimal.Decimal
+		ValueMin() decimal.Decimal
 		String() string
 	}
 
@@ -20,15 +27,34 @@ type (
 
 	OptionSymbol interface {
 		Symbol
-		Strike() float64
+		Strike() decimal.Decimal
 		Index() string
 		SettleTime() time.Time
 		Type() OptionType
 	}
 
+	//BaseSymbolProperty define common property of all kind symbol
+	BaseSymbolProperty struct {
+		pricePrecision  decimal.Decimal
+		amountPrecision decimal.Decimal
+		amountMin       decimal.Decimal
+		amountMax       decimal.Decimal
+		valueMin        decimal.Decimal //minuim price * amount
+	}
+
+	//SymbolConfig used to specific symbol property
+	SymbolConfig struct {
+		PricePrecision  decimal.Decimal
+		AmountPrecision decimal.Decimal
+		AmountMin       decimal.Decimal
+		AmountMax       decimal.Decimal
+		ValueMin        decimal.Decimal
+	}
+
 	//BaseOptionSymbol define common property of option symbol
 	BaseOptionSymbol struct {
-		strike     float64
+		BaseSymbolProperty
+		strike     decimal.Decimal
 		index      string
 		settleTime time.Time
 		typ        OptionType
@@ -37,6 +63,7 @@ type (
 	FutureType int
 	//BaseSpotSymbol define common property of spot symbol
 	BaseSpotSymbol struct {
+		BaseSymbolProperty
 		base  string
 		quote string
 	}
@@ -49,6 +76,7 @@ type (
 	}
 	//BaseFutureSymbol define common property of future symbol
 	BaseFutureSymbol struct {
+		BaseSymbolProperty
 		index      string
 		settleTime time.Time
 		typ        FutureType
@@ -60,6 +88,7 @@ type (
 	}
 
 	BaseSwapSymbol struct {
+		BaseSymbolProperty
 		index string
 	}
 )
@@ -78,16 +107,52 @@ const (
 	FutureTypeNQ
 )
 
-func NewBaseOptionSymbol(index string, st time.Time, strike float64, typ OptionType) *BaseOptionSymbol {
-	return &BaseOptionSymbol{
-		strike:     strike,
-		index:      index,
-		settleTime: st,
-		typ:        typ,
+func (p *SymbolConfig) Property() BaseSymbolProperty {
+	return BaseSymbolProperty{
+		amountMax:       p.AmountMax,
+		amountMin:       p.AmountMin,
+		pricePrecision:  p.PricePrecision,
+		amountPrecision: p.AmountPrecision,
+		valueMin:        p.ValueMin,
 	}
 }
 
-func (bos *BaseOptionSymbol) Strike() float64 {
+//AmountMin minium order amount
+func (p *BaseSymbolProperty) AmountMin() decimal.Decimal {
+	return p.amountMin
+}
+
+//AmountMax minum order amount zero means no limit
+func (p *BaseSymbolProperty) AmountMax() decimal.Decimal {
+	return p.amountMax
+}
+
+//PricePrecision return price precision value
+func (p *BaseSymbolProperty) PricePrecision() decimal.Decimal {
+	return p.pricePrecision
+}
+
+//AmountPrecision return amount precision value
+func (p *BaseSymbolProperty) AmountPrecision() decimal.Decimal {
+	return p.amountPrecision
+}
+
+//ValueMin return minium amount * price value zero means no limit
+func (p *BaseSymbolProperty) ValueMin() decimal.Decimal {
+	return p.valueMin
+}
+
+func NewBaseOptionSymbol(index string, st time.Time, strike decimal.Decimal, typ OptionType, prop SymbolConfig) *BaseOptionSymbol {
+	return &BaseOptionSymbol{
+		BaseSymbolProperty: prop.Property(),
+		strike:             strike,
+		index:              index,
+		settleTime:         st,
+		typ:                typ,
+	}
+}
+
+func (bos *BaseOptionSymbol) Strike() decimal.Decimal {
 	return bos.strike
 }
 func (bos *BaseOptionSymbol) Index() string {
@@ -151,4 +216,9 @@ func NewBaseSwapSymbol(index string) *BaseSwapSymbol {
 }
 func (bsw *BaseSwapSymbol) Index() string {
 	return bsw.index
+}
+
+func Round(val decimal.Decimal, p decimal.Decimal) decimal.Decimal {
+	times, _ := val.Div(p).Float64()
+	return decimal.NewFromInt(int64(times)).Mul(p)
 }
