@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
 
@@ -24,6 +25,37 @@ type (
 		*exchange.BaseSpotSymbol
 	}
 )
+
+var (
+	symbolMap map[string]exchange.SpotSymbol = map[string]exchange.SpotSymbol{}
+)
+
+func Init(ctx context.Context, test bool) error {
+	var client *RestClient
+	if test {
+		client = NewTestRestClient("", "", "")
+	} else {
+		client = NewRestClient("", "", "")
+	}
+
+	symbols, err := client.Symbols(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, sym := range symbols {
+		symbolMap[sym.String()] = sym
+	}
+	return nil
+}
+
+func ParseSymbol(symbol string) (exchange.SpotSymbol, error) {
+	ret, ok := symbolMap[symbol]
+	if !ok {
+		return nil, errors.Errorf("unkown symbol %s", symbol)
+	}
+	return ret, nil
+}
 
 func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error) {
 	var oss []OkexSymbol
@@ -52,8 +84,9 @@ func (os *OkexSymbol) Transform() (exchange.SpotSymbol, error) {
 		AmountPrecision: os.SizeIncrement,
 	}
 
+	copy := *os
 	return &Symbol{
-		exchange.NewBaseSpotSymbol(os.BaseCurrency, os.QuoteCurrency, cfg, os),
+		exchange.NewBaseSpotSymbol(os.BaseCurrency, os.QuoteCurrency, cfg, &copy),
 	}, nil
 }
 

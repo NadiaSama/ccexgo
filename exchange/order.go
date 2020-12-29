@@ -27,20 +27,21 @@ type (
 	}
 
 	Order struct {
-		ID       OrderID
-		ClientID OrderID
-		Symbol   Symbol
-		Amount   decimal.Decimal
-		Filled   decimal.Decimal
-		Price    decimal.Decimal
-		AvgPrice decimal.Decimal
-		Fee      decimal.Decimal
-		Created  time.Time
-		Updated  time.Time
-		Side     OrderSide
-		Status   OrderStatus
-		Type     OrderType
-		Raw      interface{} `json:"-"`
+		ID          OrderID
+		ClientID    OrderID
+		Symbol      Symbol
+		Amount      decimal.Decimal
+		Filled      decimal.Decimal
+		Price       decimal.Decimal
+		AvgPrice    decimal.Decimal
+		Fee         decimal.Decimal
+		FeeCurrency string
+		Created     time.Time
+		Updated     time.Time
+		Side        OrderSide
+		Status      OrderStatus
+		Type        OrderType
+		Raw         interface{} `json:"-"`
 	}
 
 	//OrderReqOption specific option to create order
