@@ -19,7 +19,7 @@ type (
 	}
 
 	ChIndex struct {
-		sym exchange.Symbol
+		index string
 	}
 )
 
@@ -27,14 +27,14 @@ func init() {
 	reigisterCB("deribit_price_index", parseNotifyIndex)
 }
 
-func NewIndexChannel(sym exchange.Symbol) exchange.Channel {
+func NewIndexChannel(index string) exchange.Channel {
 	return &ChIndex{
-		sym: sym,
+		index: index,
 	}
 }
 
 func (ci *ChIndex) String() string {
-	return fmt.Sprintf("deribit_price_index.%s", ci.sym.String())
+	return fmt.Sprintf("deribit_price_index.%s", ci.index)
 }
 
 func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {
@@ -43,15 +43,10 @@ func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {
 		return nil, errors.WithMessagef(err, "unmarshal index result")
 	}
 
-	sym, err := parseSpotSymbol(ir.IndexName)
-	if err != nil {
-		return nil, errors.WithMessagef(err, "bad indexName %s", ir.IndexName)
-	}
-
 	param := &exchange.IndexNotify{
 		Price:   ir.Price,
 		Created: tconv.Milli2Time(ir.Timestamp),
-		Symbol:  sym,
+		Symbol:  nil,
 	}
 	return &rpc.Notify{
 		Method: subscriptionMethod,

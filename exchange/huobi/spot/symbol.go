@@ -48,7 +48,7 @@ func (rc *RestClient) initSymbol(ctx context.Context) error {
 
 func (rc *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote)),
+		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote), exchange.SymbolConfig{}, nil),
 	}
 }
 

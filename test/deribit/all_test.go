@@ -61,8 +61,7 @@ func TestAll(t *testing.T) {
 		t.Fatalf("running the loop fail %s", err.Error())
 	}
 
-	spot, _ := client.ParseSpotSymbol("btc_usd")
-	tc := deribit.NewIndexChannel(spot)
+	tc := deribit.NewIndexChannel("btc_usd")
 	if err := client.Subscribe(baseCtx, tc); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}

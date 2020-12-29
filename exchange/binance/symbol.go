@@ -47,7 +47,7 @@ func (c *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	base = strings.ToUpper(base)
 	quote = strings.ToUpper(quote)
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(base, quote),
+		exchange.NewBaseSpotSymbol(base, quote, exchange.SymbolConfig{}, nil),
 	}
 }
 

@@ -82,7 +82,7 @@ func (i *InstrumentResult) Symbol() (exchange.OptionSymbol, error) {
 		ValueMin:        decimal.Zero,
 	}
 	ret := &OptionSymbol{
-		exchange.NewBaseOptionSymbol(i.BaseCurreny, st, i.Strike, t, cfg),
+		exchange.NewBaseOptionSymbol(i.BaseCurreny, st, i.Strike, t, cfg, i),
 	}
 
 	return ret, nil
@@ -184,32 +184,4 @@ func (sym *OptionSymbol) String() string {
 	s, _ := sym.Strike().Float64()
 	strike := int(s)
 	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
-}
-
-func (c *Client) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
-	return newSpotSymbol(base, quote)
-}
-
-func (c *Client) ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
-	return parseSpotSymbol(sym)
-}
-
-func newSpotSymbol(base, quote string) exchange.SpotSymbol {
-	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote)),
-	}
-}
-
-func (sym *SpotSymbol) String() string {
-	return fmt.Sprintf("%s_%s", sym.Base(), sym.Quote())
-}
-
-func parseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
-	fields := strings.Split(strings.ToLower(sym), "_")
-	if len(fields) != 2 {
-		return nil, exchange.NewBadArg("bad spot symbol field len", len(fields))
-	}
-	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(fields[0], fields[1]),
-	}, nil
 }

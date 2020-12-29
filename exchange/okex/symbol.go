@@ -15,7 +15,7 @@ type (
 
 func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(strings.ToUpper(base), strings.ToUpper(quote)),
+		exchange.NewBaseSpotSymbol(strings.ToUpper(base), strings.ToUpper(quote), exchange.SymbolConfig{}, nil),
 	}
 }
 

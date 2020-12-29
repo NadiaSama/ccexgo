@@ -9,6 +9,7 @@ import (
 type (
 	//Symbol is used to unit different exchange markets symbol serialize
 	Symbol interface {
+		Raw() interface{}
 		AmountPrecision() decimal.Decimal
 		PricePrecision() decimal.Decimal
 		AmountMax() decimal.Decimal
@@ -17,6 +18,9 @@ type (
 		String() string
 	}
 
+	RawMixin struct {
+		raw interface{}
+	}
 	SpotSymbol interface {
 		Symbol
 		Base() string
@@ -53,6 +57,7 @@ type (
 
 	//BaseOptionSymbol define common property of option symbol
 	BaseOptionSymbol struct {
+		RawMixin
 		BaseSymbolProperty
 		strike     decimal.Decimal
 		index      string
@@ -63,6 +68,7 @@ type (
 	FutureType int
 	//BaseSpotSymbol define common property of spot symbol
 	BaseSpotSymbol struct {
+		RawMixin
 		BaseSymbolProperty
 		base  string
 		quote string
@@ -76,6 +82,7 @@ type (
 	}
 	//BaseFutureSymbol define common property of future symbol
 	BaseFutureSymbol struct {
+		RawMixin
 		BaseSymbolProperty
 		index      string
 		settleTime time.Time
@@ -88,6 +95,7 @@ type (
 	}
 
 	BaseSwapSymbol struct {
+		RawMixin
 		BaseSymbolProperty
 		index string
 	}
@@ -106,6 +114,10 @@ const (
 	//FutureTypeNQ next quarter settle future
 	FutureTypeNQ
 )
+
+func (r *RawMixin) Raw() interface{} {
+	return r.raw
+}
 
 func (p *SymbolConfig) Property() BaseSymbolProperty {
 	return BaseSymbolProperty{
@@ -142,8 +154,9 @@ func (p *BaseSymbolProperty) ValueMin() decimal.Decimal {
 	return p.valueMin
 }
 
-func NewBaseOptionSymbol(index string, st time.Time, strike decimal.Decimal, typ OptionType, prop SymbolConfig) *BaseOptionSymbol {
+func NewBaseOptionSymbol(index string, st time.Time, strike decimal.Decimal, typ OptionType, prop SymbolConfig, raw interface{}) *BaseOptionSymbol {
 	return &BaseOptionSymbol{
+		RawMixin:           RawMixin{raw},
 		BaseSymbolProperty: prop.Property(),
 		strike:             strike,
 		index:              index,
@@ -175,10 +188,12 @@ func (ot OptionType) String() string {
 	}
 }
 
-func NewBaseSpotSymbol(base, quote string) *BaseSpotSymbol {
+func NewBaseSpotSymbol(base, quote string, cfg SymbolConfig, raw interface{}) *BaseSpotSymbol {
 	return &BaseSpotSymbol{
-		base:  base,
-		quote: quote,
+		RawMixin:           RawMixin{raw},
+		BaseSymbolProperty: cfg.Property(),
+		base:               base,
+		quote:              quote,
 	}
 }
 func (bss *BaseSpotSymbol) Base() string {

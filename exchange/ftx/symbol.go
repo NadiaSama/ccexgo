@@ -75,7 +75,7 @@ func (rc *RestClient) initSpotSymbol(ctx context.Context) error {
 		if m.Type != typeSpot {
 			continue
 		}
-		rc.symbols[m.Name] = newSpotSymbol(m.BaseCurrency, m.QuoteCurrency)
+		rc.symbols[m.Name] = newSpotSymbol(m.BaseCurrency, m.QuoteCurrency, &m)
 	}
 	return nil
 }
@@ -115,9 +115,9 @@ func (rc *RestClient) ParseSwapSymbol(symbol string) (exchange.SwapSymbol, error
 	return ret, nil
 }
 
-func newSpotSymbol(base string, quote string) *SpotSymbol {
+func newSpotSymbol(base string, quote string, m *Market) *SpotSymbol {
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(base, quote),
+		exchange.NewBaseSpotSymbol(base, quote, exchange.SymbolConfig{}, m),
 	}
 }
 
