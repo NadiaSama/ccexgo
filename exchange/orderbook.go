@@ -39,6 +39,7 @@ type (
 		Bids    []OrderElem
 		Asks    []OrderElem
 		Created time.Time
+		Raw     interface{}
 	}
 )
 
