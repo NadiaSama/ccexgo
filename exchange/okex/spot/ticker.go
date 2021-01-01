@@ -86,20 +86,29 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 	}
 	sym := okex.NewSpotSymbol(fields[0], fields[1])
 
+	ticker := &Ticker{
+		Symbol:         sym,
+		Time:           ts,
+		Last:           r.Last,
+		LastQty:        r.LastQty,
+		BestAsk:        r.BestAsk,
+		BestAskSize:    r.BestAskSize,
+		BestBid:        r.BestBid,
+		BestBidSize:    r.BestBidSize,
+		Open24H:        r.Open24H,
+		BaseVolume24H:  r.BaseVolume24H,
+		QuoteVolume24H: r.QuoteVolume24H,
+	}
 	return &rpc.Notify{
 		Method: table,
-		Params: &Ticker{
-			Symbol:         sym,
-			Time:           ts,
-			Last:           r.Last,
-			LastQty:        r.LastQty,
-			BestAsk:        r.BestAsk,
-			BestAskSize:    r.BestAskSize,
-			BestBid:        r.BestBid,
-			BestBidSize:    r.BestBidSize,
-			Open24H:        r.Open24H,
-			BaseVolume24H:  r.BaseVolume24H,
-			QuoteVolume24H: r.QuoteVolume24H,
+		Params: &exchange.Ticker{
+			Symbol:      ticker.Symbol,
+			BestBid:     ticker.BestBid,
+			BestBidSize: ticker.BestBidSize,
+			BestAsk:     ticker.BestAsk,
+			BestAskSize: ticker.BestAskSize,
+			Time:        ticker.Time,
+			Raw:         ticker,
 		},
 	}, nil
 }
