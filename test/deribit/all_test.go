@@ -154,4 +154,15 @@ func TestAll(t *testing.T) {
 	if err := client.UnSubscribe(baseCtx, oc); err != nil {
 		t.Errorf("unsubscribe fail %s", err.Error())
 	}
+
+	var balance deribit.AccountSummaryResp
+	if err := client.Call(baseCtx, deribit.AccountSummaryMethod, &deribit.AccountSummaryReq{
+		Currency: "BTC",
+	}, &balance, true); err != nil {
+		t.Fatalf("get account summary fail error=%s", err.Error())
+	}
+
+	if !balance.MarginBalance.Sub(balance.InitialMargin).Equal(balance.AvailableFunds) {
+		t.Errorf("margin not equal margin=%s inital=%s balance=%s", balance.MarginBalance, balance.InitialMargin, balance.Balance)
+	}
 }
