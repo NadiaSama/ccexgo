@@ -13,7 +13,7 @@ func TestSymbol(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	if err := initSymbol(ctx); err != nil {
+	if err := initSymbol(ctx, false); err != nil {
 		t.Fatalf("init symbol error=%s", err.Error())
 	}
 

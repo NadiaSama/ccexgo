@@ -18,7 +18,7 @@ func TestAll(t *testing.T) {
 	ch := make(chan interface{}, 4)
 	defer cancel()
 
-	if err := deribit.Init(baseCtx); err != nil {
+	if err := deribit.Init(baseCtx, true); err != nil {
 		t.Fatalf("init fail error=%s", err.Error())
 	}
 

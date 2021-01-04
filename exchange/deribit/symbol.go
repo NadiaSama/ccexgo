@@ -60,8 +60,8 @@ type (
 	}
 )
 
-func Init(ctx context.Context) error {
-	return initSymbol(ctx)
+func Init(ctx context.Context, testNet bool) error {
+	return initSymbol(ctx, testNet)
 }
 
 func (i *InstrumentResult) Symbol() (exchange.OptionSymbol, error) {
@@ -129,8 +129,13 @@ func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
 	return ret.(exchange.OptionSymbol), nil
 }
 
-func initSymbol(ctx context.Context) error {
-	client := NewWSClient("", "", nil)
+func initSymbol(ctx context.Context, testNet bool) error {
+	var client *Client
+	if testNet {
+		client = NewTestWSClient("", "", nil)
+	} else {
+		client = NewWSClient("", "", nil)
+	}
 	if err := client.Run(ctx); err != nil {
 		return err
 	}

@@ -45,7 +45,8 @@ type (
 )
 
 var (
-	ErrClear = errors.New("handleMessages closed")
+	ErrClear      = errors.New("handleMessages closed")
+	ErrNotRunning = errors.New("client is not running")
 )
 
 func NewConn(stream Stream) Conn {
@@ -120,6 +121,9 @@ func (c *connection) Error() error {
 }
 
 func (c *connection) Close() error {
+	if c.stream == nil {
+		return ErrNotRunning
+	}
 	return c.stream.Close()
 }
 
