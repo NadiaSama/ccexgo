@@ -163,6 +163,16 @@ func TestAll(t *testing.T) {
 	}
 
 	if !balance.MarginBalance.Sub(balance.InitialMargin).Equal(balance.AvailableFunds) {
-		t.Errorf("margin not equal margin=%s inital=%s balance=%s", balance.MarginBalance, balance.InitialMargin, balance.Balance)
+		t.Errorf("margin not equal margin=%s inital=%s balance=%s", balance.MarginBalance, balance.InitialMargin, balance.AvailableFunds)
 	}
+
+	var settlement deribit.SettlementResp
+	if err := client.Call(baseCtx, deribit.SettlementMethodByInstrument, &deribit.SettlementReq{
+		InstrumentName: "BTC-5JAN21-32750-P",
+		Type:           deribit.SettlementTypeDelivery,
+	}, &settlement, true); err != nil {
+		t.Fatalf("get settlement fail error=%s", err.Error())
+	}
+
+	fmt.Printf("%+v\n", settlement)
 }
