@@ -34,7 +34,7 @@ type (
 
 const (
 	SettlementMethodByInstrument       = "private/get_settlement_history_by_instrument"
-	PublibSettlementMethodByInstrument = "public/get_last_settlements_by_instrument"
+	PublicSettlementMethodByInstrument = "public/get_last_settlements_by_instrument"
 
 	SettlementTypeSettlement SettlementType = "settlement"
 	SettlementTypeDelivery   SettlementType = "delivery"

@@ -175,4 +175,12 @@ func TestAll(t *testing.T) {
 	}
 
 	fmt.Printf("%+v\n", settlement)
+
+	if err := client.Call(baseCtx, deribit.PublicSettlementMethodByInstrument, &deribit.PublicSettlementByInstrumentReq{
+		InstrumentName: "BTC-20JAN21-36000-P",
+		Type:           deribit.SettlementTypeDelivery,
+	}, &settlement, false); err != nil {
+		t.Fatalf("get public settlement fail error=%s", err.Error())
+	}
+	fmt.Printf("%+v\n", settlement)
 }
