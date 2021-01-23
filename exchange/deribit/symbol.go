@@ -88,12 +88,12 @@ func (i *InstrumentResult) Symbol() (exchange.OptionSymbol, error) {
 	return ret, nil
 }
 
-func (c *Client) OptionFetchInstruments(ctx context.Context, currency string) ([]InstrumentResult, error) {
+func (c *Client) OptionFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {
 	var ir []InstrumentResult
 	param := map[string]interface{}{
 		"currency": strings.ToUpper(currency),
 		"kind":     "option",
-		"expired":  false,
+		"expired":  expired,
 	}
 	if err := c.call(ctx, "public/get_instruments", param, &ir, false); err != nil {
 		return nil, err
@@ -103,7 +103,24 @@ func (c *Client) OptionFetchInstruments(ctx context.Context, currency string) ([
 }
 
 func (c *Client) OptionSymbols(ctx context.Context, currency string) ([]exchange.OptionSymbol, error) {
-	ir, err := c.OptionFetchInstruments(ctx, currency)
+	ir, err := c.OptionFetchInstruments(ctx, currency, false)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]exchange.OptionSymbol, len(ir))
+	for i, inst := range ir {
+		sym, err := inst.Symbol()
+		if err != nil {
+			return nil, err
+		}
+		ret[i] = sym
+	}
+	return ret, nil
+}
+
+func (c *Client) OptionExpireSymbols(ctx context.Context, currency string) ([]exchange.OptionSymbol, error) {
+	ir, err := c.OptionFetchInstruments(ctx, currency, true)
 	if err != nil {
 		return nil, err
 	}
@@ -171,6 +188,15 @@ func updateSymbolMap(ctx context.Context, client *Client) error {
 		}
 		for _, s := range symbols {
 			newMap[s.String()] = s
+		}
+
+		expired, err := client.OptionExpireSymbols(ctx, c)
+		if err != nil {
+			return err
+		}
+
+		for _, ex := range expired {
+			newMap[ex.String()] = ex
 		}
 	}
 

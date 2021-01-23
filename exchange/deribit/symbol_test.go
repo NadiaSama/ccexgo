@@ -22,7 +22,7 @@ func TestSymbol(t *testing.T) {
 		t.Fatalf("run client fail error=%s", err.Error())
 	}
 
-	inst, err := client.OptionFetchInstruments(ctx, Currencies[0])
+	inst, err := client.OptionFetchInstruments(ctx, Currencies[0], false)
 	if err != nil {
 		t.Fatalf("load instrument fail error=%s", err.Error())
 	}
