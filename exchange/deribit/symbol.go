@@ -216,3 +216,18 @@ func (sym *OptionSymbol) String() string {
 	strike := int(s)
 	return fmt.Sprintf("%s-%s-%d-%s", sym.Index(), st, strike, typ)
 }
+
+func ParseIndexSymbol(symbol string) (*SpotSymbol, error) {
+	fields := strings.Split(symbol, "_")
+	if len(fields) != 2 {
+		return nil, errors.Errorf("invalid symbol '%s'", symbol)
+	}
+
+	return &SpotSymbol{
+		exchange.NewBaseSpotSymbol(fields[0], fields[1], exchange.SymbolConfig{}, nil),
+	}, nil
+}
+
+func (ss *SpotSymbol) String() string {
+	return fmt.Sprintf("%s_%s", ss.Base(), ss.Quote())
+}

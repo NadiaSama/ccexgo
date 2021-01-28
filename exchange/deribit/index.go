@@ -43,10 +43,15 @@ func parseNotifyIndex(resp *Notify) (*rpc.Notify, error) {
 		return nil, errors.WithMessagef(err, "unmarshal index result")
 	}
 
+	sym, err := ParseIndexSymbol(ir.IndexName)
+	if err != nil {
+		return nil, err
+	}
+
 	param := &exchange.IndexNotify{
 		Price:   ir.Price,
 		Created: tconv.Milli2Time(ir.Timestamp),
-		Symbol:  nil,
+		Symbol:  sym,
 	}
 	return &rpc.Notify{
 		Method: subscriptionMethod,
