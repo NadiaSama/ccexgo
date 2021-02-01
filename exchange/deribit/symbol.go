@@ -165,8 +165,14 @@ func initSymbol(ctx context.Context, testNet bool) error {
 		for {
 			select {
 			case <-client.Done():
-				client = NewWSClient("", "", nil)
-				client.Run(ctx)
+				for {
+					client = NewWSClient("", "", nil)
+					if err := client.Run(ctx); err != nil {
+						time.Sleep(time.Second)
+						continue
+					}
+					break
+				}
 
 			case <-ctx.Done():
 				return

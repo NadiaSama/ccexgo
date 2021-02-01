@@ -65,7 +65,7 @@ func TestAll(t *testing.T) {
 	if err := client.Subscribe(baseCtx, tc); err != nil {
 		t.Fatalf("subscribe index fail %s", err.Error())
 	}
-	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC")
+	instruments, err := client.OptionFetchInstruments(baseCtx, "BTC", false)
 	if err != nil {
 		t.Fatalf("load instrument error %s", err.Error())
 	}
