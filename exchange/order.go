@@ -70,18 +70,20 @@ type (
 )
 
 const (
-	OrderSideBuy = iota
+	OrderSideBuy OrderSide = iota
 	OrderSideSell
 	OrderSideCloseLong
 	OrderSideCloseShort
+)
 
-	OrderTypeLimit = iota
+const (
+	OrderTypeLimit OrderType = iota
 	OrderTypeMarket
 	OrderTypeStopLimit
 	OrderTypeStopMarket
 
 	//OrderStatusUnknown means order info need check with api
-	OrderStatusUnknown = iota
+	OrderStatusUnknown OrderStatus = iota
 	OrderStatusOpen
 	OrderStatusDone
 	OrderStatusCancel
