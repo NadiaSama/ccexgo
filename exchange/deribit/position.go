@@ -35,6 +35,11 @@ type (
 		Currency string `json:"currency"`
 		Kind     string `json:"kind"`
 	}
+
+	PositionRequest struct {
+		AuthToken
+		InstrumentName string `json:"instrument_name"`
+	}
 )
 
 const (
