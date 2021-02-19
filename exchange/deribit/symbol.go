@@ -148,11 +148,13 @@ func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
 
 func initSymbol(ctx context.Context, testNet bool) error {
 	var client *Client
+	var newClientCB func(string, string, chan interface{}) *Client
 	if testNet {
-		client = NewTestWSClient("", "", nil)
+		newClientCB = NewTestWSClient
 	} else {
-		client = NewWSClient("", "", nil)
+		newClientCB = NewWSClient
 	}
+	client = newClientCB("", "", nil)
 	if err := client.Run(ctx); err != nil {
 		return err
 	}
@@ -166,7 +168,7 @@ func initSymbol(ctx context.Context, testNet bool) error {
 			select {
 			case <-client.Done():
 				for {
-					client = NewWSClient("", "", nil)
+					client = newClientCB("", "", nil)
 					if err := client.Run(ctx); err != nil {
 						time.Sleep(time.Second)
 						continue
