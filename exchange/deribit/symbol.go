@@ -3,6 +3,7 @@ package deribit
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -20,12 +21,24 @@ type (
 	SpotSymbol struct {
 		*exchange.BaseSpotSymbol
 	}
+
+	SwapSymbol struct {
+		*exchange.BaseSwapSymbol
+	}
+
+	FuturesSymbol struct {
+		*exchange.BaseFutureSymbol
+	}
 )
 
 const (
 	OptionTypeCall = "call"
 	OptionTypePut  = "put"
 	timeLayout     = "2Jan06"
+
+	KindOption      = "option"
+	KindFuture      = "future"
+	SettlePerpetual = "perpetual"
 )
 
 var (
@@ -64,16 +77,7 @@ func Init(ctx context.Context, testNet bool) error {
 	return initSymbol(ctx, testNet)
 }
 
-func (i *InstrumentResult) Symbol() (exchange.OptionSymbol, error) {
-	var t exchange.OptionType
-	if i.OptionType == OptionTypeCall {
-		t = exchange.OptionTypeCall
-	} else if i.OptionType == OptionTypePut {
-		t = exchange.OptionTypePut
-	} else {
-		return nil, errors.Errorf("unkown option type %s", i.OptionType)
-	}
-	st := time.Unix(i.ExpirationTimestamp/1e3, 0)
+func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 	cfg := exchange.SymbolConfig{
 		AmountMax:       decimal.Zero,
 		AmountMin:       i.MinTradeAmount,
@@ -81,18 +85,43 @@ func (i *InstrumentResult) Symbol() (exchange.OptionSymbol, error) {
 		AmountPrecision: i.MinTradeAmount,
 		ValueMin:        decimal.Zero,
 	}
-	ret := &OptionSymbol{
-		exchange.NewBaseOptionSymbol(i.BaseCurreny, st, i.Strike, t, cfg, i),
+	var st time.Time
+	if i.Kind != KindFuture || i.SettlementPeriod != SettlePerpetual {
+		st = time.Unix(i.ExpirationTimestamp/1e3, 0)
 	}
+	if i.Kind == KindOption {
+		var t exchange.OptionType
+		if i.OptionType == OptionTypeCall {
+			t = exchange.OptionTypeCall
+		} else if i.OptionType == OptionTypePut {
+			t = exchange.OptionTypePut
+		} else {
+			return nil, errors.Errorf("unkown option type %s", i.OptionType)
+		}
+		ret := &OptionSymbol{
+			exchange.NewBaseOptionSymbol(i.BaseCurreny, st, i.Strike, t, cfg, i),
+		}
+		return ret, nil
 
-	return ret, nil
+	} else if i.Kind == KindFuture {
+		if i.Kind == SettlePerpetual {
+		}
+	}
+}
+
+func (c *Client) FutureFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {
+	return c.fetchInstruments(ctx, currency, expired, "future")
 }
 
 func (c *Client) OptionFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {
+	return c.fetchInstruments(ctx, currency, expired, "option")
+}
+
+func (c *Client) fetchInstruments(ctx context.Context, currency string, expired bool, kind string) ([]InstrumentResult, error) {
 	var ir []InstrumentResult
 	param := map[string]interface{}{
 		"currency": strings.ToUpper(currency),
-		"kind":     "option",
+		"kind":     kind,
 		"expired":  expired,
 	}
 	if err := c.call(ctx, "public/get_instruments", param, &ir, false); err != nil {
@@ -103,29 +132,38 @@ func (c *Client) OptionFetchInstruments(ctx context.Context, currency string, ex
 }
 
 func (c *Client) OptionSymbols(ctx context.Context, currency string) ([]exchange.OptionSymbol, error) {
-	ir, err := c.OptionFetchInstruments(ctx, currency, false)
+	ir, err := c.fetchSymbols(ctx, currency, false, KindOption)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]exchange.OptionSymbol, len(ir))
 	for i, inst := range ir {
-		sym, err := inst.Symbol()
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = sym
+		ret[i] = inst.(exchange.OptionSymbol)
 	}
 	return ret, nil
 }
 
 func (c *Client) OptionExpireSymbols(ctx context.Context, currency string) ([]exchange.OptionSymbol, error) {
-	ir, err := c.OptionFetchInstruments(ctx, currency, true)
+	ir, err := c.fetchSymbols(ctx, currency, true, KindOption)
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]exchange.OptionSymbol, len(ir))
+	for i, inst := range ir {
+		ret[i] = inst.(exchange.OptionSymbol)
+	}
+	return ret, nil
+}
+
+func (c *Client) fetchSymbols(ctx context.Context, currency string, expired bool, kind string) ([]exchange.Symbol, error) {
+	ir, err := c.fetchInstruments(ctx, currency, expired, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]exchange.Symbol, len(ir))
 	for i, inst := range ir {
 		sym, err := inst.Symbol()
 		if err != nil {
@@ -137,13 +175,35 @@ func (c *Client) OptionExpireSymbols(ctx context.Context, currency string) ([]ex
 }
 
 func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
+	ret, err := getSymbol(sym, reflect.TypeOf(exchange.OptionSymbol(nil)))
+	if err != nil {
+		return nil, err
+	}
+	v := ret.(exchange.OptionSymbol)
+	return v, nil
+}
+
+func ParseFutureSymbol(sym string) (exchange.FuturesSymbol, error) {
+	ret, err := getSymbol(sym, reflect.TypeOf(exchange.FuturesSymbol(nil)))
+	if err != nil {
+		return nil, err
+	}
+	return ret.(exchange.FuturesSymbol), nil
+}
+
+func getSymbol(sym string, exType reflect.Type) (exchange.Symbol, error) {
 	symbolMu.Lock()
 	defer symbolMu.Unlock()
 	ret, ok := symbolMap[sym]
 	if !ok {
 		return nil, errors.Errorf("bad symbol %s", sym)
 	}
-	return ret.(exchange.OptionSymbol), nil
+
+	typ := reflect.TypeOf(ret)
+	if !typ.Implements(exType) {
+		return nil, errors.Errorf("type mismatch typ=%s exType=%s", typ, exType)
+	}
+	return ret, nil
 }
 
 func initSymbol(ctx context.Context, testNet bool) error {
@@ -206,6 +266,14 @@ func updateSymbolMap(ctx context.Context, client *Client) error {
 		for _, ex := range expired {
 			newMap[ex.String()] = ex
 		}
+
+		futures, err := client.fetchSymbols(ctx, c, false, KindFuture)
+		if err != nil {
+			return err
+		}
+		for _, ex := range futures {
+			newMap[ex.String()] = ex
+		}
 	}
 
 	symbolMu.Lock()
@@ -238,4 +306,12 @@ func ParseIndexSymbol(symbol string) (*SpotSymbol, error) {
 
 func (ss *SpotSymbol) String() string {
 	return fmt.Sprintf("%s_%s", ss.Base(), ss.Quote())
+}
+
+func (ss *SwapSymbol) String() string {
+	return fmt.Sprintf("%s-PERPETUAL", ss.Index())
+}
+
+func (fs *FuturesSymbol) String() string {
+	return fmt.Sprintf("%s-%s", fs.Index(), strings.ToUpper(fs.SettleTime().Format(timeLayout)))
 }
