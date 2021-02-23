@@ -182,6 +182,30 @@ func (c *Client) OptionExpireSymbols(ctx context.Context, currency string) ([]ex
 	return ret, nil
 }
 
+func (c *Client) FuturesSymbols(ctx context.Context, currency string) ([]exchange.FuturesSymbol, error) {
+	ir, err := c.fetchSymbols(ctx, currency, false, KindFuture)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]exchange.FuturesSymbol, 0)
+	for _, inst := range ir {
+		s, ok := inst.(exchange.FuturesSymbol)
+		if ok {
+			ret = append(ret, s)
+		}
+	}
+	return ret, nil
+}
+
+func (c *Client) SwapSymbol(ctx context.Context, currency string) (exchange.SwapSymbol, error) {
+	symbol := strings.ToUpper(fmt.Sprintf("%s-%s", currency, SettlePeriodPerpetual))
+	ret, err := getSymbol(symbol, reflect.TypeOf((*exchange.SwapSymbol)(nil)).Elem())
+	if err != nil {
+		return nil, err
+	}
+	return ret.(exchange.SwapSymbol), nil
+}
+
 func (c *Client) fetchSymbols(ctx context.Context, currency string, expired bool, kind string) ([]exchange.Symbol, error) {
 	ir, err := c.fetchInstruments(ctx, currency, expired, kind)
 	if err != nil {
@@ -200,7 +224,7 @@ func (c *Client) fetchSymbols(ctx context.Context, currency string, expired bool
 }
 
 func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
-	ret, err := getSymbol(sym, reflect.TypeOf(exchange.OptionSymbol(nil)))
+	ret, err := getSymbol(sym, reflect.TypeOf((*exchange.OptionSymbol)(nil)).Elem())
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +233,7 @@ func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
 }
 
 func ParseFutureSymbol(sym string) (exchange.FuturesSymbol, error) {
-	ret, err := getSymbol(sym, reflect.TypeOf(exchange.FuturesSymbol(nil)))
+	ret, err := getSymbol(sym, reflect.TypeOf((*exchange.FuturesSymbol)(nil)).Elem())
 	if err != nil {
 		return nil, err
 	}
