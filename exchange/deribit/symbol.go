@@ -36,9 +36,11 @@ const (
 	OptionTypePut  = "put"
 	timeLayout     = "2Jan06"
 
-	KindOption      = "option"
-	KindFuture      = "future"
-	SettlePerpetual = "perpetual"
+	KindOption            = "option"
+	KindFuture            = "future"
+	SettlePeriodPerpetual = "perpetual"
+	SettlePeriodWeek      = "week"
+	SettlePeriodMonth     = "month"
 )
 
 var (
@@ -86,7 +88,7 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 		ValueMin:        decimal.Zero,
 	}
 	var st time.Time
-	if i.Kind != KindFuture || i.SettlementPeriod != SettlePerpetual {
+	if i.Kind != KindFuture || i.SettlementPeriod != SettlePeriodPerpetual {
 		st = time.Unix(i.ExpirationTimestamp/1e3, 0)
 	}
 	if i.Kind == KindOption {
@@ -104,9 +106,32 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 		return ret, nil
 
 	} else if i.Kind == KindFuture {
-		if i.Kind == SettlePerpetual {
+		if i.SettlementPeriod == SettlePeriodPerpetual {
+			return &SwapSymbol{
+				exchange.NewBaseSwapSymbol(i.BaseCurreny),
+			}, nil
 		}
+
+		var ft exchange.FutureType
+		diff := time.Until(st)
+		if i.SettlementPeriod == SettlePeriodWeek {
+			if (diff / time.Second / 86400) < 7 {
+				ft = exchange.FutureTypeCW
+			} else {
+				ft = exchange.FutureTypeNW
+			}
+		} else {
+			if (diff / time.Second / 86400) < 31 {
+				ft = exchange.FutureTypeCQ
+			} else {
+				ft = exchange.FutureTypeNQ
+			}
+		}
+		return &FuturesSymbol{
+			exchange.NewBaseFutureSymbol(i.BaseCurreny, st, ft),
+		}, nil
 	}
+	return nil, errors.Errorf("unkown kind '%s'", i.Kind)
 }
 
 func (c *Client) FutureFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {
@@ -189,6 +214,16 @@ func ParseFutureSymbol(sym string) (exchange.FuturesSymbol, error) {
 		return nil, err
 	}
 	return ret.(exchange.FuturesSymbol), nil
+}
+
+func ParseSymbol(sym string) (exchange.Symbol, error) {
+	symbolMu.Lock()
+	defer symbolMu.Unlock()
+	ret, ok := symbolMap[sym]
+	if !ok {
+		return nil, errors.Errorf("bad symbol %s", sym)
+	}
+	return ret, nil
 }
 
 func getSymbol(sym string, exType reflect.Type) (exchange.Symbol, error) {
