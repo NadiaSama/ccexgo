@@ -95,8 +95,11 @@ func (k *Keeper) updateSubscribe(ctx context.Context) (*time.Timer, error) {
 			return nil, errors.WithMessage(err, "unsubscribe channel fail")
 		}
 	}
-	if err := k.conn.Subscribe(ctx, channels...); err != nil {
-		return nil, errors.WithMessage(err, "subscribe channel fail")
+	for _, c := range channels {
+		//okex subscirbe multi channel not work
+		if err := k.conn.Subscribe(ctx, c); err != nil {
+			return nil, errors.WithMessage(err, "subscribe channel fail")
+		}
 	}
 	k.channels = channels
 	return time.NewTimer(time.Until(next)), nil
