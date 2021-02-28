@@ -106,6 +106,7 @@ func (tr *TickerResult) Parse() (*exchange.Ticker, error) {
 		BestAsk:     tr.BestAskPrice,
 		BestAskSize: tr.BestAskAmount,
 		Time:        tconv.Milli2Time(tr.Timestamp),
+		LastPrice:   tr.LastPrice,
 		Raw:         tr,
 	}, nil
 }

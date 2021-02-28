@@ -107,6 +107,7 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 			BestBidSize: ticker.BestBidSize,
 			BestAsk:     ticker.BestAsk,
 			BestAskSize: ticker.BestAskSize,
+			LastPrice:   ticker.Last,
 			Time:        ticker.Time,
 			Raw:         ticker,
 		},
