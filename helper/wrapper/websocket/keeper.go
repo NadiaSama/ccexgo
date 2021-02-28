@@ -98,6 +98,7 @@ func (k *Keeper) updateSubscribe(ctx context.Context) (*time.Timer, error) {
 	if err := k.conn.Subscribe(ctx, channels...); err != nil {
 		return nil, errors.WithMessage(err, "subscribe channel fail")
 	}
+	k.channels = channels
 	return time.NewTimer(time.Until(next)), nil
 }
 

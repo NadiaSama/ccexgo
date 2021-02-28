@@ -86,21 +86,31 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 		return nil, err
 	}
 
+	ticker := &Ticker{
+		Symbol:         sym,
+		Time:           ts,
+		Last:           r.Last,
+		LastQty:        r.LastQty,
+		BestAsk:        r.BestAsk,
+		BestAskSize:    r.BestAskSize,
+		BestBid:        r.BestBid,
+		BestBidSize:    r.BestBidSize,
+		Open24H:        r.Open24H,
+		Volume24H:      r.Volume24H,
+		VolumeToken24H: r.VolumeToken24H,
+		OpenInterest:   r.OpenInterest,
+	}
 	return &rpc.Notify{
 		Method: table,
-		Params: &Ticker{
-			Symbol:         sym,
-			Time:           ts,
-			Last:           r.Last,
-			LastQty:        r.LastQty,
-			BestAsk:        r.BestAsk,
-			BestAskSize:    r.BestAskSize,
-			BestBid:        r.BestBid,
-			BestBidSize:    r.BestBidSize,
-			Open24H:        r.Open24H,
-			Volume24H:      r.Volume24H,
-			VolumeToken24H: r.VolumeToken24H,
-			OpenInterest:   r.OpenInterest,
+		Params: &exchange.Ticker{
+			LastPrice:   ticker.Last,
+			BestBid:     ticker.BestBid,
+			BestBidSize: ticker.BestBidSize,
+			BestAsk:     ticker.BestAsk,
+			BestAskSize: ticker.BestAskSize,
+			Time:        ticker.Time,
+			Symbol:      ticker.Symbol,
+			Raw:         ticker,
 		},
 	}, nil
 }
