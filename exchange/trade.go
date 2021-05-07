@@ -16,6 +16,7 @@ type (
 		Fee         decimal.Decimal
 		FeeCurrency string
 		Time        time.Time
+		Side        OrderSide
 		Raw         interface{}
 	}
 

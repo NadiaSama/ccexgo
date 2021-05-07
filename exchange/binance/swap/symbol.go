@@ -5,26 +5,24 @@ import (
 	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
 
 type (
 	SwapSymbol struct {
 		*exchange.BaseSwapSymbol
-		BaseAsset       string
-		MinAmount       decimal.Decimal
-		PricePrecision  decimal.Decimal
-		AmountPrecision decimal.Decimal
+		Symbol string
 	}
 
-	//only parse required field
-	exchangeInfo struct {
-		Timezone   string       `json:"timezone"`
-		ServerTime int64        `json:"serverTime"`
-		Symbols    []swapSymbol `json:"symbols"`
+	//TODO add additinoal field parse
+	ExchangeInfo struct {
+		Timezone   string   `json:"timezone"`
+		ServerTime int64    `json:"serverTime"`
+		Symbols    []Symbol `json:"symbols"`
 	}
 
-	swapSymbol struct {
+	Symbol struct {
 		Symbol                string          `json:"symbol"`
 		Status                string          `json:"status"`
 		MaintMarginPercent    decimal.Decimal `json:"maintMarginPercent"`
@@ -36,12 +34,12 @@ type (
 		BaseAssetPrecision    int             `json:"baseAssetPrecision"`
 		QuotePrecision        int             `json:"quotePrecision"`
 		UnderlyingType        string          `json:"COIN"`
-		Filters               []filter        `json:"filters"`
+		Filters               []Filter        `json:"filters"`
 		OrderTypes            []string        `json:"orderTypes"`
 		TimeInForce           []string        `json:"timeInForce"`
 	}
 
-	filter struct {
+	Filter struct {
 		MinPrice          decimal.Decimal `json:"minPrice"`
 		MaxPrice          decimal.Decimal `json:"maxPrice"`
 		FilterType        string          `json:"filterType"`
@@ -61,38 +59,64 @@ const (
 	lotSize     = "LOT_SIZE"
 )
 
-func (rc *RestClient) loadSymbol(ctx context.Context) error {
-	var info exchangeInfo
-	if err := rc.Request(ctx, http.MethodGet, "/fapi/v1/exchangeInfo", nil, nil, false, &info); err != nil {
+var (
+	symbolMap = map[string]exchange.SwapSymbol{}
+)
+
+func Init(ctx context.Context) error {
+	client := NewRestClient("", "")
+	symbols, err := client.Symbols(ctx)
+	if err != nil {
 		return err
 	}
 
-	for _, sym := range info.Symbols {
-		symbol := &SwapSymbol{
-			BaseSwapSymbol: exchange.NewBaseSwapSymbol(sym.Symbol),
-		}
-
-		for _, f := range sym.Filters {
-			if f.FilterType == priceFilter {
-				symbol.PricePrecision = f.TickSize
-				continue
-			}
-			if f.FilterType == lotSize {
-				symbol.AmountPrecision = f.StepSize
-				symbol.MinAmount = f.MinQty
-				continue
-			}
-		}
-		symbol.BaseAsset = sym.BaseAsset
-		rc.symbols[symbol.String()] = symbol
+	for _, s := range symbols {
+		symbolMap[s.String()] = s
 	}
 	return nil
 }
 
-func (rc *RestClient) Symbols() map[string]*SwapSymbol {
-	return rc.symbols
+func ParseSymbol(symbol string) (exchange.SwapSymbol, error) {
+	sym, ok := symbolMap[symbol]
+	if !ok {
+		return nil, errors.Errorf("unsupport symbol %s", symbol)
+	}
+	return sym, nil
+}
+
+func (rc *RestClient) ExchangeInfo(ctx context.Context) (*ExchangeInfo, error) {
+	var info ExchangeInfo
+	if err := rc.Request(ctx, http.MethodGet, "/fapi/v1/exchangeInfo", nil, nil, false, &info); err != nil {
+		return nil, errors.WithMessage(err, "fetch exchangeInfo fail")
+	}
+	return &info, nil
+}
+
+func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SwapSymbol, error) {
+	info, err := rc.ExchangeInfo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []exchange.SwapSymbol
+	for i := range info.Symbols {
+		sym := info.Symbols[i]
+		s, err := sym.Parse()
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, s)
+	}
+	return ret, nil
+}
+
+func (s *Symbol) Parse() (exchange.SwapSymbol, error) {
+	return &SwapSymbol{
+		exchange.NewBaseSwapSymbol(s.BaseAsset),
+		s.Symbol,
+	}, nil
 }
 
 func (s *SwapSymbol) String() string {
-	return s.Index()
+	return s.Symbol
 }

@@ -77,7 +77,7 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error
 	return ret, nil
 }
 
-func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+func NewSymbol(base, quote string) exchange.SpotSymbol {
 	base = strings.ToUpper(base)
 	quote = strings.ToUpper(quote)
 	return &SpotSymbol{
@@ -86,7 +86,7 @@ func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	}
 }
 
-func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
+func ParseSymbol(sym string) (exchange.SpotSymbol, error) {
 	ret, ok := symbolMap[sym]
 	if !ok {
 		return nil, ErrPair
