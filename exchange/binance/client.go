@@ -97,7 +97,7 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 		query = fmt.Sprintf("%s&signature=%s", query, sig)
 	}
 
-	u := url.URL{Scheme: "https", Path: endPoint, RawPath: query, Host: rc.apiHost}
+	u := url.URL{Scheme: "https", Path: endPoint, RawQuery: query, Host: rc.apiHost}
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "get request fail")
