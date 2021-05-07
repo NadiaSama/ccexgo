@@ -2,12 +2,12 @@ package spot
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -36,10 +36,25 @@ var (
 	symbolMap = map[string]exchange.SpotSymbol{}
 )
 
+func Init(ctx context.Context) error {
+	client := NewRestClient("", "")
+	symbols, err := client.Symbols(ctx)
+	if err != nil {
+		return err
+	}
+
+	for i := range symbols {
+		s := symbols[i]
+		symbolMap[s.String()] = s
+	}
+	return nil
+}
+
 func (rc *RestClient) ExchangeInfo(ctx context.Context) (*ExchangeInfo, error) {
 	var exInfo ExchangeInfo
 	if err := rc.Request(ctx, http.MethodGet, "/api/v3/exchangeInfo", nil, nil, false, &exInfo); err != nil {
-		return nil, err
+		return nil, errors.WithMessage(err, "get exchange info fail")
+
 	}
 	return &exInfo, nil
 }
@@ -62,7 +77,7 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error
 	return ret, nil
 }
 
-func (c *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
+func NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	base = strings.ToUpper(base)
 	quote = strings.ToUpper(quote)
 	return &SpotSymbol{
@@ -71,7 +86,7 @@ func (c *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
 	}
 }
 
-func (c *RestClient) ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
+func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
 	ret, ok := symbolMap[sym]
 	if !ok {
 		return nil, ErrPair

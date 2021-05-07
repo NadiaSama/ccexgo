@@ -8,7 +8,7 @@ type (
 	}
 )
 
-func NewSpotClient(key, secret string) *RestClient {
+func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
 		binance.NewRestClient(key, secret, "api.binance.com"),
 	}

@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
 	"github.com/pkg/errors"
 )
@@ -20,19 +19,17 @@ import (
 type (
 	//Binance Rest client instance
 	RestClient struct {
-		key         string
-		secret      string
-		apiHost     string
-		pair2Symbol map[string]exchange.SpotSymbol
+		key     string
+		secret  string
+		apiHost string
 	}
 )
 
 func NewRestClient(key, secret, host string) *RestClient {
 	ret := &RestClient{
-		key:         key,
-		secret:      secret,
-		apiHost:     host,
-		pair2Symbol: make(map[string]exchange.SpotSymbol),
+		key:     key,
+		secret:  secret,
+		apiHost: host,
 	}
 	return ret
 }
@@ -100,7 +97,7 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string,
 		query = fmt.Sprintf("%s&signature=%s", query, sig)
 	}
 
-	u := url.URL{Scheme: "https", Path: endPoint, RawPath: query}
+	u := url.URL{Scheme: "https", Path: endPoint, RawPath: query, Host: rc.apiHost}
 	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
 	if err != nil {
 		return nil, errors.WithMessage(err, "get request fail")
