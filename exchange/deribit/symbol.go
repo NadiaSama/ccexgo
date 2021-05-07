@@ -39,6 +39,8 @@ const (
 	KindOption      = "option"
 	KindFuture      = "future"
 	SettlePerpetual = "perpetual"
+	SettleWeek      = "week"
+	SettleMonth     = "month"
 )
 
 var (
@@ -104,9 +106,38 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 		return ret, nil
 
 	} else if i.Kind == KindFuture {
-		if i.Kind == SettlePerpetual {
+		if i.SettlementPeriod == SettlePerpetual {
+			ret := &SwapSymbol{
+				exchange.NewBaseSwapSymbolWithCfg(i.BaseCurreny, cfg, i),
+			}
+			return ret, nil
 		}
+
+		st := time.Unix(i.ExpirationTimestamp/1000, 0)
+		now := time.Now()
+		var typ exchange.FutureType
+		if i.SettlementPeriod == SettleWeek {
+			if now.Add(time.Hour * 24 * 7).After(st) {
+				typ = exchange.FutureTypeCW
+			} else {
+				typ = exchange.FutureTypeNW
+			}
+		} else {
+			if now.Add(time.Hour * 24 * 30 * 3).After(st) {
+				typ = exchange.FutureTypeCQ
+			} else if now.Add(time.Hour * 24 * 30 * 6).After(st) {
+				typ = exchange.FutureTypeNQ
+			} else {
+				typ = exchange.FutureTypeNNQ
+			}
+		}
+		ret := &FuturesSymbol{
+			exchange.NewBaseFuturesSymbolWithCfg(i.BaseCurreny, st, typ, cfg, i),
+		}
+		return ret, nil
 	}
+
+	return nil, errors.Errorf("unknown kind %s", i.Kind)
 }
 
 func (c *Client) FutureFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {

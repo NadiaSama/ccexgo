@@ -113,6 +113,8 @@ const (
 	FutureTypeCQ
 	//FutureTypeNQ next quarter settle future
 	FutureTypeNQ
+	//FutureTypeNNQ next next quart settle future (deribit only)
+	FutureTypeNNQ
 )
 
 func (r *RawMixin) Raw() interface{} {
@@ -204,6 +206,16 @@ func (bss *BaseSpotSymbol) Quote() string {
 	return bss.quote
 }
 
+func NewBaseFuturesSymbolWithCfg(index string, st time.Time, typ FutureType, cfg SymbolConfig, raw interface{}) *BaseFutureSymbol {
+	return &BaseFutureSymbol{
+		RawMixin:           RawMixin{raw},
+		BaseSymbolProperty: cfg.Property(),
+		index:              index,
+		settleTime:         st,
+		typ:                typ,
+	}
+}
+
 func NewBaseFutureSymbol(index string, st time.Time, typ FutureType) *BaseFutureSymbol {
 	return &BaseFutureSymbol{
 		index:      index,
@@ -222,6 +234,14 @@ func (bfs *BaseFutureSymbol) SettleTime() time.Time {
 
 func (bfs *BaseFutureSymbol) Type() FutureType {
 	return bfs.typ
+}
+
+func NewBaseSwapSymbolWithCfg(index string, cfg SymbolConfig, raw interface{}) *BaseSwapSymbol {
+	return &BaseSwapSymbol{
+		RawMixin:           RawMixin{raw},
+		BaseSymbolProperty: cfg.Property(),
+		index:              index,
+	}
 }
 
 func NewBaseSwapSymbol(index string) *BaseSwapSymbol {
