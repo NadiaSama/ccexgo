@@ -36,11 +36,11 @@ const (
 	OptionTypePut  = "put"
 	timeLayout     = "2Jan06"
 
-	KindOption      = "option"
-	KindFuture      = "future"
-	SettlePerpetual = "perpetual"
-	SettleWeek      = "week"
-	SettleMonth     = "month"
+	KindOption            = "option"
+	KindFuture            = "future"
+	SettlePeriodPerpetual = "perpetual"
+	SettlePeriodWeek      = "week"
+	SettlePeriodMonth     = "month"
 )
 
 var (
@@ -88,7 +88,7 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 		ValueMin:        decimal.Zero,
 	}
 	var st time.Time
-	if i.Kind != KindFuture || i.SettlementPeriod != SettlePerpetual {
+	if i.Kind != KindFuture || i.SettlementPeriod != SettlePeriodPerpetual {
 		st = time.Unix(i.ExpirationTimestamp/1e3, 0)
 	}
 	if i.Kind == KindOption {
@@ -106,38 +106,34 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 		return ret, nil
 
 	} else if i.Kind == KindFuture {
-		if i.SettlementPeriod == SettlePerpetual {
-			ret := &SwapSymbol{
+		if i.SettlementPeriod == SettlePeriodPerpetual {
+			return &SwapSymbol{
 				exchange.NewBaseSwapSymbolWithCfg(i.BaseCurreny, cfg, i),
-			}
-			return ret, nil
+			}, nil
 		}
 
-		st := time.Unix(i.ExpirationTimestamp/1000, 0)
-		now := time.Now()
-		var typ exchange.FutureType
-		if i.SettlementPeriod == SettleWeek {
-			if now.Add(time.Hour * 24 * 7).After(st) {
-				typ = exchange.FutureTypeCW
+		var ft exchange.FutureType
+		diff := time.Until(st)
+		if i.SettlementPeriod == SettlePeriodWeek {
+			if (diff / time.Second / 86400) < 7 {
+				ft = exchange.FutureTypeCW
 			} else {
-				typ = exchange.FutureTypeNW
+				ft = exchange.FutureTypeNW
 			}
 		} else {
-			if now.Add(time.Hour * 24 * 30 * 3).After(st) {
-				typ = exchange.FutureTypeCQ
-			} else if now.Add(time.Hour * 24 * 30 * 6).After(st) {
-				typ = exchange.FutureTypeNQ
+			if (diff / time.Second / 86400) < 31 {
+				ft = exchange.FutureTypeCQ
+			} else if (diff / time.Second / 86400) < 90 {
+				ft = exchange.FutureTypeNQ
 			} else {
-				typ = exchange.FutureTypeNNQ
+				ft = exchange.FutureTypeNNQ
 			}
 		}
-		ret := &FuturesSymbol{
-			exchange.NewBaseFuturesSymbolWithCfg(i.BaseCurreny, st, typ, cfg, i),
-		}
-		return ret, nil
+		return &FuturesSymbol{
+			exchange.NewBaseFuturesSymbolWithCfg(i.BaseCurreny, st, ft, cfg, i),
+		}, nil
 	}
-
-	return nil, errors.Errorf("unknown kind %s", i.Kind)
+	return nil, errors.Errorf("unkown kind '%s'", i.Kind)
 }
 
 func (c *Client) FutureFetchInstruments(ctx context.Context, currency string, expired bool) ([]InstrumentResult, error) {
@@ -188,6 +184,30 @@ func (c *Client) OptionExpireSymbols(ctx context.Context, currency string) ([]ex
 	return ret, nil
 }
 
+func (c *Client) FuturesSymbols(ctx context.Context, currency string) ([]exchange.FuturesSymbol, error) {
+	ir, err := c.fetchSymbols(ctx, currency, false, KindFuture)
+	if err != nil {
+		return nil, err
+	}
+	ret := make([]exchange.FuturesSymbol, 0)
+	for _, inst := range ir {
+		s, ok := inst.(exchange.FuturesSymbol)
+		if ok {
+			ret = append(ret, s)
+		}
+	}
+	return ret, nil
+}
+
+func (c *Client) SwapSymbol(ctx context.Context, currency string) (exchange.SwapSymbol, error) {
+	symbol := strings.ToUpper(fmt.Sprintf("%s-%s", currency, SettlePeriodPerpetual))
+	ret, err := getSymbol(symbol, reflect.TypeOf((*exchange.SwapSymbol)(nil)).Elem())
+	if err != nil {
+		return nil, err
+	}
+	return ret.(exchange.SwapSymbol), nil
+}
+
 func (c *Client) fetchSymbols(ctx context.Context, currency string, expired bool, kind string) ([]exchange.Symbol, error) {
 	ir, err := c.fetchInstruments(ctx, currency, expired, kind)
 	if err != nil {
@@ -206,7 +226,7 @@ func (c *Client) fetchSymbols(ctx context.Context, currency string, expired bool
 }
 
 func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
-	ret, err := getSymbol(sym, reflect.TypeOf(exchange.OptionSymbol(nil)))
+	ret, err := getSymbol(sym, reflect.TypeOf((*exchange.OptionSymbol)(nil)).Elem())
 	if err != nil {
 		return nil, err
 	}
@@ -215,11 +235,21 @@ func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
 }
 
 func ParseFutureSymbol(sym string) (exchange.FuturesSymbol, error) {
-	ret, err := getSymbol(sym, reflect.TypeOf(exchange.FuturesSymbol(nil)))
+	ret, err := getSymbol(sym, reflect.TypeOf((*exchange.FuturesSymbol)(nil)).Elem())
 	if err != nil {
 		return nil, err
 	}
 	return ret.(exchange.FuturesSymbol), nil
+}
+
+func ParseSymbol(sym string) (exchange.Symbol, error) {
+	symbolMu.Lock()
+	defer symbolMu.Unlock()
+	ret, ok := symbolMap[sym]
+	if !ok {
+		return nil, errors.Errorf("bad symbol %s", sym)
+	}
+	return ret, nil
 }
 
 func getSymbol(sym string, exType reflect.Type) (exchange.Symbol, error) {

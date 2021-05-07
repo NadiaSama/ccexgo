@@ -94,7 +94,7 @@ func parseNotifyTicker(resp *Notify) (*rpc.Notify, error) {
 }
 
 func (tr *TickerResult) Parse() (*exchange.Ticker, error) {
-	sym, err := ParseOptionSymbol(tr.InstrumentName)
+	sym, err := ParseSymbol(tr.InstrumentName)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "parse instrument_name '%s'", tr.InstrumentName)
 	}
@@ -106,6 +106,7 @@ func (tr *TickerResult) Parse() (*exchange.Ticker, error) {
 		BestAsk:     tr.BestAskPrice,
 		BestAskSize: tr.BestAskAmount,
 		Time:        tconv.Milli2Time(tr.Timestamp),
+		LastPrice:   tr.LastPrice,
 		Raw:         tr,
 	}, nil
 }

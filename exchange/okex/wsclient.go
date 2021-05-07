@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -53,23 +54,42 @@ func newWSClient(addr, key, secret, passPhrase string, data chan interface{}) *W
 	return ret
 }
 
-//Subscribe in order to get subscribe result only one channle can subscribe each time
-func (ws *WSClient) Subscribe(ctx context.Context, channel ...exchange.Channel) error {
-	if len(channel) != 1 {
-		return errors.Errorf("only one channel can subscribe each time")
-	}
+//Subscribe due to okex api limit subscribe result can not ensure
+func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
 
-	arg := channel[0]
+	args := make([]string, len(channels))
+	for i, c := range channels {
+		args[i] = c.String()
+	}
 	cm := callParam{
 		OP:   opSubscribe,
-		Args: []string{arg.String()},
+		Args: args,
 	}
 
 	var r response
 	if err := ws.Call(ctx, opSubscribe, opSubscribe, &cm, &r); err != nil {
-		return errors.WithMessagef(err, "subscribe error '%s'", arg.String())
+		return errors.WithMessagef(err, "subscribe error '%s'", strings.Join(args, ","))
 	}
 	return nil
+}
+
+//UnSubscribe due to okex api limit subscribe result can not ensure
+func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	args := make([]string, len(channels))
+	for i, c := range channels {
+		args[i] = c.String()
+	}
+	cm := callParam{
+		OP:   opUnSubscribe,
+		Args: args,
+	}
+
+	var r response
+	if err := ws.Call(ctx, opUnSubscribe, opUnSubscribe, &cm, &r); err != nil {
+		return errors.WithMessagef(err, "unsubscribe error '%s'", strings.Join(args, ","))
+	}
+	return nil
+
 }
 
 //Run start the websocket loop and create a goroutine which

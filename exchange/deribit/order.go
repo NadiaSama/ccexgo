@@ -14,7 +14,7 @@ type (
 		AuthToken
 		InstrumentName string  `json:"instrument_name"`
 		Amount         float64 `json:"amount"`
-		Price          float64 `json:"price"`
+		Price          float64 `json:"price,omitempty"`
 		Type           string  `json:"type"`
 		PostOnly       bool    `json:"post_only,omitempty"`
 		TimeInForce    string  `json:"time_in_force,omitempty"`
@@ -77,13 +77,16 @@ func (c *Client) CreateOrder(ctx context.Context, req *exchange.OrderRequest, op
 		method = "/private/sell"
 	}
 	a, _ := req.Amount.Float64()
-	p, _ := req.Price.Float64()
 
 	param := &orderParam{
 		Amount:         a,
-		Price:          p,
 		InstrumentName: req.Symbol.String(),
 		Type:           type2Str[req.Type],
+	}
+
+	if req.Type == exchange.OrderTypeLimit || req.Type == exchange.OrderTypeStopLimit {
+		p, _ := req.Price.Float64()
+		param.Price = p
 	}
 
 	for _, opt := range opts {

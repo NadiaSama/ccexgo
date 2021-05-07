@@ -14,6 +14,7 @@ type (
 		BestAsk     decimal.Decimal
 		BestAskSize decimal.Decimal
 		Time        time.Time
+		LastPrice   decimal.Decimal
 		Raw         interface{}
 	}
 )

@@ -105,6 +105,15 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 
 	return &rpc.Notify{
 		Method: TickerTable,
-		Params: &ticker,
+		Params: &exchange.Ticker{
+			LastPrice:   ticker.Last,
+			BestBid:     ticker.BestBid,
+			BestBidSize: ticker.BestBidSize,
+			BestAsk:     ticker.BestAsk,
+			BestAskSize: ticker.BestAskSize,
+			Symbol:      ticker.Symbol,
+			Time:        ticker.Time,
+			Raw:         &ticker,
+		},
 	}, nil
 }
