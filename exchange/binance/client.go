@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -38,10 +37,6 @@ func NewRestClient(key, secret, host string) *RestClient {
 	return ret
 }
 
-func (rc *RestClient) Init(ctx context.Context) error {
-	return rc.initPair(ctx)
-}
-
 func (rc *RestClient) signature(param string) string {
 	h := hmac.New(sha256.New, []byte(rc.secret))
 	h.Write([]byte(param))
@@ -49,31 +44,14 @@ func (rc *RestClient) signature(param string) string {
 }
 
 func (rc *RestClient) Request(ctx context.Context, method, endPoint string, param url.Values, data io.Reader, signed bool, dst interface{}) error {
-	if method != http.MethodGet {
-		return errors.Errorf("bad method '%s'", method)
-	}
-	p := map[string]string{}
-	for k, v := range param {
-		p[k] = v[0]
-	}
-
-	return rc.request(ctx, endPoint, p, signed, dst)
+	return rc.request(ctx, method, endPoint, param, data, signed, dst)
 }
 
-func (rc *RestClient) request(ctx context.Context, endPoint string, param map[string]string, signed bool, dst interface{}) error {
-	if signed {
-		ts := timeStamp()
-		if param == nil {
-			param = map[string]string{}
-		}
-		param["timestamp"] = fmt.Sprintf("%d", ts)
+func (rc *RestClient) request(ctx context.Context, method, endPoint string, param url.Values, data io.Reader, signed bool, dst interface{}) error {
+	req, err := rc.buildRequest(ctx, method, endPoint, param, data, signed)
+	if err != nil {
+		return err
 	}
-	query := rc.buildQuery(param, signed)
-
-	u := url.URL{Scheme: "https", Host: rc.apiHost, Path: endPoint, RawQuery: query}
-	req, _ := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
-	req.Header.Add("X-MBX-APIKEY", rc.key)
-
 	rerr := request.DoReqWithCtx(req, func(resp *http.Response, ierr error) error {
 		if ierr != nil {
 			return ierr
@@ -100,21 +78,40 @@ func (rc *RestClient) request(ctx context.Context, endPoint string, param map[st
 	return rerr
 }
 
-func timeStamp() int64 {
-	now := time.Now()
-	return now.UnixNano() / 1e6
-}
-
-func (rc *RestClient) buildQuery(param map[string]string, signed bool) string {
-	fields := make([]string, 0)
-	for k, v := range param {
-		fields = append(fields, fmt.Sprintf("%s=%s", k, v))
+func (rc *RestClient) buildRequest(ctx context.Context, method, endPoint string, values url.Values, data io.Reader, signed bool) (*http.Request, error) {
+	if signed {
+		if values == nil {
+			values = url.Values{}
+		}
+		values.Add("timestamp", fmt.Sprintf("%d", timeStamp()))
 	}
-	query := strings.Join(fields, "&")
-
+	query := values.Encode()
+	if data != nil {
+		body, err := ioutil.ReadAll(data)
+		if err != nil {
+			return nil, errors.WithMessage(err, "read data fail")
+		}
+		if len(body) != 0 {
+			query = fmt.Sprintf("%s&%s", query, string(body))
+		}
+	}
 	if signed {
 		sig := rc.signature(query)
 		query = fmt.Sprintf("%s&signature=%s", query, sig)
 	}
-	return query
+
+	u := url.URL{Scheme: "https", Path: endPoint, RawPath: query}
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), nil)
+	if err != nil {
+		return nil, errors.WithMessage(err, "get request fail")
+	}
+	if len(rc.key) != 0 {
+		req.Header.Add("X-MBX-APIKEY", rc.key)
+	}
+	return req, nil
+}
+
+func timeStamp() int64 {
+	now := time.Now()
+	return now.UnixNano() / 1e6
 }
