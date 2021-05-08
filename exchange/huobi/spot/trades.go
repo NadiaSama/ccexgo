@@ -145,7 +145,7 @@ func (mr MatchResult) Parse() (*exchange.Trade, error) {
 		ID:          strconv.FormatInt(mr.ID, 10),
 		Price:       mr.Price,
 		Amount:      mr.FilledAmount,
-		Fee:         fee,
+		Fee:         fee.Neg(),
 		FeeCurrency: feeCurrency,
 		Time:        tconv.Milli2Time(mr.CreatedAt),
 		Side:        side,

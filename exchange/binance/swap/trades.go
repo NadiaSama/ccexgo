@@ -66,7 +66,7 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 		Side:        side,
 		Amount:      t.Qty,
 		Price:       t.Price,
-		Fee:         t.Commission,
+		Fee:         t.Commission.Neg(),
 		FeeCurrency: t.CommissionAsset,
 		Time:        tconv.Milli2Time(t.Time),
 		Raw:         t,
