@@ -1,4 +1,4 @@
-package spot
+package swap
 
 import (
 	"context"
@@ -11,30 +11,30 @@ import (
 
 type (
 	Fill struct {
-		LedgeID      string          `json:"ledger_id"`
 		TradeID      string          `json:"trade_id"`
+		FillID       string          `json:"fill_id"`
 		InstrumentID string          `json:"instrument_id"`
-		Price        decimal.Decimal `json:"price"`
-		Size         decimal.Decimal `json:"size"`
 		OrderID      string          `json:"order_id"`
-		ExecType     string          `json:"exec_type"`
-		Timestamp    string          `json:"timestamp"`
+		Price        decimal.Decimal `json:"price"`
+		OrderQty     decimal.Decimal `json:"order_qty"`
 		Fee          decimal.Decimal `json:"fee"`
+		Timestamp    string          `json:"timestamp"`
+		ExecType     string          `json:"exec_type"`
 		Side         string          `json:"side"`
-		Currency     string          `json:"currency"`
+		OrderSide    string          `json:"order_side"`
+		Type         string          `json:"type"`
 	}
 )
 
 const (
-	FillsEndPoint = "/api/spot/v3/fills"
+	FillsEndPoint = "/api/swap/v3/fills"
 )
 
-func (rc *RestClient) Fills(ctx context.Context, instrumentID, orderID string, before, after, limit string) ([]Fill, error) {
+func (rc *RestClient) Fills(ctx context.Context, instrumentID string, orderID string, before, after, limit string) ([]Fill, error) {
 	values := okex.FillsParam(instrumentID, orderID, before, after, limit)
-
 	var ret []Fill
 	if err := rc.Request(ctx, http.MethodGet, FillsEndPoint, values, nil, true, &ret); err != nil {
-		return nil, errors.WithMessage(err, "fetch fills failed")
+		return nil, errors.WithMessage(err, "fetch fills fail")
 	}
 	return ret, nil
 }
