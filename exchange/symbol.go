@@ -92,12 +92,14 @@ type (
 	SwapSymbol interface {
 		Symbol
 		Index() string
+		ContractVal() decimal.Decimal
 	}
 
 	BaseSwapSymbol struct {
 		RawMixin
 		BaseSymbolProperty
-		index string
+		index       string
+		contractVal decimal.Decimal
 	}
 )
 
@@ -236,21 +238,27 @@ func (bfs *BaseFutureSymbol) Type() FutureType {
 	return bfs.typ
 }
 
-func NewBaseSwapSymbolWithCfg(index string, cfg SymbolConfig, raw interface{}) *BaseSwapSymbol {
+func NewBaseSwapSymbolWithCfg(index string, cf decimal.Decimal, cfg SymbolConfig, raw interface{}) *BaseSwapSymbol {
 	return &BaseSwapSymbol{
 		RawMixin:           RawMixin{raw},
 		BaseSymbolProperty: cfg.Property(),
 		index:              index,
+		contractVal:        cf,
 	}
 }
 
 func NewBaseSwapSymbol(index string) *BaseSwapSymbol {
 	return &BaseSwapSymbol{
-		index: index,
+		index:       index,
+		contractVal: decimal.NewFromFloat(1.0),
 	}
 }
 func (bsw *BaseSwapSymbol) Index() string {
 	return bsw.index
+}
+
+func (bsv *BaseSwapSymbol) ContractVal() decimal.Decimal {
+	return bsv.contractVal
 }
 
 func Round(val decimal.Decimal, p decimal.Decimal) decimal.Decimal {

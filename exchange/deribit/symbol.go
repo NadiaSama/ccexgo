@@ -108,7 +108,7 @@ func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
 	} else if i.Kind == KindFuture {
 		if i.SettlementPeriod == SettlePeriodPerpetual {
 			return &SwapSymbol{
-				exchange.NewBaseSwapSymbolWithCfg(i.BaseCurreny, cfg, i),
+				exchange.NewBaseSwapSymbolWithCfg(i.BaseCurreny, i.ContractSize, cfg, i),
 			}, nil
 		}
 
