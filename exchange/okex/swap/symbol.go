@@ -21,8 +21,8 @@ type (
 		ContractVal         decimal.Decimal `json:"contract_val"`
 		Listing             string          `json:"listing"`
 		Delivery            string          `json:"delivery"`
-		SizeIncrement       string          `json:"size_increment"`
-		TickSize            string          `json:"tick_size"`
+		SizeIncrement       decimal.Decimal `json:"size_increment"`
+		TickSize            decimal.Decimal `json:"tick_size"`
 		IsInverse           string          `json:"is_inverse"`
 		Category            string          `json:"category"`
 		ContractValCurrency string          `json:"contract_val_currency"`
@@ -79,8 +79,12 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SwapSymbol, error
 }
 
 func (os *OkexSymbol) Parse() (*Symbol, error) {
+	cfg := exchange.SymbolConfig{
+		PricePrecision:  os.TickSize,
+		AmountPrecision: os.SizeIncrement,
+	}
 	return &Symbol{
-		exchange.NewBaseSwapSymbol(os.Underlying),
+		exchange.NewBaseSwapSymbolWithCfg(os.Underlying, os.ContractVal, cfg, os),
 		os.InstrumentID,
 	}, nil
 }
