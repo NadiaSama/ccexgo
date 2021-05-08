@@ -24,8 +24,8 @@ type (
 		Symbol    Symbol
 		StartTime time.Time
 		EndTime   time.Time
-		StartID   string
-		EndID     string
+		StartID   interface{}
+		EndID     interface{}
 		Limit     int
 	}
 )

@@ -32,8 +32,9 @@ const (
 	UserTradesEndPoint = "/fapi/v1/userTrades"
 )
 
-func (rc *RestClient) UserTrades(ctx context.Context, req *exchange.TradeReqParam) ([]Trade, error) {
-	value := binance.TradeParam(req)
+func (rc *RestClient) UserTrades(ctx context.Context, symbol string, st int64, et int64, fid int64, limit int) ([]Trade, error) {
+	value := binance.TradeParam(symbol, st, et, fid, limit)
+
 	var ret []Trade
 	if err := rc.Request(ctx, http.MethodGet, UserTradesEndPoint, value, nil, true, &ret); err != nil {
 		return nil, errors.WithMessage(err, "fetch myTrades fail")
@@ -71,7 +72,13 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 }
 
 func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
-	trades, err := rc.UserTrades(ctx, req)
+	fid, err := binance.ToTradeID(req.StartID)
+	if err != nil {
+		return nil, err
+	}
+
+	trades, err := rc.UserTrades(ctx, req.Symbol.String(), binance.ToTimestamp(req.StartTime),
+		binance.ToTimestamp(req.EndTime), fid, req.Limit)
 	if err != nil {
 		return nil, err
 	}

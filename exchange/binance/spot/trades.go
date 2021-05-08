@@ -32,9 +32,9 @@ const (
 	MyTradesEndPoint = "/api/v3/myTrades"
 )
 
-func (rc *RestClient) MyTrades(ctx context.Context, req *exchange.TradeReqParam) ([]Trade, error) {
+func (rc *RestClient) MyTrades(ctx context.Context, symbol string, st int64, et int64, fid int64, limit int) ([]Trade, error) {
 	var ret []Trade
-	value := binance.TradeParam(req)
+	value := binance.TradeParam(symbol, st, et, fid, limit)
 	if err := rc.Request(ctx, http.MethodGet, MyTradesEndPoint, value, nil, true, &ret); err != nil {
 		return nil, errors.WithMessage(err, "fetch myTrades fail")
 	}
@@ -42,7 +42,12 @@ func (rc *RestClient) MyTrades(ctx context.Context, req *exchange.TradeReqParam)
 }
 
 func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
-	trades, err := rc.MyTrades(ctx, req)
+	fid, err := binance.ToTradeID(req.StartID)
+	if err != nil {
+		return nil, err
+	}
+	trades, err := rc.MyTrades(ctx, req.Symbol.String(), binance.ToTimestamp(req.StartTime),
+		binance.ToTimestamp(req.EndTime), fid, req.Limit)
 	if err != nil {
 		return nil, err
 	}
