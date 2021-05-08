@@ -3,9 +3,11 @@ package swap
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/binance"
+	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -58,27 +60,32 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 	}
 
 	return &exchange.Trade{
-		ID:          exchange.NewIntID(t.ID),
-		OrderID:     exchange.NewIntID(t.OrderID),
+		ID:          strconv.FormatInt(t.ID, 10),
+		OrderID:     strconv.FormatInt(t.OrderID, 10),
 		Symbol:      s,
 		Side:        side,
 		Amount:      t.Qty,
 		Price:       t.Price,
 		Fee:         t.Commission,
 		FeeCurrency: t.CommissionAsset,
-		Time:        binance.ParseTimestamp(t.Time),
+		Time:        tconv.Milli2Time(t.Time),
 		Raw:         t,
 	}, nil
 }
 
 func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
-	fid, err := binance.ToTradeID(req.StartID)
-	if err != nil {
-		return nil, err
+	var fid int64
+	if req.StartID != "" {
+		var err error
+		fid, err = strconv.ParseInt(req.StartID, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
 	}
 
-	trades, err := rc.UserTrades(ctx, req.Symbol.String(), binance.ToTimestamp(req.StartTime),
-		binance.ToTimestamp(req.EndTime), fid, req.Limit)
+	trades, err := rc.UserTrades(ctx, req.Symbol.String(), tconv.Time2Milli(req.StartTime),
+		tconv.Time2Milli(req.EndTime), fid, req.Limit)
 	if err != nil {
 		return nil, err
 	}

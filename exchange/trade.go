@@ -8,8 +8,8 @@ import (
 
 type (
 	Trade struct {
-		ID          OrderID
-		OrderID     OrderID
+		ID          string
+		OrderID     string
 		Symbol      Symbol
 		Price       decimal.Decimal
 		Amount      decimal.Decimal
@@ -24,8 +24,8 @@ type (
 		Symbol    Symbol
 		StartTime time.Time
 		EndTime   time.Time
-		StartID   interface{}
-		EndID     interface{}
+		StartID   string
+		EndID     string
 		Limit     int
 	}
 )

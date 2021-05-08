@@ -2,21 +2,19 @@ package spot
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
-	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
 )
 
 type (
 	SpotSymbol struct {
 		*exchange.BaseSpotSymbol
+		Symbol string
 	}
 
+	//TODO add precision
 	Symbol struct {
 		BaseCurrency string `json:"base-currency"`
 		QuoteCurreny string `json:"quote-currency"`
@@ -29,37 +27,63 @@ type (
 	}
 )
 
-func (rc *RestClient) initSymbol(ctx context.Context) error {
-	var resp SymbolResp
-	if err := rc.Request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &resp); err != nil {
+var (
+	symbolMap map[string]exchange.SpotSymbol = map[string]exchange.SpotSymbol{}
+)
+
+func Init(ctx context.Context) error {
+	client := NewRestClient("", "")
+	symbols, err := client.Symbols(ctx)
+	if err != nil {
 		return err
 	}
-
-	if resp.Status != huobi.StatusOK {
-		ret, _ := json.Marshal(&resp)
-		return huobi.NewError(string(ret))
-	}
-
-	for _, sym := range resp.Data {
-		rc.pair2Symbol[sym.Symbol] = rc.NewSpotSymbol(sym.BaseCurrency, sym.QuoteCurreny)
+	for _, s := range symbols {
+		symbolMap[s.String()] = s
 	}
 	return nil
 }
 
-func (rc *RestClient) NewSpotSymbol(base, quote string) exchange.SpotSymbol {
-	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(strings.ToLower(base), strings.ToLower(quote), exchange.SymbolConfig{}, nil),
-	}
-}
-
-func (rc *RestClient) ParseSpotSymbol(pair string) (exchange.SpotSymbol, error) {
-	ret, ok := rc.pair2Symbol[pair]
+func ParseSymbol(symbol string) (exchange.SpotSymbol, error) {
+	ret, ok := symbolMap[symbol]
 	if !ok {
-		return nil, errors.Errorf("unsupport pair %s", pair)
+		return nil, errors.Errorf("unsupport symbol %s", symbol)
 	}
 	return ret, nil
 }
 
+func (rc *RestClient) FetchSymbols(ctx context.Context) ([]Symbol, error) {
+	var resp []Symbol
+	if err := rc.Request(ctx, http.MethodGet, "/v1/common/symbols", nil, nil, false, &resp); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error) {
+	symbols, err := rc.FetchSymbols(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []exchange.SpotSymbol{}
+	for _, symbol := range symbols {
+		s, err := symbol.Parse()
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, s)
+	}
+	return ret, nil
+}
+
+func (s *Symbol) Parse() (exchange.SpotSymbol, error) {
+	return &SpotSymbol{
+		exchange.NewBaseSpotSymbol(s.BaseCurrency, s.QuoteCurreny, exchange.SymbolConfig{}, s),
+		s.Symbol,
+	}, nil
+}
+
 func (ss *SpotSymbol) String() string {
-	return fmt.Sprintf("%s%s", ss.Base(), ss.Quote())
+	return ss.Symbol
 }

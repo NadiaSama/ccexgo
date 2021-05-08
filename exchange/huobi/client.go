@@ -33,6 +33,12 @@ type (
 		secret  string
 		apiHost string
 	}
+
+	RestResponse struct {
+		Status string      `json:"status"`
+		Code   int         `json:"code"`
+		Data   interface{} `json:"data"`
+	}
 )
 
 func NewRestClient(key, secret, host string) *RestClient {
@@ -58,8 +64,15 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 		}
 		defer resp.Body.Close()
 
-		if err := json.Unmarshal(content, dst); err != nil {
+		rr := RestResponse{
+			Data: dst,
+		}
+		if err := json.Unmarshal(content, &rr); err != nil {
 			return errors.WithMessagef(err, "unmarshal %s fail", string(content))
+		}
+
+		if (rr.Status != "" && rr.Status != "ok") || (rr.Code != 0 && rr.Code != 200) {
+			return errors.Errorf("rest return error %s", string(content))
 		}
 		return nil
 	})
