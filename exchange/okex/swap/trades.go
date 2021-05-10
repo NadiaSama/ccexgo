@@ -3,7 +3,9 @@ package swap
 import (
 	"context"
 	"net/http"
+	"strconv"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/okex"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
@@ -37,4 +39,67 @@ func (rc *RestClient) Fills(ctx context.Context, instrumentID string, orderID st
 		return nil, errors.WithMessage(err, "fetch fills fail")
 	}
 	return ret, nil
+}
+
+func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
+	fills, err := rc.Fills(ctx, req.Symbol.String(), "", req.StartID, req.EndID, strconv.Itoa(req.Limit))
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*exchange.Trade
+	for i := range fills {
+		fill := fills[i]
+		trade, err := fill.Parse()
+		if err != nil {
+			return nil, errors.WithMessage(err, "parse fill error")
+		}
+		ret = append(ret, trade)
+	}
+	return ret, nil
+}
+
+func (f *Fill) Parse() (*exchange.Trade, error) {
+	s, err := ParseSymbol(f.InstrumentID)
+	if err != nil {
+		return nil, err
+	}
+	t, err := okex.ParseTime(f.Timestamp)
+	if err != nil {
+		return nil, err
+	}
+
+	var side exchange.OrderSide
+	if f.Side == "long" {
+		if f.OrderSide == "buy" {
+			side = exchange.OrderSideBuy
+		} else if f.OrderSide == "sell" {
+			side = exchange.OrderSideCloseLong
+		} else {
+			return nil, errors.Errorf("unkown order side '%s'", f.OrderSide)
+		}
+	} else if f.Side == "short" {
+		if f.OrderSide == "buy" {
+			side = exchange.OrderSideCloseShort
+		} else if f.OrderSide == "sell" {
+			side = exchange.OrderSideSell
+		} else {
+			return nil, errors.Errorf("unkown order side '%s'", f.OrderSide)
+		}
+	} else {
+		return nil, errors.Errorf("unkown side '%s'", f.Side)
+	}
+
+	return &exchange.Trade{
+		ID:          f.TradeID,
+		OrderID:     f.OrderID,
+		Price:       f.Price,
+		Amount:      f.OrderQty,
+		Fee:         f.Fee,
+		FeeCurrency: "USDT",
+		Symbol:      s,
+		Time:        t,
+		Side:        side,
+		Raw:         f,
+	}, nil
 }

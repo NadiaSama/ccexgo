@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
 	"github.com/pkg/errors"
 )
@@ -76,6 +77,16 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 		}
 		return nil
 	})
+}
+
+func (rc *RestClient) Property() exchange.Property {
+	return exchange.Property{
+		Trades: exchange.TradesProp{
+			MaxDuration: time.Hour * 48,
+			SuportID:    false,
+			SupportTime: true,
+		},
+	}
 }
 
 func (rc *RestClient) buildRequest(ctx context.Context, method, host string, endPoint string, values url.Values, body io.Reader, sign bool) (*http.Request, error) {

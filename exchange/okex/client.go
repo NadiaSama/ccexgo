@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
 	"github.com/pkg/errors"
 )
@@ -63,6 +64,14 @@ func (rc *RestClient) Request(ctx context.Context, method, endPoint string, para
 	return rc.request(ctx, method, endPoint, p, body, sign, dst)
 }
 
+func (rc *RestClient) Property() exchange.Property {
+	return exchange.Property{
+		Trades: exchange.TradesProp{
+			SuportID:    true,
+			SupportTime: false,
+		},
+	}
+}
 func (rc *RestClient) request(ctx context.Context, method, endPoint string, param map[string]string, body io.Reader, sign bool, dst interface{}) error {
 	req, err := rc.buildRequest(ctx, method, endPoint, param, body, sign)
 	if err != nil {
