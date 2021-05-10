@@ -81,7 +81,7 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 
 func (rc *RestClient) Property() exchange.Property {
 	return exchange.Property{
-		Trades: exchange.TradesProp{
+		Trades: &exchange.TradesProp{
 			MaxDuration: time.Hour * 48,
 			SuportID:    false,
 			SupportTime: true,

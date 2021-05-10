@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -66,4 +68,64 @@ func (rc *RestClient) Income(ctx context.Context, symbol string, it IncomeType, 
 		return nil, errors.WithMessage(err, "get income fail")
 	}
 	return ret, nil
+}
+
+func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]*exchange.Finance, error) {
+	var (
+		s   string
+		typ IncomeType
+	)
+	if req.Symbol != nil {
+		s = req.Symbol.String()
+	}
+	if req.Type == exchange.FinanceTypeFunding {
+		typ = IncomeTypeFundingFee
+	}
+
+	incomes, err := rc.Income(ctx, s, typ, tconv.Time2Milli(req.StartTime),
+		tconv.Time2Milli(req.EndTime), req.Limit)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*exchange.Finance{}
+	for i := range incomes {
+		income := incomes[i]
+		finance, err := income.Parse()
+		if err != nil {
+			return nil, errors.WithMessage(err, "parse income fail")
+		}
+		ret = append(ret, finance)
+	}
+	return ret, nil
+}
+
+func (ic *Income) Parse() (*exchange.Finance, error) {
+	var (
+		s   exchange.Symbol
+		err error
+	)
+	if ic.Symbol != "" {
+		s, err = ParseSymbol(ic.Symbol)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &exchange.Finance{
+		ID:       fmt.Sprintf("%d", ic.TranID),
+		Time:     tconv.Milli2Time(ic.Time),
+		Amount:   ic.Income,
+		Symbol:   s,
+		Currency: ic.Asset,
+		Type:     ic.IncomeType.Parse(),
+		Raw:      ic,
+	}, nil
+}
+
+func (ic IncomeType) Parse() exchange.FinanceType {
+	if ic == IncomeTypeFundingFee {
+		return exchange.FinanceTypeFunding
+	}
+	return exchange.FinanceTypeOther
 }

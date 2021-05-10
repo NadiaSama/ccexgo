@@ -66,7 +66,11 @@ func (rc *RestClient) Request(ctx context.Context, method, endPoint string, para
 
 func (rc *RestClient) Property() exchange.Property {
 	return exchange.Property{
-		Trades: exchange.TradesProp{
+		Trades: &exchange.TradesProp{
+			SuportID:    true,
+			SupportTime: false,
+		},
+		Finance: &exchange.FinanceProp{
 			SuportID:    true,
 			SupportTime: false,
 		},

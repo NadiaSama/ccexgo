@@ -10,7 +10,14 @@ type (
 		SupportTime bool
 	}
 
+	FinanceProp struct {
+		MaxDuration time.Duration
+		SuportID    bool
+		SupportTime bool
+	}
+
 	Property struct {
-		Trades TradesProp
+		Trades  *TradesProp
+		Finance *FinanceProp
 	}
 )
