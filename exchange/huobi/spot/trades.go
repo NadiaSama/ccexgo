@@ -108,7 +108,7 @@ func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) (
 	return ret, nil
 }
 
-func (mr MatchResult) Parse() (*exchange.Trade, error) {
+func (mr *MatchResult) Parse() (*exchange.Trade, error) {
 	s, err := ParseSymbol(mr.Symbol)
 	if err != nil {
 		return nil, err
@@ -149,6 +149,6 @@ func (mr MatchResult) Parse() (*exchange.Trade, error) {
 		FeeCurrency: feeCurrency,
 		Time:        tconv.Milli2Time(mr.CreatedAt),
 		Side:        side,
-		Raw:         mr,
+		Raw:         *mr,
 	}, nil
 }

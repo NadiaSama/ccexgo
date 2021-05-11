@@ -16,14 +16,14 @@ import (
 type (
 	LedgerType string
 	Ledger     struct {
-		LedgeID      string          `json:"ledge_id"`
+		LedgerID     string          `json:"ledger_id"`
 		Amount       decimal.Decimal `json:"amount"`
 		Type         LedgerType      `json:"type"`
 		Fee          decimal.Decimal `json:"fee"`
 		Timestamp    string          `json:"timestamp"`
 		InstrumentID string          `json:"instrument_id"`
 		Currency     string          `json:"currency"`
-		Details      string          `json:"details"`
+		Details      interface{}     `json:"details"`
 		OrderID      string          `json:"order_id"`
 		From         string          `json:"from"`
 		To           string          `json:"to"`
@@ -90,18 +90,18 @@ func (l *Ledger) Parse() (*exchange.Finance, error) {
 	}
 
 	return &exchange.Finance{
-		ID:       l.LedgeID,
+		ID:       l.LedgerID,
 		Time:     t,
 		Amount:   l.Amount,
 		Currency: l.Currency,
 		Type:     l.Type.Parse(),
 		Symbol:   s,
-		Raw:      t,
+		Raw:      *l,
 	}, nil
 }
 
 func (typ LedgerType) Parse() exchange.FinanceType {
-	if string(typ) == "14" {
+	if string(typ) == "funding" {
 		return exchange.FinanceTypeFunding
 	}
 	return exchange.FinanceTypeOther

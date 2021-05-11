@@ -100,6 +100,6 @@ func (f *Fill) Parse() (*exchange.Trade, error) {
 		Symbol:      s,
 		Time:        t,
 		Side:        side,
-		Raw:         f,
+		Raw:         *f,
 	}, nil
 }
