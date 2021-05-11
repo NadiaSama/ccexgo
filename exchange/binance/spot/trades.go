@@ -94,6 +94,7 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 		FeeCurrency: t.CommissionAsset,
 		Time:        tconv.Milli2Time(t.Time),
 		Side:        side,
+		IsMaker:     t.IsMaker,
 		Raw:         *t,
 	}
 	return ret, nil

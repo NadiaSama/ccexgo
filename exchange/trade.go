@@ -17,6 +17,7 @@ type (
 		FeeCurrency string
 		Time        time.Time
 		Side        OrderSide
+		IsMaker     bool
 		Raw         interface{}
 	}
 

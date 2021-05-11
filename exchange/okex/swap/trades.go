@@ -30,6 +30,8 @@ type (
 
 const (
 	FillsEndPoint = "/api/swap/v3/fills"
+	ExecTypeTaker = "T"
+	ExecTypeMaker = "M"
 )
 
 func (rc *RestClient) Fills(ctx context.Context, instrumentID string, orderID string, before, after, limit string) ([]Fill, error) {
@@ -90,6 +92,14 @@ func (f *Fill) Parse() (*exchange.Trade, error) {
 		return nil, errors.Errorf("unkown side '%s'", f.Side)
 	}
 
+	var isMaker bool
+	if f.ExecType == ExecTypeTaker {
+		isMaker = false
+	} else if f.ExecType == ExecTypeMaker {
+		isMaker = true
+	} else {
+		return nil, errors.Errorf("unkown execType '%s'", f.ExecType)
+	}
 	return &exchange.Trade{
 		ID:          f.TradeID,
 		OrderID:     f.OrderID,
@@ -100,6 +110,7 @@ func (f *Fill) Parse() (*exchange.Trade, error) {
 		Symbol:      s,
 		Time:        t,
 		Side:        side,
+		IsMaker:     isMaker,
 		Raw:         *f,
 	}, nil
 }

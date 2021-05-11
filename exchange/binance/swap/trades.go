@@ -69,6 +69,7 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 		Fee:         t.Commission.Neg(),
 		FeeCurrency: t.CommissionAsset,
 		Time:        tconv.Milli2Time(t.Time),
+		IsMaker:     t.Maker,
 		Raw:         *t,
 	}, nil
 }

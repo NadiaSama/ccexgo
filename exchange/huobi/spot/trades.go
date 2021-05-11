@@ -43,6 +43,9 @@ const (
 	DirectNext Direct = "next"
 
 	MatchResutEndPoint = "/v1/order/matchresults"
+
+	MatchRoleMaker = "maker"
+	MatchRoleTaker = "taker"
 )
 
 func (rc *RestClient) MatchResults(ctx context.Context, symbol string, types []string, st int64, et int64, from string, d Direct, size int) ([]MatchResult, error) {
@@ -139,6 +142,15 @@ func (mr *MatchResult) Parse() (*exchange.Trade, error) {
 		}
 	}
 
+	var isMaker bool
+	if mr.Role == MatchRoleMaker {
+		isMaker = true
+	} else if mr.Role == MatchRoleTaker {
+		isMaker = false
+	} else {
+		return nil, errors.Errorf("unknown role %s", mr.Role)
+	}
+
 	return &exchange.Trade{
 		Symbol:      s,
 		OrderID:     strconv.FormatInt(mr.OrderID, 10),
@@ -149,6 +161,7 @@ func (mr *MatchResult) Parse() (*exchange.Trade, error) {
 		FeeCurrency: feeCurrency,
 		Time:        tconv.Milli2Time(mr.CreatedAt),
 		Side:        side,
+		IsMaker:     isMaker,
 		Raw:         *mr,
 	}, nil
 }
