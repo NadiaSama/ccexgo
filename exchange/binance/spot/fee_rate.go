@@ -50,7 +50,7 @@ func (rc *RestClient) FeeRate(ctx context.Context, symbols []exchange.Symbol) ([
 		return nil, err
 	}
 
-	var set map[string]struct{}
+	set := make(map[string]struct{})
 	for _, s := range symbols {
 		set[s.String()] = struct{}{}
 	}
