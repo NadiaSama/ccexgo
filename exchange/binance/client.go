@@ -12,7 +12,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/request"
 	"github.com/pkg/errors"
 )
@@ -43,21 +42,6 @@ func (rc *RestClient) signature(param string) string {
 
 func (rc *RestClient) Request(ctx context.Context, method, endPoint string, param url.Values, data io.Reader, signed bool, dst interface{}) error {
 	return rc.request(ctx, method, endPoint, param, data, signed, dst)
-}
-
-func (rc *RestClient) Property() exchange.Property {
-	return exchange.Property{
-		Trades: &exchange.TradesProp{
-			MaxDuration: time.Hour * 168,
-			SuportID:    true,
-			SupportTime: true,
-		},
-		Finance: &exchange.FinanceProp{
-			MaxDuration: time.Hour * 168,
-			SuportID:    false,
-			SupportTime: true,
-		},
-	}
 }
 
 func (rc *RestClient) request(ctx context.Context, method, endPoint string, param url.Values, data io.Reader, signed bool, dst interface{}) error {
