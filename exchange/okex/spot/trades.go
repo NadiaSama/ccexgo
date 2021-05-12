@@ -11,7 +11,7 @@ import (
 
 type (
 	Fill struct {
-		LedgeID      string          `json:"ledger_id"`
+		LedgerID     string          `json:"ledger_id"`
 		TradeID      string          `json:"trade_id"`
 		InstrumentID string          `json:"instrument_id"`
 		Price        decimal.Decimal `json:"price"`
