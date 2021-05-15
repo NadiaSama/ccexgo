@@ -30,7 +30,7 @@ var (
 	symbolMap map[string]exchange.SpotSymbol = map[string]exchange.SpotSymbol{}
 )
 
-func Init(ctx context.Context, test bool) error {
+func okexInit(ctx context.Context, test bool) error {
 	var client *RestClient
 	if test {
 		client = NewTestRestClient("", "", "")
@@ -47,6 +47,14 @@ func Init(ctx context.Context, test bool) error {
 		symbolMap[sym.String()] = sym
 	}
 	return nil
+}
+
+func Init(ctx context.Context) error {
+	return okexInit(ctx, false)
+}
+
+func TestnetInit(ctx context.Context) error {
+	return okexInit(ctx, true)
 }
 
 func ParseSymbol(symbol string) (exchange.SpotSymbol, error) {
