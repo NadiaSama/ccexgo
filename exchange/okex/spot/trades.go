@@ -29,6 +29,7 @@ const (
 	FillsEndPoint = "/api/spot/v3/fills"
 )
 
+//Fills return okex fills in time descent order
 func (rc *RestClient) Fills(ctx context.Context, instrumentID, orderID string, before, after, limit string) ([]Fill, error) {
 	values := okex.FillsParam(instrumentID, orderID, before, after, limit)
 
@@ -36,5 +37,6 @@ func (rc *RestClient) Fills(ctx context.Context, instrumentID, orderID string, b
 	if err := rc.Request(ctx, http.MethodGet, FillsEndPoint, values, nil, true, &ret); err != nil {
 		return nil, errors.WithMessage(err, "fetch fills failed")
 	}
+
 	return ret, nil
 }
