@@ -27,4 +27,5 @@ type (
 const (
 	FinanceTypeOther FinanceType = iota
 	FinanceTypeFunding
+	FinanceTypeInterest
 )

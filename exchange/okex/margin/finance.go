@@ -1,4 +1,4 @@
-package swap
+package margin
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/okex"
+	"github.com/NadiaSama/ccexgo/exchange/okex/spot"
 	"github.com/pkg/errors"
 )
 
 func (rc *RestClient) Ledgers(ctx context.Context, instrumentID string, before, after, limit, typ string) ([]okex.Ledger, error) {
-	endPoint := fmt.Sprintf("/api/swap/v3/accounts/%s/ledger", instrumentID)
+	endPoint := fmt.Sprintf("/api/margin/v3/accounts/%s/ledger", instrumentID)
 
-	ret, err := okex.FetchLedgers(ctx, rc, endPoint, before, after, limit, typ)
-	return ret, err
+	return okex.FetchLedgers(ctx, rc, endPoint, before, after, limit, typ)
 }
 
 func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]*exchange.Finance, error) {
@@ -24,8 +24,8 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 	}
 
 	var typ string
-	if req.Type == exchange.FinanceTypeFunding {
-		typ = "14"
+	if req.Type == exchange.FinanceTypeInterest {
+		typ = "5"
 	}
 	ledgers, err := rc.Ledgers(ctx, symbol, req.StartID, req.EndID, strconv.Itoa(req.Limit), typ)
 	if err != nil {
@@ -45,10 +45,9 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 }
 
 func parseSymbol(sym string) (exchange.Symbol, error) {
-	s, err := ParseSymbol(sym)
+	s, err := spot.ParseSymbol(sym)
 	if err != nil {
 		return nil, err
 	}
-
-	return s.(exchange.Symbol), err
+	return s.(exchange.Symbol), nil
 }
