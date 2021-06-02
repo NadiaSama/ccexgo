@@ -6,19 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"reflect"
 
 	"github.com/pkg/errors"
 )
 
 type (
-	OrderSide     string
-	PosSide       string
-	OrdType       string
-	TDMode        string
-	OrderState    string
-	OrderCategory string
-
 	CreateOrderReq struct {
 		InstID     string    `json:"instId"`
 		TDMode     TDMode    `json:"tdMode"`
@@ -61,7 +53,7 @@ type (
 	}
 
 	Order struct {
-		InstType    string        `json:"instType"`
+		InstType    InstType      `json:"instType"`
 		InstId      string        `json:"instId"`
 		Ccy         string        `json:"ccy"`
 		OrderID     string        `json:"orderId"`
@@ -97,6 +89,13 @@ type (
 )
 
 const (
+	InstTypeSpot    InstType = "SPOT"
+	InstTypeMargin  InstType = "MARGIN"
+	InstTypeSwap    InstType = "SWAP"
+	InstTypeFutures InstType = "FUTURES"
+	InstTypeOption  InstType = "OPTION"
+	InstTypeAny     InstType = "ANY"
+
 	TDModeIsolated TDMode = "isolated"
 	TDModeCross    TDMode = "cross"
 	TDModeCash     TDMode = "cash"
@@ -143,9 +142,22 @@ var (
 	tdModeMap        map[string]TDMode        = make(map[string]TDMode)
 	orderCategoryMap map[string]OrderCategory = make(map[string]OrderCategory)
 	orderStateMap    map[string]OrderState    = make(map[string]OrderState)
+	instTypeMap      map[string]InstType      = make(map[string]InstType)
 )
 
 func init() {
+	its := []InstType{
+		InstTypeSpot,
+		InstTypeMargin,
+		InstTypeFutures,
+		InstTypeSwap,
+		InstTypeOption,
+		InstTypeAny,
+	}
+	for _, i := range its {
+		instTypeMap[string(i)] = i
+	}
+
 	ots := []OrdType{
 		OrdTypeMaket,
 		OrdTypeLimit,
@@ -256,58 +268,5 @@ func (rc *RestClient) doPostJSON(ctx context.Context, endPoint string, obj inter
 	if err := rc.Request(ctx, http.MethodPost, endPoint, nil, body, true, dst); err != nil {
 		return err
 	}
-	return nil
-}
-
-func (ot *OrdType) UnmarshalJSON(raw []byte) error {
-	return assignMapPtr(orderTypeMap, "orderType", raw, ot)
-}
-
-func (os *OrderSide) UnmarshalJSON(raw []byte) error {
-	return assignMapPtr(orderSideMap, "orderSide", raw, os)
-}
-
-func (tm *TDMode) UnmarshalJSON(raw []byte) error {
-	return assignMapPtr(tdModeMap, "tdMode", raw, tm)
-}
-
-func (os *OrderState) UnmarshalJSON(raw []byte) error {
-	return assignMapPtr(orderStateMap, "orderState", raw, os)
-}
-
-func (oc *OrderCategory) UnmarshalJSON(raw []byte) error {
-	return assignMapPtr(orderCategoryMap, "orderCategory", raw, oc)
-}
-
-func (ps *PosSide) UnmarshalJSON(raw []byte) error {
-	var key string
-	if err := json.Unmarshal(raw, &key); err != nil {
-		return errors.Errorf("invalid key %s", string(raw))
-	}
-
-	val, ok := posSideMap[key]
-	if !ok {
-		return errors.Errorf("unkown posSide %s", key)
-	}
-	*ps = val
-	return nil
-}
-
-func assignMapPtr(dict interface{}, typName string, rawKey []byte, dst interface{}) error {
-	var key string
-	if err := json.Unmarshal(rawKey, &key); err != nil {
-		return errors.Errorf("invalid key %s", string(rawKey))
-	}
-
-	kVal := reflect.ValueOf(key)
-	dictVal := reflect.ValueOf(dict)
-
-	sVal := dictVal.MapIndex(kVal)
-	if !sVal.IsValid() {
-		return errors.Errorf("unkown %s '%s'", typName, string(key))
-	}
-
-	dVal := reflect.Indirect(reflect.ValueOf(dst))
-	dVal.Set(sVal)
 	return nil
 }
