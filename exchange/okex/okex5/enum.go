@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	CodeOK = "0"
+)
+
 type (
 	OrderSide     string
 	PosSide       string

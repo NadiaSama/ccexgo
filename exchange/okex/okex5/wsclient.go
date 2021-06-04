@@ -31,7 +31,8 @@ const (
 	WebSocketSimPublicAddr  = "wss://wspap.okex.com:8443/ws/v5/public?brokerId=9999"
 	WebSocketSimPrivateAdrr = "wss://wspap.okex.com:8443/ws/v5/private?brokerId=9999"
 
-	methodSubscribe = "subscribe"
+	MethodSubscribe   = "subscribe"
+	MethodUnSubscribe = "unsubscribe"
 )
 
 func NewWSPublicClient(data chan interface{}) *WSClient {
@@ -79,10 +80,25 @@ func (ws *WSClient) Subscirbe(ctx context.Context, channels ...exchange.Channel)
 	c := channels[0].(*Okex5Channel)
 
 	var resp wsResp
-	if err := ws.Call(ctx, methodSubscribe, methodSubscribe, []Okex5Channel{*c}, &resp); err != nil {
+	if err := ws.Call(ctx, MethodSubscribe, MethodSubscribe, []Okex5Channel{*c}, &resp); err != nil {
 		return errors.WithMessage(err, "subscribe error")
 	}
 	return nil
+}
+
+func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("only 1 channel is support")
+	}
+
+	c := channels[0].(*Okex5Channel)
+
+	var resp wsResp
+	if err := ws.Call(ctx, MethodUnSubscribe, MethodUnSubscribe, []Okex5Channel{*c}, &resp); err != nil {
+		return errors.WithMessage(err, "subscribe error")
+	}
+	return nil
+
 }
 
 func (oc *Okex5Channel) String() string {
