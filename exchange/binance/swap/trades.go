@@ -74,7 +74,7 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 	}, nil
 }
 
-func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
+func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]exchange.Trade, error) {
 	var fid int64
 	if req.StartID != "" {
 		var err error
@@ -91,14 +91,14 @@ func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) (
 		return nil, err
 	}
 
-	ret := []*exchange.Trade{}
+	ret := []exchange.Trade{}
 	for i := range trades {
 		trade := trades[i]
 		t, err := trade.Parse()
 		if err != nil {
 			return nil, err
 		}
-		ret = append(ret, t)
+		ret = append(ret, *t)
 	}
 	return ret, nil
 }

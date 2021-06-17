@@ -27,6 +27,13 @@ type (
 		Quote() string
 	}
 
+	MarginSymbol interface {
+		Symbol
+		Lever() decimal.Decimal
+		Base() string
+		Quote() string
+	}
+
 	OptionType int
 
 	OptionSymbol interface {
@@ -72,6 +79,11 @@ type (
 		BaseSymbolProperty
 		base  string
 		quote string
+	}
+
+	BaseMarginSymbol struct {
+		*BaseSpotSymbol
+		lever decimal.Decimal
 	}
 
 	FuturesSymbol interface {
@@ -206,6 +218,17 @@ func (bss *BaseSpotSymbol) Base() string {
 
 func (bss *BaseSpotSymbol) Quote() string {
 	return bss.quote
+}
+
+func NewBaseMarginSymbol(base, quote string, cfg SymbolConfig, lever decimal.Decimal, raw interface{}) *BaseMarginSymbol {
+	return &BaseMarginSymbol{
+		BaseSpotSymbol: NewBaseSpotSymbol(base, quote, cfg, raw),
+		lever:          lever,
+	}
+}
+
+func (ms *BaseMarginSymbol) Lever() decimal.Decimal {
+	return ms.lever
 }
 
 func NewBaseFuturesSymbolWithCfg(index string, st time.Time, typ FutureType, cfg SymbolConfig, raw interface{}) *BaseFutureSymbol {

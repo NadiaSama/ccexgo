@@ -6,8 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strconv"
+	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -52,6 +56,34 @@ type (
 		ClOrdID string `json:"clOrdId"`
 	}
 
+	FillsReq struct {
+		InstType InstType
+		InstID   string
+		OrdID    string
+		Uly      string
+		After    string
+		Before   string
+		Limit    string
+	}
+
+	Fill struct {
+		InstType InstType  `json:"instType"`
+		InstID   string    `json:"instId"`
+		TradeID  string    `json:"tradeId"`
+		OrdID    string    `json:"ordId"`
+		ClOrdID  string    `json:"clOrdId"`
+		BillID   string    `json:"billId"`
+		Tag      string    `json:"tag"`
+		FIllPx   string    `json:"fillPx"`
+		FillSz   string    `json:"fillSz"`
+		Side     OrderSide `json:"side"`
+		PosSide  PosSide   `json:"posSide"`
+		ExecType ExecType  `json:"execType"`
+		FeeCcy   string    `json:"feeCcy"`
+		Fee      string    `json:"fee"`
+		Ts       string    `json:"ts"`
+	}
+
 	Order struct {
 		InstType    InstType      `json:"instType"`
 		InstId      string        `json:"instId"`
@@ -89,6 +121,16 @@ type (
 )
 
 const (
+	CreateOrderEndPoint = "/api/v5/trade/order"
+	FetchOrderEndPoint  = CreateOrderEndPoint
+	CancelOrderEndPoint = "/api/v5/trade/cancel-order"
+	FillsEndPoint       = "/api/v5/trade/fills"
+)
+
+const (
+	ExecTypeMaker ExecType = "M"
+	ExecTypeTaker ExecType = "T"
+
 	InstTypeSpot    InstType = "SPOT"
 	InstTypeMargin  InstType = "MARGIN"
 	InstTypeSwap    InstType = "SWAP"
@@ -129,12 +171,6 @@ const (
 	OrderCategoryDelivery           OrderCategory = "delivery"
 )
 
-const (
-	CreateOrderEndPoint = "/api/v5/trade/order"
-	FetchOrderEndPoint  = CreateOrderEndPoint
-	CancelOrderEndPoint = "/api/v5/trade/cancel-order"
-)
-
 var (
 	orderTypeMap     map[string]OrdType       = make(map[string]OrdType)
 	orderSideMap     map[string]OrderSide     = make(map[string]OrderSide)
@@ -143,6 +179,7 @@ var (
 	orderCategoryMap map[string]OrderCategory = make(map[string]OrderCategory)
 	orderStateMap    map[string]OrderState    = make(map[string]OrderState)
 	instTypeMap      map[string]InstType      = make(map[string]InstType)
+	execTypeMap      map[string]ExecType      = make(map[string]ExecType)
 )
 
 func init() {
@@ -220,6 +257,14 @@ func init() {
 	for _, t := range oss {
 		orderStateMap[string(t)] = t
 	}
+
+	ess := []ExecType{
+		ExecTypeMaker,
+		ExecTypeTaker,
+	}
+	for _, e := range ess {
+		execTypeMap[string(e)] = e
+	}
 }
 
 func (rc *RestClient) CreateOrder(ctx context.Context, req *CreateOrderReq) (*CreateOrderResp, error) {
@@ -256,6 +301,161 @@ func (rc *RestClient) FetchOrder(ctx context.Context, req *FetchOrderReq) (*Orde
 	}
 
 	return &ret[0], nil
+}
+
+func (rc *RestClient) Fills(ctx context.Context, param *FillsReq) ([]Fill, error) {
+	values := url.Values{}
+	if param.InstType != "" && param.InstType != InstTypeAny {
+		values.Add("instType", string(param.InstType))
+	}
+
+	if param.InstID != "" {
+		values.Add("instId", param.InstID)
+	}
+
+	if param.Uly != "" {
+		values.Add("uly", param.Uly)
+	}
+
+	if param.OrdID != "" {
+		values.Add("ordId", param.OrdID)
+	}
+
+	if param.After != "" {
+		values.Add("after", param.After)
+	}
+
+	if param.Before != "" {
+		values.Add("before", param.Before)
+	}
+
+	if param.Limit != "" {
+		values.Add("limit", param.Limit)
+	}
+
+	var ret []Fill
+	if err := rc.Request(ctx, http.MethodGet, FillsEndPoint, values, nil, true, &ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
+}
+
+func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]exchange.Trade, error) {
+	var it InstType
+	switch req.Symbol.(type) {
+	case exchange.MarginSymbol:
+		it = InstTypeMargin
+
+	case exchange.OptionSymbol:
+		it = InstTypeOption
+
+	case exchange.SwapSymbol:
+		it = InstTypeSwap
+
+	case exchange.SpotSymbol:
+		it = InstTypeSpot
+
+	}
+
+	var limit string
+	if req.Limit != 0 {
+		limit = strconv.Itoa(req.Limit)
+	}
+
+	fills, err := rc.Fills(ctx, &FillsReq{
+		InstType: it,
+		InstID:   req.Symbol.String(),
+		After:    req.EndID,
+		Before:   req.StartID,
+		Limit:    limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []exchange.Trade{}
+	for _, f := range fills {
+		t, err := f.Parse()
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, *t)
+	}
+	return ret, nil
+}
+
+func (f *Fill) Parse() (*exchange.Trade, error) {
+	var (
+		symbol exchange.Symbol
+		err    error
+	)
+
+	switch f.InstType {
+	case InstTypeSwap:
+		symbol, err = ParseSwapSymbol(f.InstID)
+		if err != nil {
+			return nil, err
+		}
+
+	case InstTypeMargin:
+		symbol, err = ParseMarginSymbol(f.InstID)
+		if err != nil {
+			return nil, err
+		}
+
+	case InstTypeSpot:
+		symbol, err = ParseSpotSymbol(f.InstID)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+
+	var (
+		fee    decimal.Decimal
+		price  decimal.Decimal
+		amount decimal.Decimal
+		ts     time.Time
+	)
+
+	fee, err = decimal.NewFromString(f.Fee)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invalid fee")
+	}
+	price, err = decimal.NewFromString(f.FIllPx)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invalid px")
+	}
+	amount, err = decimal.NewFromString(f.FillSz)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invalid sz")
+	}
+	ts, err = ParseTimestamp(f.Ts)
+	if err != nil {
+		return nil, errors.WithMessage(err, "invalid ts")
+	}
+
+	var side exchange.OrderSide
+	if f.Side == OrderSideBuy {
+		side = exchange.OrderSideBuy
+	} else {
+		side = exchange.OrderSideSell
+	}
+
+	return &exchange.Trade{
+		ID:          f.BillID,
+		OrderID:     f.OrdID,
+		Symbol:      symbol,
+		Amount:      amount,
+		Price:       price,
+		Fee:         fee,
+		FeeCurrency: f.FeeCcy,
+		IsMaker:     f.ExecType == ExecTypeMaker,
+		Raw:         *f,
+		Side:        side,
+		Time:        ts,
+	}, nil
 }
 
 func (rc *RestClient) doPostJSON(ctx context.Context, endPoint string, obj interface{}, dst interface{}) error {

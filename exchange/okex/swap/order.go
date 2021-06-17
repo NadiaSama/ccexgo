@@ -50,7 +50,7 @@ type (
 		ClientOID    string `json:"client_oid"`
 		Size         string `json:"size"`
 		Type         string `json:"type"`
-		OrderType    string `json"order_type"`
+		OrderType    string `json:"order_type"`
 		MatchPrice   string `json:"match_price"`
 		Price        string `json:"price"`
 		InstrumentID string `json:"instrument_id"`

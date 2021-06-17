@@ -43,20 +43,20 @@ func (rc *RestClient) Fills(ctx context.Context, instrumentID string, orderID st
 	return ret, nil
 }
 
-func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
+func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]exchange.Trade, error) {
 	fills, err := rc.Fills(ctx, req.Symbol.String(), "", req.StartID, req.EndID, strconv.Itoa(req.Limit))
 	if err != nil {
 		return nil, err
 	}
 
-	var ret []*exchange.Trade
+	var ret []exchange.Trade
 	for i := range fills {
 		fill := fills[i]
 		trade, err := fill.Parse()
 		if err != nil {
 			return nil, errors.WithMessage(err, "parse fill error")
 		}
-		ret = append(ret, trade)
+		ret = append(ret, *trade)
 	}
 	return ret, nil
 }

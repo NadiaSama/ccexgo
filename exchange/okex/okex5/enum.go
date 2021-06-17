@@ -19,6 +19,7 @@ type (
 	OrderState    string
 	OrderCategory string
 	InstType      string
+	ExecType      string
 )
 
 func (it *InstType) UnmarshalJSON(raw []byte) error {
@@ -47,6 +48,10 @@ func (oc *OrderCategory) UnmarshalJSON(raw []byte) error {
 
 func (ps *PosSide) UnmarshalJSON(raw []byte) error {
 	return assignMapPtr(posSideMap, "posSide", raw, ps)
+}
+
+func (et *ExecType) UnmarshalJSON(raw []byte) error {
+	return assignMapPtr(execTypeMap, "execType", raw, et)
 }
 
 func assignMapPtr(dict interface{}, typName string, rawKey []byte, dst interface{}) error {

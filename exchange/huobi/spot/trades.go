@@ -81,7 +81,7 @@ func (rc *RestClient) MatchResults(ctx context.Context, symbol string, types []s
 	return mr, nil
 }
 
-func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]*exchange.Trade, error) {
+func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) ([]exchange.Trade, error) {
 	if req.EndID != "" || req.StartID != "" {
 		return nil, errors.Errorf("id is not support yet")
 	}
@@ -100,13 +100,13 @@ func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) (
 		return nil, err
 	}
 
-	ret := []*exchange.Trade{}
+	ret := []exchange.Trade{}
 	for _, m := range mr {
 		t, err := m.Parse()
 		if err != nil {
 			return nil, errors.WithMessage(err, "parse match result fail")
 		}
-		ret = append(ret, t)
+		ret = append(ret, *t)
 	}
 	return ret, nil
 }
