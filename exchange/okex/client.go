@@ -96,7 +96,7 @@ func (rc *RestClient) request(ctx context.Context, method, endPoint string, para
 			return errors.Errorf("bad response %s", string(body))
 		}
 		if err := json.Unmarshal(body, dst); err != nil {
-			return err
+			return errors.WithMessage(err, "unmarshal response fail")
 		}
 		return nil
 	})
