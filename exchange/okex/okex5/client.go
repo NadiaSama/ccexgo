@@ -21,6 +21,12 @@ type (
 	}
 )
 
+func NewRestClient(key, secret, pass string) *RestClient {
+	return &RestClient{
+		client: okex.NewRestClient(key, secret, pass),
+	}
+}
+
 func NewTestRestClient(key, secret, pass string) *RestClient {
 	return &RestClient{
 		client: okex.NewTESTRestClient(key, secret, pass),
