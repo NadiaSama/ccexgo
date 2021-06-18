@@ -4,7 +4,9 @@ import (
 	"context"
 	"io"
 	"net/url"
+	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/okex"
 	"github.com/pkg/errors"
 )
@@ -48,4 +50,20 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 	}
 
 	return nil
+}
+
+func (rc *RestClient) Property() exchange.Property {
+	return exchange.Property{
+		Trades: &exchange.TradesProp{
+			MaxDuration: time.Hour * 168,
+			SuportID:    true,
+			SupportTime: false,
+		},
+
+		Finance: &exchange.FinanceProp{
+			MaxDuration: time.Hour * 168,
+			SuportID:    true,
+			SupportTime: false,
+		},
+	}
 }
