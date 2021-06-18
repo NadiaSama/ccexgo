@@ -17,7 +17,7 @@ func (rc *RestClient) Ledgers(ctx context.Context, instrumentID string, before, 
 	return ret, err
 }
 
-func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]*exchange.Finance, error) {
+func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]exchange.Finance, error) {
 	var symbol string
 	if req.Symbol != nil {
 		symbol = req.Symbol.String()
@@ -31,7 +31,7 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 	if err != nil {
 		return nil, err
 	}
-	ret := []*exchange.Finance{}
+	ret := []exchange.Finance{}
 
 	for i := range ledgers {
 		ledger := ledgers[i]
@@ -39,7 +39,7 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 		if err != nil {
 			return nil, errors.WithMessage(err, "parse ledger fail")
 		}
-		ret = append(ret, f)
+		ret = append(ret, *f)
 	}
 	return ret, nil
 }

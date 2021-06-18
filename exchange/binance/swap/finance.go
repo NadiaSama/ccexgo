@@ -70,7 +70,7 @@ func (rc *RestClient) Income(ctx context.Context, symbol string, it IncomeType, 
 	return ret, nil
 }
 
-func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]*exchange.Finance, error) {
+func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam) ([]exchange.Finance, error) {
 	var (
 		s   string
 		typ IncomeType
@@ -88,14 +88,14 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 		return nil, err
 	}
 
-	ret := []*exchange.Finance{}
+	ret := []exchange.Finance{}
 	for i := range incomes {
 		income := incomes[i]
 		finance, err := income.Parse()
 		if err != nil {
 			return nil, errors.WithMessage(err, "parse income fail")
 		}
-		ret = append(ret, finance)
+		ret = append(ret, *finance)
 	}
 	return ret, nil
 }
