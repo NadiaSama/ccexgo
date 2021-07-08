@@ -45,11 +45,66 @@ type (
 		Before   string
 		Limit    string
 	}
+
+	InterestAccruedReq struct {
+		InstID  string
+		Ccy     string
+		MgnMode MgnMode
+		After   string
+		Before  string
+		Limit   string
+	}
+
+	InterestAccrued struct {
+		InstID       string
+		Ccy          string
+		MgnMode      MgnMode
+		InterestRate string
+		Liab         string
+		Interest     string
+		TS           string
+	}
 )
 
 const (
-	BillsEndPoint = "/api/v5/account/bills"
+	BillsEndPoint           = "/api/v5/account/bills"
+	InterestAccruedEndPoint = "/api/v5/account/interest-accrued"
 )
+
+func (rc *RestClient) InterestAccrued(ctx context.Context, iar *InterestAccruedReq) ([]InterestAccrued, error) {
+	values := url.Values{}
+	if iar.InstID != "" {
+		values.Add("instId", iar.InstID)
+	}
+
+	if iar.Ccy != "" {
+		values.Add("ccy", iar.Ccy)
+	}
+
+	if iar.MgnMode != "" {
+		values.Add("mgnMode", string(iar.MgnMode))
+	}
+
+	if iar.Before != "" {
+		values.Add("before", iar.Before)
+	}
+
+	if iar.After != "" {
+		values.Add("after", iar.After)
+	}
+
+	if iar.Limit != "" {
+		values.Add("limit", iar.Limit)
+	}
+
+	var ret []InterestAccrued
+
+	if err := rc.Request(ctx, http.MethodGet, InterestAccruedEndPoint, values, nil, true, &ret); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
 
 func (rc *RestClient) Bills(ctx context.Context, req *BillReq) ([]Bill, error) {
 	values := url.Values{}
@@ -125,7 +180,7 @@ func (rc *RestClient) Finance(ctx context.Context, req *exchange.FinanceReqParam
 	if req.Type == exchange.FinanceTypeFunding {
 		param.Type = "8"
 	} else if req.Type == exchange.FinanceTypeInterest {
-		param.Type = "7"
+		return nil, errors.Errorf("finance interest should be get via InterestAccrued")
 	} else {
 		return nil, errors.Errorf("other type is not support yet")
 	}
