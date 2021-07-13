@@ -2,6 +2,7 @@ package huobi
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
@@ -15,6 +16,11 @@ type (
 	}
 )
 
+var (
+	//SkipError means the response can not be handled directly by Parse method
+	SkipError = errors.New("skip error")
+)
+
 func (r *Response) Parse() (rpc.Response, error) {
 	if r.Ping != 0 {
 		return &rpc.Notify{
@@ -23,13 +29,5 @@ func (r *Response) Parse() (rpc.Response, error) {
 		}, nil
 	}
 
-	trades, err := ParseTrades(r.Tick)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rpc.Notify{
-		Method: r.Ch,
-		Params: trades,
-	}, nil
+	return nil, SkipError
 }

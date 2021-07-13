@@ -7,6 +7,7 @@ import (
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -35,20 +36,19 @@ const (
 	ContractEndPoint = "/swap-api/v1/swap_contract_info"
 )
 
-func newSymbol(index string) *Symbol {
-	return &Symbol{
-		exchange.NewBaseSwapSymbol(index),
-	}
-}
+var (
+	contractMap = map[string]*Symbol{}
+)
 
 func (s *Symbol) String() string {
 	return s.Index()
 }
 
-//TODO ParseSwapSymbol? ParseSymbol?
-func (rc *RestClient) initSymbol(ctx context.Context) error {
+func Init(ctx context.Context) error {
+	rc := NewRestClient("", "")
+
 	var ci ContractInfo
-	if err := rc.Request(ctx, http.MethodGet, ContractEndPoint, nil, nil, false, &ci); err != nil {
+	if err := rc.RequestWithRawResp(ctx, http.MethodGet, ContractEndPoint, nil, nil, false, &ci); err != nil {
 		return errors.WithMessagef(err, "get contract info fail")
 	}
 
@@ -56,16 +56,29 @@ func (rc *RestClient) initSymbol(ctx context.Context) error {
 		return errors.Errorf("got huobi contract info fail")
 	}
 
-	for _, data := range ci.Data {
-		rc.swapCodeMap[data.Symbol] = newSymbol(data.ContractCode)
+	for i := range ci.Data {
+		data := ci.Data[i]
+		cv := decimal.NewFromFloat(data.ContractSize)
+		symbol := &Symbol{
+			exchange.NewBaseSwapSymbolWithCfg(data.ContractCode, cv, exchange.SymbolConfig{
+				AmountPrecision: decimal.NewFromFloat(1.0),
+				PricePrecision:  decimal.NewFromFloat(data.PriceTick),
+				AmountMin:       decimal.NewFromInt(1),
+				AmountMax:       decimal.Zero,
+			}, &data),
+		}
+
+		contractMap[data.ContractCode] = symbol
 	}
+
 	return nil
 }
 
-func (rc *RestClient) GetSwapContract(symbol string) (*Symbol, error) {
-	val, ok := rc.swapCodeMap[symbol]
+func ParseSymbol(sym string) (exchange.SwapSymbol, error) {
+	s, ok := contractMap[sym]
 	if !ok {
-		return nil, errors.Errorf("unkown symbol '%s'", symbol)
+		return nil, errors.Errorf("unsupport symbol %s", sym)
 	}
-	return val, nil
+
+	return s, nil
 }

@@ -30,5 +30,23 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, errors.WithMessagef(err, "bad response '%s'", string(msg))
 	}
 
-	return resp.Parse()
+	ret, err := resp.Parse()
+
+	if ret != nil {
+		return ret, nil
+	}
+
+	if err != nil && err != huobi.SkipError {
+		return nil, err
+	}
+
+	r, err := ParseDepth(resp.Tick)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rpc.Notify{
+		Method: resp.Ch,
+		Params: r,
+	}, nil
 }

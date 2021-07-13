@@ -50,6 +50,29 @@ func NewRestClient(key, secret, host string) *RestClient {
 	}
 }
 
+func (rc *RestClient) RequestWithRawResp(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
+	req, err := rc.buildRequest(ctx, method, rc.apiHost, endPoint, param, body, sign)
+	if err != nil {
+		return err
+	}
+	return request.DoReqWithCtx(req, func(resp *http.Response, ierr error) error {
+		if ierr != nil {
+			return ierr
+		}
+		content, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		if err := json.Unmarshal(content, dst); err != nil {
+			return errors.WithMessagef(err, "unmarshal %s fail", string(content))
+		}
+
+		return nil
+	})
+}
+
 func (rc *RestClient) Request(ctx context.Context, method string, endPoint string, param url.Values, body io.Reader, sign bool, dst interface{}) error {
 	req, err := rc.buildRequest(ctx, method, rc.apiHost, endPoint, param, body, sign)
 	if err != nil {
