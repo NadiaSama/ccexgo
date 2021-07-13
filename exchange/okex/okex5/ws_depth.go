@@ -3,6 +3,7 @@ package okex5
 import (
 	"encoding/json"
 	"hash/crc32"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,8 +70,8 @@ func NewBooks50TBTChannel(instId string) exchange.Channel {
 
 func NewDepthDS() *DepthDS {
 	ret := &DepthDS{
-		bids: btree.NewWith(32, utils.StringComparator),
-		asks: btree.NewWith(32, utils.StringComparator),
+		bids: btree.NewWith(32, floatComparator),
+		asks: btree.NewWith(32, floatComparator),
 	}
 
 	return ret
@@ -164,4 +165,12 @@ func updateBook(dst *btree.Tree, elems [][4]string) {
 			dst.Put(key, e)
 		}
 	}
+}
+
+func floatComparator(a, b interface{}) int {
+	sa := a.(string)
+	sb := b.(string)
+	fa, _ := strconv.ParseFloat(sa, 64)
+	fb, _ := strconv.ParseFloat(sb, 64)
+	return utils.Float64Comparator(fa, fb)
 }
