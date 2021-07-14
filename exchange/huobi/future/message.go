@@ -48,5 +48,5 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		resp.Ch = strings.Join(f, ".")
 	}
 
-	return resp.Parse()
+	return resp.Parse(raw)
 }

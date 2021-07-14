@@ -9,10 +9,13 @@ import (
 
 type (
 	Response struct {
-		Ping int             `json:"ping"`
-		Ch   string          `json:"ch"`
-		TS   int             `json:"ts"`
-		Tick json.RawMessage `json:"tick"`
+		Ping   int             `json:"ping,omitempty"`
+		Ch     string          `json:"ch,omitempty"`
+		TS     int64           `json:"ts,omitempty"`
+		Tick   json.RawMessage `json:"tick,omitempty"`
+		ID     string          `json:"id,omitempty"`
+		Status string          `json:"status,omitempty"`
+		Subbed string          `json:"subbed,omitempty"`
 	}
 )
 
@@ -21,11 +24,18 @@ var (
 	SkipError = errors.New("skip error")
 )
 
-func (r *Response) Parse() (rpc.Response, error) {
+func (r *Response) Parse(raw []byte) (rpc.Response, error) {
 	if r.Ping != 0 {
 		return &rpc.Notify{
 			Method: MethodPing,
 			Params: r.Ping,
+		}, nil
+	}
+
+	if r.ID != "" {
+		return &rpc.Result{
+			ID:     r.ID,
+			Result: raw,
 		}, nil
 	}
 

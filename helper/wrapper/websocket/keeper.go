@@ -69,8 +69,8 @@ func (k *Keeper) connLoop(ctx context.Context) {
 		case <-k.conn.Done():
 			if err := k.conn.Error(); err != nil {
 				k.pushErrorClose(err)
-				return
 			}
+			return
 		case <-timer.C:
 			timer, err = k.updateSubscribe(ctx)
 			if err != nil {
