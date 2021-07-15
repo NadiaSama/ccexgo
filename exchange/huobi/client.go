@@ -147,10 +147,14 @@ func (rc *RestClient) buildRequest(ctx context.Context, method, host string, end
 }
 
 func (rc *RestClient) signature(method, host, path, query string) string {
+	return Signature(rc.secret, method, host, path, query)
+}
+
+func Signature(secret, method, host, path, query string) string {
 	fields := []string{method, host, path, query}
 	raw := strings.Join(fields, "\n")
 
-	hash := hmac.New(sha256.New, []byte(rc.secret))
+	hash := hmac.New(sha256.New, []byte(secret))
 	hash.Write([]byte(raw))
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
