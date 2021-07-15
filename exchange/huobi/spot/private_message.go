@@ -2,7 +2,6 @@ package spot
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 	"github.com/pkg/errors"
@@ -18,10 +17,10 @@ type (
 		Params interface{} `json:"params,omitempty"`
 	}
 	PrivateWSResp struct {
-		Action string                 `json:"action"`
-		Code   int                    `json:"code"`
-		Ch     string                 `json:"ch"`
-		Data   map[string]interface{} `json:"data"`
+		Action string          `json:"action"`
+		Code   int             `json:"code"`
+		Ch     string          `json:"ch"`
+		Data   json.RawMessage `json:"data"`
 	}
 )
 
@@ -30,6 +29,7 @@ const (
 	ActionPong = "pong"
 	ActionReq  = "req"
 	ActionSub  = "sub"
+	ActionPush = "push"
 )
 
 func NewPrivateCodeC() *PrivateCodeC {
@@ -38,13 +38,11 @@ func NewPrivateCodeC() *PrivateCodeC {
 
 func (pcc *PrivateCodeC) Encode(req rpc.Request) ([]byte, error) {
 	raw, err := json.Marshal(req.Params())
-	fmt.Printf("%s\n", string(raw))
 	return raw, err
 }
 
 func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 	var resp PrivateWSResp
-	fmt.Printf("%s\n", string(raw))
 	if err := json.Unmarshal(raw, &resp); err != nil {
 		return nil, err
 	}
@@ -52,7 +50,6 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 	if resp.Action == ActionPing {
 		return &rpc.Notify{Method: ActionPing, Params: resp.Data}, nil
 	}
-
 	if resp.Action == ActionReq || resp.Action == ActionSub {
 		var err error
 		if resp.Code != 200 {
@@ -65,5 +62,16 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 		}, nil
 	}
 
+	if resp.Action == ActionPush {
+		r, err := ParseOrder(resp.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		return &rpc.Notify{
+			Method: resp.Ch,
+			Params: r,
+		}, nil
+	}
 	return nil, nil
 }

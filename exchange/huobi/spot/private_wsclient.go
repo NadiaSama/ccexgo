@@ -44,6 +44,24 @@ func (pws *PrivateWSClient) Run(ctx context.Context) error {
 	return pws.Auth(ctx)
 }
 
+func (pws *PrivateWSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("invalid channeld num=%d", len(channels))
+	}
+
+	params := PrivateWSReq{
+		Action: ActionSub,
+		Ch:     channels[0].String(),
+	}
+
+	var resp PrivateWSResp
+	if err := pws.Call(ctx, params.Ch, params.Action, &params, &resp); err != nil {
+		return errors.WithMessage(err, "subscribe fail")
+	}
+
+	return nil
+}
+
 func (pws *PrivateWSClient) Handle(ctx context.Context, n *rpc.Notify) {
 	if n.Method == ActionPing {
 		go func() {
