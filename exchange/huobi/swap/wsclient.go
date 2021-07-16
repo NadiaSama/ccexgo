@@ -19,7 +19,7 @@ const (
 
 func NewWSClient(data chan interface{}) *WSClient {
 	return &WSClient{
-		future.NewWSClientDeriv(SwapWSAddr, NewCodeC(), data),
+		WSClientDeriv: future.NewWSClientDeriv(SwapWSAddr, NewCodeC(), data),
 	}
 }
 
