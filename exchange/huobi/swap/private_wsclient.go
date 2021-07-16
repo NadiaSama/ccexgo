@@ -43,11 +43,13 @@ type (
 		LeverRate      int         `json:"lever_rate"`
 		OrderID        int64       `json:"order_id"`
 		OrderIDStr     string      `json:"order_id_str"`
+		ClientOrderID  int64       `json:"client_order_id"`
 		OrderType      int         `json:"order_type"`
 		CreatedAt      int64       `json:"created_at"`
 		TradeVolume    int         `json:"trade_volume"`
 		TradeTurnOver  int         `json:"trade_turnover"`
 		Fee            float64     `json:"fee"`
+		FeeAsset       string      `json:"fee_asset"`
 		TradeAvgPrice  float64     `json:"trade_avg_price"`
 		CanceledAt     int64       `json:"canceled_at"`
 	}
@@ -99,6 +101,18 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 			ID:     "auth",
 			Error:  err,
 			Result: msg,
+		}, nil
+	}
+
+	if resp.Op == "notify" {
+		r, err := ParseOrder(&resp)
+		if err != nil {
+			return nil, err
+		}
+
+		return &rpc.Notify{
+			Method: resp.Topic,
+			Params: r,
 		}, nil
 	}
 
