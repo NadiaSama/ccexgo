@@ -84,11 +84,23 @@ type (
 		Ts       string    `json:"ts"`
 	}
 
+	OrdersHistoryReq struct {
+		InstType InstType      `json:"instType"`
+		Uly      string        `json:"uly"`
+		InstID   string        `json:"instId"`
+		OrdType  OrdType       `json:"ordType"`
+		State    string        `json:"state"`
+		Category OrderCategory `json:"category"`
+		After    string        `json:"after"`
+		Before   string        `json:"before"`
+		Limit    string        `json:"limit"`
+	}
+
 	Order struct {
 		InstType    InstType      `json:"instType"`
 		InstId      string        `json:"instId"`
 		Ccy         string        `json:"ccy"`
-		OrderID     string        `json:"orderId"`
+		OrderID     string        `json:"ordId"`
 		ClOrdID     string        `json:"clOrdId"`
 		Tag         string        `json:"tag"`
 		Px          string        `json:"px"`
@@ -165,6 +177,50 @@ func (rc *RestClient) FetchOrder(ctx context.Context, req *FetchOrderReq) (*Orde
 	}
 
 	return &ret[0], nil
+}
+
+func (rc *RestClient) OrdersHistory(ctx context.Context, param *OrdersHistoryReq) ([]Order, error) {
+	values := url.Values{}
+	values.Add("instType", string(param.InstType))
+
+	if param.InstID != "" {
+		values.Add("instId", param.InstID)
+	}
+
+	if param.Uly != "" {
+		values.Add("uly", param.Uly)
+	}
+
+	if param.OrdType != "" {
+		values.Add("ordType", string(param.OrdType))
+	}
+
+	if param.State != "" {
+		values.Add("state", param.State)
+	}
+
+	if param.After != "" {
+		values.Add("after", param.After)
+	}
+
+	if param.Before != "" {
+		values.Add("before", param.Before)
+	}
+
+	if param.Category != "" {
+		values.Add("category", string(param.Category))
+	}
+
+	if param.Limit != "" {
+		values.Add("limit", param.Limit)
+	}
+
+	var ret []Order
+	if err := rc.Request(ctx, http.MethodGet, "/api/v5/trade/orders-history", values, nil, true, &ret); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }
 
 func (rc *RestClient) Fills(ctx context.Context, param *FillsReq) ([]Fill, error) {
