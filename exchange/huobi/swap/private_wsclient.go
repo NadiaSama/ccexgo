@@ -3,7 +3,6 @@ package swap
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -27,31 +26,25 @@ type (
 	}
 
 	Response struct {
-		Op             string      `json:"op"`
-		TS             interface{} `json:"ts"` //ping message and auth message ts field have different type
-		CID            string      `json:"cid"`
-		ErrCode        int         `json:"err-code"`
-		Topic          string      `json:"topci"`
-		Symbol         string      `json:"symbol"`
-		ContractCode   string      `json:"contract_code"`
-		Volume         float64     `json:"volumen"`
-		Price          float64     `json:"price"`
-		OrderPriceType string      `json:"order_price_type"`
-		Direction      string      `json:"direction"`
-		Offset         string      `json:"offset"`
-		Status         int         `json:"status"`
-		LeverRate      int         `json:"lever_rate"`
-		OrderID        int64       `json:"order_id"`
-		OrderIDStr     string      `json:"order_id_str"`
-		ClientOrderID  int64       `json:"client_order_id"`
-		OrderType      int         `json:"order_type"`
-		CreatedAt      int64       `json:"created_at"`
-		TradeVolume    int         `json:"trade_volume"`
-		TradeTurnOver  int         `json:"trade_turnover"`
-		Fee            float64     `json:"fee"`
-		FeeAsset       string      `json:"fee_asset"`
-		TradeAvgPrice  float64     `json:"trade_avg_price"`
-		CanceledAt     int64       `json:"canceled_at"`
+		Op string `json:"op"`
+	}
+
+	subParam struct {
+		Op    string `json:"op"`
+		Cid   string `json:"cid"`
+		Topic string `json:"topic"`
+	}
+
+	PingResponse struct {
+		Op string `json:"op"`
+		TS string `json:"ts"`
+	}
+
+	AuthResponse struct {
+		Op      string `json:"op"`
+		ErrCode int    `json:"err-code"`
+		TS      int64  `json:"ts"`
+		ErrMsg  string `json:"err-msg"`
 	}
 )
 
@@ -68,7 +61,6 @@ func NewPrivateCodeC() *PrivateCodeC {
 func (pcc *PrivateCodeC) Encode(req rpc.Request) ([]byte, error) {
 	param := req.Params()
 	r, e := json.Marshal(param)
-	fmt.Printf("%s\n", string(r))
 	return r, e
 }
 
@@ -77,7 +69,6 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%s\n", string(msg))
 
 	var resp Response
 	if err := json.Unmarshal(msg, &resp); err != nil {
@@ -85,15 +76,23 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	if resp.Op == "ping" {
+		var pr PingResponse
+		if err := json.Unmarshal(msg, &pr); err != nil {
+			return nil, err
+		}
 		return &rpc.Notify{
 			Method: "pong",
-			Params: resp.TS,
+			Params: pr.TS,
 		}, nil
 	}
 
 	if resp.Op == "auth" {
+		var ar AuthResponse
+		if err := json.Unmarshal(msg, &ar); err != nil {
+			return nil, err
+		}
 		var err error
-		if resp.ErrCode != 0 {
+		if ar.ErrCode != 0 {
 			err = errors.Errorf("error happend %s", string(msg))
 		}
 
@@ -105,13 +104,14 @@ func (pcc *PrivateCodeC) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	if resp.Op == "notify" {
-		r, err := ParseOrder(&resp)
+		r, err := ParseOrder(msg)
 		if err != nil {
 			return nil, err
 		}
 
+		op := r.Raw.(*OrderNotify)
 		return &rpc.Notify{
-			Method: resp.Topic,
+			Method: op.Topic,
 			Params: r,
 		}, nil
 	}
@@ -145,6 +145,21 @@ func (ws *PrivateWSClient) Auth(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (ws *PrivateWSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("only 1 channel can be subcribed")
+	}
+
+	param := subParam{
+		Op:    "sub",
+		Cid:   "123",
+		Topic: channels[0].String(),
+	}
+
+	err := ws.Call(ctx, "", "", param, nil)
+	return errors.WithMessage(err, "subscribe fail")
 }
 
 func (ws *PrivateWSClient) Handle(ctx context.Context, notify *rpc.Notify) {

@@ -28,19 +28,27 @@ type (
 
 	SwapCancelError struct {
 		OrderID string `json:"order_id"`
-		ErrCode string `json:"err_code"`
+		ErrCode int    `json:"err_code"`
 		ErrMsg  string `json:"err_msg"`
 	}
 
 	SwapCancelResp struct {
 		Errors    []SwapCancelError `json:"errors"`
-		Successes string            `json:"successes"`
+		Successes string            `json:"successes"` //id1,id2,id3 ...
 	}
 )
 
 const (
 	SwapOrderEndPoint  = "/swap-api/v1/swap_order"
 	SwapCancelEndPoint = "/swap-api/v1/swap_cancel"
+
+	OrderDirectionBuy  = "buy"
+	OrderDirectionSell = "sell"
+	OrderOffsetOpen    = "open"
+	OrderOffsetClose   = "close"
+
+	OrderPriceLimit  = "limit"
+	OrderPriceMarket = "opponent"
 )
 
 func NewOrderReq(contractCode string, volume int, direction string, offset string, lever int, orderPriceType string) *OrderReq {
