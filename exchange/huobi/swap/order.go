@@ -1,13 +1,9 @@
 package swap
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 type (
@@ -111,26 +107,16 @@ func (scr *SwapCancelReq) Serialize() ([]byte, error) {
 }
 
 func (rc *RestClient) SwapOrder(ctx context.Context, req *OrderReq) (*OrderResp, error) {
-	bs, err := req.Serialize()
-	if err != nil {
-		return nil, errors.WithMessage(err, "serialize fail")
-	}
-	buf := bytes.NewBuffer(bs)
 	var resp OrderResp
-	if err := rc.Request(ctx, http.MethodPost, SwapOrderEndPoint, nil, buf, true, &resp); err != nil {
+	if err := rc.PrivatePostReq(ctx, SwapOrderEndPoint, req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
 }
 
 func (rc *RestClient) SwapCancel(ctx context.Context, req *SwapCancelReq) (*SwapCancelResp, error) {
-	bs, err := req.Serialize()
-	if err != nil {
-		return nil, errors.WithMessage(err, "serialize fail")
-	}
-	buf := bytes.NewBuffer(bs)
 	var resp SwapCancelResp
-	if err := rc.Request(ctx, http.MethodPost, SwapCancelEndPoint, nil, buf, true, &resp); err != nil {
+	if err := rc.PrivatePostReq(ctx, SwapCancelEndPoint, req, &resp); err != nil {
 		return nil, err
 	}
 
