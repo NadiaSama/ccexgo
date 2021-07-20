@@ -6,6 +6,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -16,9 +17,15 @@ type (
 
 	//TODO add precision
 	Symbol struct {
-		BaseCurrency string `json:"base-currency"`
-		QuoteCurreny string `json:"quote-currency"`
-		Symbol       string `json:"symbol"`
+		BaseCurrency    string  `json:"base-currency"`
+		QuoteCurreny    string  `json:"quote-currency"`
+		Symbol          string  `json:"symbol"`
+		MinOrderAmt     float64 `json:"min-order-amt"`
+		MaxOrderAmt     float64 `json:"max-order-amt"`
+		MinOrderValue   float64 `json:"min-order-value"`
+		PricePrecision  int     `json:"price-precision"`
+		AmountPrecision int     `json:"amount-precision"`
+		ValuePrecision  int     `json:"value-precision"`
 	}
 
 	SymbolResp struct {
@@ -78,8 +85,15 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error
 }
 
 func (s *Symbol) Parse() (exchange.SpotSymbol, error) {
+	cfg := exchange.SymbolConfig{
+		AmountMin:       decimal.NewFromFloat(s.MinOrderAmt),
+		AmountMax:       decimal.NewFromFloat(s.MaxOrderAmt),
+		AmountPrecision: decimal.NewFromInt(10).Pow(decimal.NewFromInt(int64(s.AmountPrecision) * -1)),
+		PricePrecision:  decimal.NewFromInt(10).Pow(decimal.NewFromInt(int64(s.PricePrecision) * -1)),
+		ValuePrecision:  decimal.NewFromInt(10).Pow(decimal.NewFromInt(int64(s.ValuePrecision) * -1)),
+	}
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(s.BaseCurrency, s.QuoteCurreny, exchange.SymbolConfig{}, s),
+		exchange.NewBaseSpotSymbol(s.BaseCurrency, s.QuoteCurreny, cfg, s),
 		s.Symbol,
 	}, nil
 }

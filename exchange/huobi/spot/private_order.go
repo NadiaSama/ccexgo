@@ -95,30 +95,13 @@ func (od *OrderData) Parse() (*exchange.Order, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	status, ok := orderStatusMap[od.OrderStatus]
-	if !ok {
-		return nil, errors.Errorf("unkown order status '%s'", od.OrderStatus)
+	status, err := ParseOrderStatus(od.OrderStatus)
+	if err != nil {
+		return nil, err
 	}
-
-	fields := strings.SplitN(od.Type, "-", 2)
-
-	var side exchange.OrderSide
-	if fields[0] == "buy" {
-		side = exchange.OrderSideBuy
-	} else if fields[0] == "sell" {
-		side = exchange.OrderSideSell
-	} else {
-		return nil, errors.Errorf("parse order side fail unkown order type '%s'", od.Type)
-	}
-
-	var typ exchange.OrderType
-	if strings.HasPrefix(fields[1], "limit") {
-		typ = exchange.OrderTypeLimit
-	} else if strings.HasPrefix(fields[1], "market") {
-		typ = exchange.OrderTypeMarket
-	} else {
-		return nil, errors.Errorf("parse order type fail unkown order type '%s'", od.Type)
+	side, typ, err := ParseOrderType(od.Type)
+	if err != nil {
+		return nil, err
 	}
 
 	ret := exchange.Order{
@@ -160,4 +143,36 @@ func (od *OrderData) Parse() (*exchange.Order, error) {
 	}
 	ret.Raw = od
 	return &ret, nil
+}
+
+func ParseOrderStatus(state string) (exchange.OrderStatus, error) {
+	if status, ok := orderStatusMap[state]; !ok {
+		return status, errors.Errorf("unkown order status '%s'", state)
+	} else {
+		return status, nil
+	}
+}
+
+func ParseOrderType(oType string) (exchange.OrderSide, exchange.OrderType, error) {
+	fields := strings.SplitN(oType, "-", 2)
+
+	var side exchange.OrderSide
+	var typ exchange.OrderType
+	if fields[0] == "buy" {
+		side = exchange.OrderSideBuy
+	} else if fields[0] == "sell" {
+		side = exchange.OrderSideSell
+	} else {
+		return side, typ, errors.Errorf("parse order side fail unkown order type '%s'", oType)
+	}
+
+	if strings.HasPrefix(fields[1], "limit") {
+		typ = exchange.OrderTypeLimit
+	} else if strings.HasPrefix(fields[1], "market") {
+		typ = exchange.OrderTypeMarket
+	} else {
+		return side, typ, errors.Errorf("parse order type fail unkown order type '%s'", oType)
+	}
+
+	return side, typ, nil
 }
