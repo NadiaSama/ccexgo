@@ -23,7 +23,7 @@ type (
 		ID            string  `json:"id"`
 		TradeVolume   int     `json:"trade_volume"`
 		TradePrice    float64 `json:"trade_price"`
-		TradeTurnOver int     `json:"trade_turnover"`
+		TradeTurnOver float64 `json:"trade_turnover"`
 		CreatedAt     int64   `json:"created_at"`
 		Profit        float64 `json:"profit"`
 		RealProfit    float64 `json:"real_profit"`
@@ -48,7 +48,7 @@ type (
 		OrderType      int                `json:"order_type"`
 		CreatedAt      int64              `json:"created_at"`
 		TradeVolume    int                `json:"trade_volume"`
-		TradeTurnOver  int                `json:"trade_turnover"`
+		TradeTurnOver  float64            `json:"trade_turnover"`
 		Fee            float64            `json:"fee"`
 		FeeAsset       string             `json:"fee_asset"`
 		TradeAvgPrice  float64            `json:"trade_avg_price"`
