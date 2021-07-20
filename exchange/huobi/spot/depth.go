@@ -40,6 +40,7 @@ type (
 	}
 
 	//MBPDepthDS build depth according incremental updates and refresh message
+	//the ds is inited which means the refresh message has been push int ods
 	MBPDepthDS struct {
 		bids       *btree.Tree
 		asks       *btree.Tree
@@ -79,7 +80,7 @@ func NewMBPDepthDS(symbol exchange.Symbol) *MBPDepthDS {
 	}
 }
 
-//Push add incremental updates into ds
+//Push add incremental updates into ds, return wether the has have been inited
 func (ds *MBPDepthDS) Push(d *Depth, ts time.Time) (inited bool, err error) {
 	//make sure seqNum is consistent
 	if ds.lastSeqNum != 0 && ds.lastSeqNum != d.PrevSeqNum {

@@ -26,12 +26,19 @@ type (
 		TS      int64
 		Version int
 	}
+
+	DepthSize int
 )
 
-func NewDepthHighFreq(symbol exchange.SwapSymbol, size int) exchange.Channel {
+const (
+	DepthSize20  DepthSize = 20
+	DepthSize150 DepthSize = 150
+)
+
+func NewDepthHighFreq(symbol string, size DepthSize) exchange.Channel {
 	return &DepthHighFreqChannel{
-		contractCode: symbol.String(),
-		size:         size,
+		contractCode: symbol,
+		size:         int(size),
 	}
 }
 
