@@ -28,5 +28,9 @@ func (rc *RestClient) Books(ctx context.Context, instId string, sz string) (*Dep
 		return nil, err
 	}
 
+	if len(ret) == 0 {
+		return nil, errors.Errorf("no depth")
+	}
+
 	return &ret[0], nil
 }
