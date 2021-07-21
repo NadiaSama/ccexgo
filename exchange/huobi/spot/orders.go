@@ -194,23 +194,23 @@ func (r *OrdersResp) Transform() (*exchange.Order, error) {
 		return nil, err
 	}
 
-	amount, err := decimal.NewFromString(r.Data.Amount)
+	amount, err := parseStringToDecimal(r.Data.Amount)
 	if err != nil {
 		return nil, err
 	}
-	price, err := decimal.NewFromString(r.Data.Price)
+	price, err := parseStringToDecimal(r.Data.Price)
 	if err != nil {
 		return nil, err
 	}
-	filled, err := decimal.NewFromString(r.Data.FilledAmount)
+	filled, err := parseStringToDecimal(r.Data.FilledAmount)
 	if err != nil {
 		return nil, err
 	}
-	fees, err := decimal.NewFromString(r.Data.FilledFees)
+	fees, err := parseStringToDecimal(r.Data.FilledFees)
 	if err != nil {
 		return nil, err
 	}
-	cost, err := decimal.NewFromString(r.Data.FilledCashAmount)
+	cost, err := parseStringToDecimal(r.Data.FilledCashAmount)
 	var avgPrice decimal.Decimal
 	if !filled.IsZero() {
 		avgPrice = cost.Div(amount)
@@ -249,4 +249,13 @@ func (r *OrdersResp) Transform() (*exchange.Order, error) {
 		Type:     typ,
 		Raw:      r,
 	}, nil
+}
+
+func parseStringToDecimal(source string) (ret decimal.Decimal, err error) {
+	if source == "" {
+		return
+	}
+
+	ret, err = decimal.NewFromString(source)
+	return
 }
