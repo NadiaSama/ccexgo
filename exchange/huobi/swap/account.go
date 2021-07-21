@@ -54,6 +54,9 @@ func (rc *RestClient) Transfer(ctx context.Context, req *TransferReq) (*Transfer
 	if err := rc.RequestWithRawResp(ctx, http.MethodPost, TransferEndPoint, nil, buf, true, &resp); err != nil {
 		return nil, err
 	}
+	if resp.Code != 200 {
+		return nil, errors.Errorf("transfer fail %+v", resp)
+	}
 
 	return &resp, nil
 }
