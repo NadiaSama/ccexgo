@@ -54,7 +54,7 @@ type (
 		TradeAvgPrice  float64            `json:"trade_avg_price"`
 		CanceledAt     int64              `json:"canceled_at"`
 		RealProfit     float64            `json:"real_profit"`
-		Trades         []OrderNotifyTrade `json:"trades"`
+		Trades         []OrderNotifyTrade `json:"trade"`
 	}
 )
 

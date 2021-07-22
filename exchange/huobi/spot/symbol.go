@@ -74,7 +74,8 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SpotSymbol, error
 	}
 
 	ret := []exchange.SpotSymbol{}
-	for _, symbol := range symbols {
+	for i := range symbols {
+		symbol := symbols[i]
 		s, err := symbol.Parse()
 		if err != nil {
 			return nil, err

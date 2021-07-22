@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -128,7 +128,7 @@ func (od *OrderData) Parse() (*exchange.Order, error) {
 	}
 
 	if od.OrderCreateTime != 0 {
-		ret.Created = time.Unix(od.OrderCreateTime/1e3, od.OrderCreateTime%1e3*1e6)
+		ret.Created = huobi.ParseTS(od.OrderCreateTime)
 		ret.Updated = ret.Created
 	}
 
@@ -139,7 +139,7 @@ func (od *OrderData) Parse() (*exchange.Order, error) {
 		ts = od.TradeTime
 	}
 	if ts != 0 {
-		ret.Updated = time.Unix(ts/1e3, ts%1e3*1e6)
+		ret.Updated = huobi.ParseTS(ts)
 	}
 	ret.Raw = od
 	return &ret, nil
