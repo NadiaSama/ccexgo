@@ -44,7 +44,7 @@ var (
 	orderStatusMap = map[string]exchange.OrderStatus{
 		"created":          exchange.OrderStatusOpen,
 		"submitted":        exchange.OrderStatusOpen,
-		"partail-filled":   exchange.OrderStatusOpen,
+		"partial-filled":   exchange.OrderStatusOpen,
 		"partial-canceled": exchange.OrderStatusOpen,
 		"canceling":        exchange.OrderStatusOpen,
 		"filled":           exchange.OrderStatusDone,
