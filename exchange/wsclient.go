@@ -45,3 +45,10 @@ func (wc *WSClient) Run(ctx context.Context) error {
 	go wc.Conn.Run(ctx, wc.handler)
 	return nil
 }
+
+func (ws *WSClient) Close() error {
+	if ws.Conn == nil {
+		return nil
+	}
+	return ws.Conn.Close()
+}

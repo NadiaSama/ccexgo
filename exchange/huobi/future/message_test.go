@@ -50,7 +50,7 @@ func TestDecodeTrades(t *testing.T) {
 }
 
 func TestEncodeCallParam(t *testing.T) {
-	cp := &callParam{
+	cp := &huobi.CallParam{
 		ID:  "i1",
 		Sub: "sub1",
 	}
@@ -61,7 +61,7 @@ func TestEncodeCallParam(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode fail %s", err.Error())
 	}
-	var rcp callParam
+	var rcp huobi.CallParam
 	json.Unmarshal(raw, &rcp)
 	if rcp.ID != cp.ID || rcp.Sub != cp.Sub || rcp.Pong != 0 {
 		t.Errorf("encode bad data %s %v", string(raw), rcp)

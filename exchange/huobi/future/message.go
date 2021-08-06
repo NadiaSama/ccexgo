@@ -14,13 +14,6 @@ type (
 		*huobi.CodeC
 		codeMap map[string]string
 	}
-
-	//callParam carry params which used by huobi websocket sub and pong
-	callParam struct {
-		Pong int    `json:"pong,omitempty"`
-		Sub  string `json:"sub,omitempty"`
-		ID   string `json:"id,omitempty"`
-	}
 )
 
 func NewCodeC(cm map[string]string) *CodeC {
@@ -55,5 +48,5 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		resp.Ch = strings.Join(f, ".")
 	}
 
-	return resp.Parse()
+	return resp.Parse(raw)
 }

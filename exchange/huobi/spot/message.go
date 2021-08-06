@@ -1,4 +1,4 @@
-package swap
+package spot
 
 import (
 	"encoding/json"
@@ -40,7 +40,7 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, err
 	}
 
-	r, err := ParseDepth(resp.Tick)
+	r, err := ParseDepth(resp.Ch, resp.TS, resp.Tick)
 	if err != nil {
 		return nil, err
 	}

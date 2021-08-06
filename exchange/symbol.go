@@ -12,6 +12,7 @@ type (
 		Raw() interface{}
 		AmountPrecision() decimal.Decimal
 		PricePrecision() decimal.Decimal
+		ValuePrecision() decimal.Decimal
 		AmountMax() decimal.Decimal
 		AmountMin() decimal.Decimal
 		ValueMin() decimal.Decimal
@@ -46,8 +47,9 @@ type (
 
 	//BaseSymbolProperty define common property of all kind symbol
 	BaseSymbolProperty struct {
-		pricePrecision  decimal.Decimal
-		amountPrecision decimal.Decimal
+		pricePrecision  decimal.Decimal //0.001
+		amountPrecision decimal.Decimal //0.01
+		valuePrecision  decimal.Decimal
 		amountMin       decimal.Decimal
 		amountMax       decimal.Decimal
 		valueMin        decimal.Decimal //minuim price * amount
@@ -57,6 +59,7 @@ type (
 	SymbolConfig struct {
 		PricePrecision  decimal.Decimal
 		AmountPrecision decimal.Decimal
+		ValuePrecision  decimal.Decimal
 		AmountMin       decimal.Decimal
 		AmountMax       decimal.Decimal
 		ValueMin        decimal.Decimal
@@ -139,6 +142,7 @@ func (p *SymbolConfig) Property() BaseSymbolProperty {
 	return BaseSymbolProperty{
 		amountMax:       p.AmountMax,
 		amountMin:       p.AmountMin,
+		valuePrecision:  p.ValuePrecision,
 		pricePrecision:  p.PricePrecision,
 		amountPrecision: p.AmountPrecision,
 		valueMin:        p.ValueMin,
@@ -163,6 +167,10 @@ func (p *BaseSymbolProperty) PricePrecision() decimal.Decimal {
 //AmountPrecision return amount precision value
 func (p *BaseSymbolProperty) AmountPrecision() decimal.Decimal {
 	return p.amountPrecision
+}
+
+func (p *BaseSymbolProperty) ValuePrecision() decimal.Decimal {
+	return p.valuePrecision
 }
 
 //ValueMin return minium amount * price value zero means no limit

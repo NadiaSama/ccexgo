@@ -2,20 +2,29 @@ package huobi
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 )
 
 type (
 	Response struct {
-		Ping int             `json:"ping"`
-		Ch   string          `json:"ch"`
-		TS   int             `json:"ts"`
-		Tick json.RawMessage `json:"tick"`
+		Ping   int             `json:"ping,omitempty"`
+		Ch     string          `json:"ch,omitempty"`
+		TS     int64           `json:"ts,omitempty"`
+		Tick   json.RawMessage `json:"tick,omitempty"`
+		ID     string          `json:"id,omitempty"`
+		Status string          `json:"status,omitempty"`
+		Subbed string          `json:"subbed,omitempty"`
 	}
 )
 
-func (r *Response) Parse() (rpc.Response, error) {
+var (
+	//SkipError means the response can not be handled directly by Parse method
+	SkipError = errors.New("skip error")
+)
+
+func (r *Response) Parse(raw []byte) (rpc.Response, error) {
 	if r.Ping != 0 {
 		return &rpc.Notify{
 			Method: MethodPing,
@@ -23,13 +32,12 @@ func (r *Response) Parse() (rpc.Response, error) {
 		}, nil
 	}
 
-	trades, err := ParseTrades(r.Tick)
-	if err != nil {
-		return nil, err
+	if r.ID != "" {
+		return &rpc.Result{
+			ID:     r.ID,
+			Result: raw,
+		}, nil
 	}
 
-	return &rpc.Notify{
-		Method: r.Ch,
-		Params: trades,
-	}, nil
+	return nil, SkipError
 }
