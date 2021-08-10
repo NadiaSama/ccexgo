@@ -21,12 +21,13 @@ type (
 		FeeAsset      string  `json:"fee_asset"`
 		TradeID       int64   `json:"trade_id"`
 		ID            string  `json:"id"`
-		TradeVolume   int     `json:"trade_volume"`
+		TradeVolume   float64 `json:"trade_volume"`
 		TradePrice    float64 `json:"trade_price"`
 		TradeTurnOver float64 `json:"trade_turnover"`
 		CreatedAt     int64   `json:"created_at"`
 		Profit        float64 `json:"profit"`
 		RealProfit    float64 `json:"real_profit"`
+		Role          string  `json:"role"`
 	}
 
 	OrderNotify struct {
