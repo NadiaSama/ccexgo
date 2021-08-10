@@ -3,7 +3,13 @@ package swap
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
+
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
+	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -201,4 +207,84 @@ func (rc *RestClient) SwapOrderDetail(ctx context.Context, req *SwapOrderDetailR
 	}
 
 	return &ret, nil
+}
+
+func (rc *RestClient) FetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
+	id, err := strconv.ParseInt(order.ID.String(), 10, 64)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "invalid order id '%s'", order.ID.String())
+	}
+	req := NewSwapOrderDetailReq(order.Symbol.String(), id)
+	resp, err := rc.SwapOrderDetail(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Transform()
+}
+
+func (r *SwapOrderDetailResp) Transform() (*exchange.Order, error) {
+	symbol, err := ParseSymbol(r.ContractCode)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &exchange.Order{
+		ID:          exchange.NewIntID(r.OrderID),
+		Symbol:      symbol,
+		Amount:      decimal.NewFromFloat(r.Volume),
+		Filled:      decimal.NewFromFloat(r.TradeVolume),
+		Price:       decimal.NewFromFloat(r.Price),
+		AvgPrice:    decimal.NewFromFloat(r.TradeAvgPrice),
+		Fee:         decimal.NewFromFloat(r.Fee),
+		FeeCurrency: r.FeeAsset,
+		Created:     huobi.ParseTS(r.CreatedAt),
+	}
+
+	if r.Direction == OrderDirectionBuy {
+		if r.Offset == OrderOffsetOpen {
+			ret.Side = exchange.OrderSideBuy
+		} else if r.Offset == OrderOffsetClose {
+			ret.Side = exchange.OrderSideCloseShort
+		} else {
+			return nil, errors.Errorf("unkown order offset '%s'", r.Offset)
+		}
+	} else if r.Direction == OrderDirectionSell {
+		if r.Offset == OrderOffsetOpen {
+			ret.Side = exchange.OrderSideSell
+		} else if r.Offset == OrderOffsetClose {
+			ret.Side = exchange.OrderSideCloseLong
+		} else {
+			return nil, errors.Errorf("unkown order offset '%s'", r.Offset)
+		}
+	} else {
+		return nil, errors.Errorf("unkown order direction '%s'", r.Direction)
+	}
+
+	if r.CanceledAt != 0 {
+		ret.Updated = huobi.ParseTS(r.CanceledAt)
+	} else {
+		var fetchTS int64
+		for _, t := range r.Trades {
+			if t.CreatedAt > fetchTS {
+				ret.Updated = huobi.ParseTS(t.CreatedAt)
+				fetchTS = r.CreatedAt
+			}
+		}
+	}
+
+	st, ok := statusMap[r.Status]
+	if !ok {
+		return nil, errors.WithMessagef(err, "unkown order status %d", r.Status)
+	}
+
+	typ, ok := typeMap[r.OrderPriceType]
+	if !ok {
+		return nil, errors.WithMessagef(err, "unkown order type %s", r.OrderPriceType)
+	}
+	ret.Status = st
+	ret.Type = typ
+	ret.Raw = r
+
+	return ret, nil
 }

@@ -70,6 +70,11 @@ var (
 		7:  exchange.OrderStatusCancel,
 		11: exchange.OrderStatusOpen,
 	}
+
+	typeMap = map[string]exchange.OrderType{
+		"limit":    exchange.OrderTypeLimit,
+		"opponent": exchange.OrderTypeMarket,
+	}
 )
 
 func NewOrdersChannel(symbol string) exchange.Channel {
