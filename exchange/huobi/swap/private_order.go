@@ -113,6 +113,10 @@ func ParseOrder(raw []byte) (*exchange.Order, error) {
 	if !ok {
 		return nil, errors.Errorf("unkown orderstatus %s", resp.Status)
 	}
+	typ, ok := typeMap[resp.OrderPriceType]
+	if !ok {
+		return nil, errors.Errorf("unkown orderType %s", resp.OrderPriceType)
+	}
 
 	var side exchange.OrderSide
 	if resp.Direction == OrderDirectionBuy {
@@ -148,6 +152,7 @@ func ParseOrder(raw []byte) (*exchange.Order, error) {
 		Created:     created,
 		Updated:     updated,
 		Status:      st,
+		Type:        typ,
 		Side:        side,
 		Raw:         &resp,
 	}, nil
