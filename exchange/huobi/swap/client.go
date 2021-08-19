@@ -3,6 +3,7 @@ package swap
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange/huobi"
@@ -34,8 +35,19 @@ func NewRestClientWithHost(key, secret, host string) *RestClient {
 	}
 }
 
-func (rc *RestClient) PrivatePostReq(ctx context.Context, endPoint string, sr Serializer, dst interface{}) error {
-	raw, err := sr.Serialize()
+//PrivatePostReq send post request to huobi swap api. the request body is generate from req param
+//vai json.Marshal() or Serialize()
+func (rc *RestClient) PrivatePostReq(ctx context.Context, endPoint string, req interface{}, dst interface{}) error {
+	var (
+		raw []byte
+		err error
+	)
+
+	if sr, ok := req.(Serializer); ok {
+		raw, err = sr.Serialize()
+	} else {
+		raw, err = json.Marshal(req)
+	}
 	if err != nil {
 		return errors.WithMessage(err, "serialize fail")
 	}
