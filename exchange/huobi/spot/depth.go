@@ -228,7 +228,7 @@ func ParseDepth(ch string, ts int64, tick json.RawMessage) (interface{}, error) 
 
 	return &exchange.OrderBook{
 		Symbol:  sym,
-		Created: time.Unix(ts/1e3, ts%1e3*1e5),
+		Created: time.Unix(ts/1e3, ts%1e3*1e6),
 		Bids:    bids,
 		Asks:    asks,
 		Raw:     &d,
