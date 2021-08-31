@@ -42,6 +42,10 @@ type (
 		Size     float64 `json:"size"`
 		ClientID string  `json:"clientId,omitempty"`
 	}
+
+	OrderChannel struct {
+		symbol exchange.Symbol
+	}
 )
 
 const (
@@ -73,6 +77,16 @@ var (
 		exchange.OrderSideSell: "sell",
 	}
 )
+
+func NewOrderChannel(sym exchange.Symbol) exchange.Channel {
+	return &OrderChannel{
+		symbol: sym,
+	}
+}
+
+func (oc *OrderChannel) String() string {
+	return oc.symbol.String()
+}
 
 func (rc *RestClient) OrderNew(ctx context.Context, req *exchange.OrderRequest, options ...exchange.OrderReqOption) (*exchange.Order, error) {
 	side, ok := sideRMap[req.Side]

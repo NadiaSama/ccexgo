@@ -37,7 +37,21 @@ type (
 		Fee     decimal.Decimal
 		FeeRate decimal.Decimal
 	}
+
+	FillChannel struct {
+		symbol exchange.Symbol
+	}
 )
+
+func NewFillChannel(sym exchange.Symbol) exchange.Channel {
+	return &FillChannel{
+		symbol: sym,
+	}
+}
+
+func (fc *FillChannel) String() string {
+	return fc.symbol.String()
+}
 
 func parseFillInternal(notify *FillNotify) (*Fill, error) {
 	side, ok := sideMap[notify.Side]

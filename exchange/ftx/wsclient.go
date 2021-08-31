@@ -29,14 +29,6 @@ const (
 	ftxWSAddr = "wss://ftx.com/ws/"
 )
 
-var (
-	subMaps map[exchange.SubType]string = map[exchange.SubType]string{
-		exchange.SubTypePrivateOrder: channelOrders,
-		exchange.SubTypePrivateTrade: channelFills,
-		exchange.SubTypeOrderBook:    channelOrderBook,
-	}
-)
-
 func NewWSClient(key, secret string, data chan interface{}) *WSClient {
 	ret := &WSClient{
 		key:    key,
@@ -89,28 +81,39 @@ func (ws *WSClient) Auth(ctx context.Context) error {
 	return nil
 }
 
-func (ws *WSClient) Subscribe(ctx context.Context, typ exchange.SubType, syms ...exchange.Symbol) error {
-	channel, ok := subMaps[typ]
-	if !ok {
-		return errors.Errorf("unsupport subtype '%d'", typ)
+func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("ftx multi subscribe not support")
 	}
+
+	ch := channels[0]
 
 	var result subscribeResult
 	var req callParam
-	if channel == channelOrderBook {
-		if len(syms) != 1 {
-			return errors.Errorf("ftx multi subscribe not support")
-		}
+
+	switch t := ch.(type) {
+	case *OrderBookChannel:
 		req = callParam{
-			Channel: channel,
+			Channel: channelOrderBook,
 			OP:      "subscribe",
-			Market:  syms[0].String(),
+			Market:  t.symbol.String(),
 		}
-	} else {
+
+	case *FillChannel:
 		req = callParam{
-			Channel: channel,
+			Channel: channelFills,
 			OP:      "subscribe",
+			Market:  t.symbol.String(),
 		}
+
+	case *OrderChannel:
+		req = callParam{
+			Channel: channelOrders,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+	default:
+		return errors.Errorf("unsupport typ %+v", t)
 	}
 
 	if err := ws.Conn.Call(ctx, subID(req.Channel, req.Market), req.OP, &req, &result); err != nil {

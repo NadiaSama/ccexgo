@@ -19,7 +19,21 @@ type (
 		Asks      [][2]float64 `json:"asks"`
 		Timestamp int64        `json:"timestamp"`
 	}
+
+	OrderBookChannel struct {
+		symbol exchange.Symbol
+	}
 )
+
+func NewOrderBookChannel(sym exchange.Symbol) exchange.Channel {
+	return &OrderBookChannel{
+		symbol: sym,
+	}
+}
+
+func (obc *OrderBookChannel) String() string {
+	return obc.symbol.String()
+}
 
 func NewOrderBook(sym exchange.Symbol) *OrderBook {
 	return &OrderBook{symbol: sym}
