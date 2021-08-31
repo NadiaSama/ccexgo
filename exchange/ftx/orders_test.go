@@ -57,9 +57,10 @@ func TestOrdersNew(t *testing.T) {
 
 	ctx := context.Background()
 	client := NewRestClient("", "")
-	client.symbols["XRP-PERP"] = newSwapSymbol("XRP")
+	xrpS := newSwapSymbol("XRP")
+	symbolMap["XRP-PERP"] = xrpS
 	req := exchange.OrderRequest{
-		Symbol: client.symbols["XRP-PERP"],
+		Symbol: xrpS,
 		Amount: decimal.NewFromFloat(10.1234),
 		Price:  decimal.NewFromFloat(1.023),
 		Side:   exchange.OrderSideBuy,
@@ -114,7 +115,8 @@ func TestOrderFetch(t *testing.T) {
 
 	ctx := context.Background()
 	client := NewRestClient("", "")
-	client.symbols["XRP-PERP"] = newSwapSymbol("XRP")
+	xrpS := newSwapSymbol("XRP")
+	symbolMap["XRP-PERP"] = xrpS
 
 	order, err := client.OrderFetch(ctx, &exchange.Order{
 		ID: exchange.NewIntID(9596912),

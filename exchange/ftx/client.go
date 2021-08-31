@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
 )
 
@@ -22,8 +21,6 @@ type (
 		key    string
 		secret string
 		prefix string
-
-		symbols map[string]exchange.Symbol
 	}
 
 	Wrap struct {
@@ -39,19 +36,10 @@ const (
 
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
-		key:     key,
-		secret:  secret,
-		prefix:  "https://ftx.com/api",
-		symbols: make(map[string]exchange.Symbol),
+		key:    key,
+		secret: secret,
+		prefix: "https://ftx.com/api",
 	}
-}
-
-func (rc *RestClient) Init(ctx context.Context) error {
-	if err := rc.initSpotSymbol(ctx); err != nil {
-		return err
-	}
-
-	return rc.initFutureSymbol(ctx)
 }
 
 func (rc *RestClient) request(ctx context.Context, method string, endPoint string, params url.Values, body io.Reader, sign bool, dst interface{}) error {

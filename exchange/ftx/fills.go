@@ -39,13 +39,13 @@ type (
 	}
 )
 
-func parseFillInternal(notify *FillNotify, cm map[string]exchange.Symbol) (*Fill, error) {
+func parseFillInternal(notify *FillNotify) (*Fill, error) {
 	side, ok := sideMap[notify.Side]
 	if !ok {
 		return nil, errors.Errorf("unknown order side '%s'", notify.Side)
 	}
-	symbol, ok := cm[notify.Future]
-	if !ok {
+	symbol, err := ParseSymbol(notify.Future)
+	if err != nil {
 		return nil, errors.Errorf("unkown order symbol '%s'", notify.Future)
 	}
 

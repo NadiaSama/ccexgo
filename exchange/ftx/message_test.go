@@ -9,9 +9,9 @@ import (
 )
 
 func TestMessageDecode(t *testing.T) {
-	cc := NewCodeC(map[string]exchange.Symbol{
-		"ADA-PERP": newSwapSymbol("ADA"),
-	})
+	symbolMap = make(map[string]exchange.Symbol)
+	symbolMap["ADA-PERP"] = newSwapSymbol("ADA")
+	cc := NewCodeC()
 
 	e := []byte(`{"channel": "", "market": "", "type": "error", "code": 1001, "msg": "not login"}`)
 	if resp, err := cc.Decode(e); err != nil {
@@ -26,7 +26,7 @@ func TestMessageDecode(t *testing.T) {
 	if resp, err := cc.Decode(s); err != nil {
 		t.Errorf("parse error fail %s", err.Error())
 	} else {
-		if r := resp.(*rpc.Result); r.ID != "chm" {
+		if r := resp.(*rpc.Result); r.ID != "ch.m" {
 			t.Errorf("bad id %v", *r)
 		}
 	}

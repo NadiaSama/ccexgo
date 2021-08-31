@@ -13,7 +13,9 @@ import (
 type (
 	WSClient struct {
 		*exchange.WSClient
-		data chan interface{}
+		data   chan interface{}
+		key    string
+		secret string
 	}
 
 	subscribeResult struct {
@@ -35,25 +37,14 @@ var (
 	}
 )
 
-func (rc *RestClient) NewWSClient(data chan interface{}) *WSClient {
-	ret := &WSClient{}
-	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(rc.symbols), ret)
+func NewWSClient(key, secret string, data chan interface{}) *WSClient {
+	ret := &WSClient{
+		key:    key,
+		secret: secret,
+	}
+	ret.WSClient = exchange.NewWSClient(ftxWSAddr, NewCodeC(), ret)
 	ret.data = data
 	return ret
-}
-
-func (rc *RestClient) NewAuthWSClient(ctx context.Context, data chan interface{}) (*WSClient, error) {
-	client := rc.NewWSClient(data)
-	if err := client.Run(ctx); err != nil {
-		return nil, errors.WithMessagef(err, "client run fail")
-	}
-
-	if err := client.Auth(ctx, rc.key, rc.secret); err != nil {
-		client.Close()
-		return nil, errors.WithMessagef(err, "auth wsclient fail")
-	}
-
-	return client, nil
 }
 
 func (ws *WSClient) Run(ctx context.Context) error {
@@ -81,14 +72,14 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	}()
 	return nil
 }
-func (ws *WSClient) Auth(ctx context.Context, key string, secret string) error {
+func (ws *WSClient) Auth(ctx context.Context) error {
 	ts := time.Now().UnixNano() / 1e6
 	es := fmt.Sprintf("%dwebsocket_login", ts)
 	param := authParam{
 		OP: "login",
 		Args: authArgs{
-			Key:  key,
-			Sign: signature(secret, es),
+			Key:  ws.key,
+			Sign: signature(ws.secret, es),
 			Time: ts,
 		},
 	}

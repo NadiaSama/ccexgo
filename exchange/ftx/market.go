@@ -19,6 +19,7 @@ type (
 		PostOnly       bool    `json:"postOnly"`
 		PriceIncrement float64 `json:"priceIncrement"`
 		SizeIncrement  float64 `json:"sizeIncrement"`
+		MinProvideSize float64 `json:"minProvideSize"`
 		Restricted     bool    `json:"restricted"`
 	}
 )

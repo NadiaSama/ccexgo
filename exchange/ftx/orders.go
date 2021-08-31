@@ -109,9 +109,9 @@ func (rc *RestClient) OrderNew(ctx context.Context, req *exchange.OrderRequest, 
 }
 
 func (rc *RestClient) parseOrder(o *Order) (*exchange.Order, error) {
-	return parseOrderInternal(o, rc.symbols)
+	return parseOrderInternal(o)
 }
-func parseOrderInternal(o *Order, cm map[string]exchange.Symbol) (*exchange.Order, error) {
+func parseOrderInternal(o *Order) (*exchange.Order, error) {
 	ct, err := time.Parse("2006-01-02T15:04:05.000000Z07:00", o.CreatedAt)
 	if err != nil {
 		return nil, errors.WithMessagef(err, "bad create time '%s'", o.CreatedAt)
@@ -127,9 +127,9 @@ func parseOrderInternal(o *Order, cm map[string]exchange.Symbol) (*exchange.Orde
 		}
 	}
 
-	symbol, ok := cm[o.Market]
-	if !ok {
-		return nil, errors.WithMessagef(err, "parse symbol '%s' fail", o.Market)
+	symbol, err := ParseSymbol(o.Market)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "parse symbol fail")
 	}
 
 	typ, ok := typeMap[o.Type]

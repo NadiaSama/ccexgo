@@ -3,10 +3,12 @@ package ftx
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -25,115 +27,157 @@ type (
 
 const (
 	typeFuture = "future"
+	typeMove   = "move"
 	typeSwap   = "perpetual"
 	typeSpot   = "spot"
 )
 
-func (rc *RestClient) initFutureSymbol(ctx context.Context) error {
-	infos, err := rc.Futures(ctx)
-	if err != nil {
+var (
+	mu        sync.Mutex
+	symbolMap map[string]exchange.Symbol
+)
+
+func Init(ctx context.Context) error {
+	if err := initSymbols(ctx); err != nil {
 		return err
 	}
-	for _, info := range infos {
-		if !info.Enabled {
-			continue
-		}
 
-		if info.Type == typeFuture && !info.Expired {
-			name := info.Name
-			st, err := time.Parse("2006-01-02T15:04:05Z07:00", info.Expiry)
-			if err != nil {
-				return errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
-			}
-			var typ exchange.FutureType
-			now := time.Now()
-			if st.Sub(now).Hours() > 3*30*24 {
-				typ = exchange.FutureTypeNQ
-			} else {
-				typ = exchange.FutureTypeCQ
-			}
-			rc.symbols[name] = newFutureSymbol(info.Underlying, st, typ)
-			continue
+	go func() {
+		for {
+			next := time.Now().Add(time.Hour)
+			next = time.Date(next.Year(), next.Month(), next.Day(), next.Hour(), 0, 5, 0, next.Location())
+			time.Sleep(time.Until(next))
+			initSymbols(ctx)
 		}
-
-		if info.Type == typeSwap {
-			name := info.Name
-			rc.symbols[name] = newSwapSymbol(info.Underlying)
-			continue
-		}
-	}
+	}()
 	return nil
 }
 
-func (rc *RestClient) initSpotSymbol(ctx context.Context) error {
+func ParseSymbol(symbol string) (exchange.Symbol, error) {
+	mu.Lock()
+	defer mu.Unlock()
+	s, ok := symbolMap[symbol]
+	if !ok {
+		return nil, errors.Errorf("bad %s", symbol)
+	}
+	return s, nil
+}
+
+func initSymbols(ctx context.Context) error {
+	d := make(map[string]exchange.Symbol, 0)
+	if err := initSpotSymbols(ctx, d); err != nil {
+		return err
+	}
+
+	if err := initFutureSymbol(ctx, d); err != nil {
+		return err
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	symbolMap = d
+	return nil
+}
+
+func initSpotSymbols(ctx context.Context, dst map[string]exchange.Symbol) error {
+	rc := NewRestClient("", "")
 	markets, err := rc.Markets(ctx)
 	if err != nil {
 		return err
 	}
 
-	for _, m := range markets {
+	for i := range markets {
+		m := markets[i]
+
 		if m.Type != typeSpot {
 			continue
 		}
-		rc.symbols[m.Name] = newSpotSymbol(m.BaseCurrency, m.QuoteCurrency, &m)
+
+		s, err := m.ToSymbol()
+		if err != nil {
+			return errors.WithMessagef(err, "parse market %s fail", m.Name)
+		}
+		dst[s.String()] = s
 	}
 	return nil
 }
 
-func (rc *RestClient) ParseSymbol(symbol string) (exchange.Symbol, error) {
-	sym, ok := rc.symbols[symbol]
-	if !ok {
-		return nil, errors.Errorf("unkown future symbol '%s'", symbol)
-	}
-	return sym, nil
-}
-
-func (rc *RestClient) ParseFutureSymbol(symbol string) (exchange.FuturesSymbol, error) {
-	sym, err := rc.ParseSymbol(symbol)
+func initFutureSymbol(ctx context.Context, dst map[string]exchange.Symbol) error {
+	rc := NewRestClient("", "")
+	futures, err := rc.Futures(ctx)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	ret, ok := sym.(exchange.FuturesSymbol)
-	if !ok {
-		return nil, errors.Errorf("bad symbol for '%s'", symbol)
+	for i := range futures {
+		info := futures[i]
+		symbol, err := info.ToSymbol()
+		if err != nil {
+			return errors.WithMessagef(err, "parse futures %s fail", info.Name)
+		}
+		dst[symbol.String()] = symbol
 	}
-
-	return ret, nil
+	return nil
 }
 
-func (rc *RestClient) ParseSwapSymbol(symbol string) (exchange.SwapSymbol, error) {
-	sym, err := rc.ParseSymbol(symbol)
-	if err != nil {
-		return nil, err
+func (m *Market) ToSymbol() (exchange.Symbol, error) {
+	cfg := exchange.SymbolConfig{
+		PricePrecision:  decimal.NewFromFloat(m.PriceIncrement),
+		AmountPrecision: decimal.NewFromFloat(m.SizeIncrement),
+		AmountMin:       decimal.NewFromFloat(m.MinProvideSize),
 	}
-
-	ret, ok := sym.(exchange.SwapSymbol)
-	if !ok {
-		return nil, errors.Errorf("bad symbol for '%s'", symbol)
+	switch m.Type {
+	case typeSpot:
+		return newSpotSymbol(m.BaseCurrency, m.QuoteCurrency, cfg, m), nil
+	default:
+		return nil, errors.Errorf("unsupport type %s", m.Type)
 	}
-	return ret, nil
 }
 
-func newSpotSymbol(base string, quote string, m *Market) *SpotSymbol {
+func newSpotSymbol(base string, quote string, cfg exchange.SymbolConfig, m *Market) *SpotSymbol {
 	return &SpotSymbol{
-		exchange.NewBaseSpotSymbol(base, quote, exchange.SymbolConfig{}, m),
+		exchange.NewBaseSpotSymbol(base, quote, cfg, m),
 	}
 }
 
 func (ss *SpotSymbol) String() string {
-	return fmt.Sprintf("%s/%s", ss.Base(), ss.Quote())
+	r := ss.Raw().(*Market)
+	return r.Name
 }
 
-func newFutureSymbol(index string, st time.Time, typ exchange.FutureType) *FuturesSymbol {
-	return &FuturesSymbol{
-		exchange.NewBaseFutureSymbol(index, st, typ),
+func (info *FutureInfo) ToSymbol() (exchange.Symbol, error) {
+	cfg := exchange.SymbolConfig{
+		AmountPrecision: decimal.NewFromFloat(info.SizeIncrement),
+		PricePrecision:  decimal.NewFromFloat(info.PriceIncrement),
 	}
+	if (info.Type == typeFuture || info.Type == typeMove) && !info.Expired {
+		st, err := time.Parse("2006-01-02T15:04:05Z07:00", info.Expiry)
+		if err != nil {
+			return nil, errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
+		}
+		var typ exchange.FutureType
+		now := time.Now()
+		if st.Sub(now).Hours() > 3*30*24 {
+			typ = exchange.FutureTypeNQ
+		} else {
+			typ = exchange.FutureTypeCQ
+		}
+		return &FuturesSymbol{
+			BaseFutureSymbol: exchange.NewBaseFuturesSymbolWithCfg(info.Underlying, st, typ, cfg, info),
+		}, nil
+	}
+
+	if info.Type == typeSwap {
+		return &SwapSymbol{
+			BaseSwapSymbol: exchange.NewBaseSwapSymbolWithCfg(info.Underlying, decimal.NewFromFloat(1.0), cfg, info),
+		}, nil
+	}
+	return nil, nil
 }
 
 func (fs *FuturesSymbol) String() string {
-	st := fs.SettleTime()
-	return fmt.Sprintf("%s-%s", fs.Index(), st.Format("0102"))
+	r := fs.Raw().(*FutureInfo)
+	return r.Name
 }
 
 func newSwapSymbol(index string) *SwapSymbol {

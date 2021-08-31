@@ -12,7 +12,6 @@ import (
 type (
 	CodeC struct {
 		*exchange.CodeC
-		codeMap   map[string]exchange.Symbol
 		orderBook map[string]*OrderBook
 	}
 
@@ -59,10 +58,9 @@ const (
 	channelFills     = "fills"
 )
 
-func NewCodeC(codeMap map[string]exchange.Symbol) *CodeC {
+func NewCodeC() *CodeC {
 	return &CodeC{
 		exchange.NewCodeC(),
-		codeMap,
 		make(map[string]*OrderBook),
 	}
 }
@@ -112,8 +110,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 
 	case typePartial:
 		if cr.Channel == channelOrderBook {
-			sym, ok := cc.codeMap[cr.Market]
-			if !ok {
+			sym, err := ParseSymbol(cr.Market)
+			if err != nil {
 				return nil, errors.Errorf("unknow market '%s'", cr.Market)
 			}
 			ob := NewOrderBook(sym)
@@ -177,7 +175,7 @@ func (cc *CodeC) parseOrder(raw []byte) (*exchange.Order, error) {
 	if err := json.Unmarshal(raw, &order); err != nil {
 		return nil, err
 	}
-	return parseOrderInternal(&order, cc.codeMap)
+	return parseOrderInternal(&order)
 }
 
 func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
@@ -186,7 +184,7 @@ func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
 		return nil, err
 	}
 
-	return parseFillInternal(&fill, cc.codeMap)
+	return parseFillInternal(&fill)
 }
 
 func subID(channel string, market string) string {
