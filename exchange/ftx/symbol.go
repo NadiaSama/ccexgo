@@ -112,6 +112,10 @@ func initFutureSymbol(ctx context.Context, dst map[string]exchange.Symbol) error
 	for i := range futures {
 		info := futures[i]
 		symbol, err := info.ToSymbol()
+		if symbol == nil {
+			continue
+		}
+
 		if err != nil {
 			return errors.WithMessagef(err, "parse futures %s fail", info.Name)
 		}
@@ -150,7 +154,7 @@ func (info *FutureInfo) ToSymbol() (exchange.Symbol, error) {
 		AmountPrecision: decimal.NewFromFloat(info.SizeIncrement),
 		PricePrecision:  decimal.NewFromFloat(info.PriceIncrement),
 	}
-	if (info.Type == typeFuture || info.Type == typeMove) && !info.Expired {
+	if info.Type == typeFuture || info.Type == typeMove {
 		st, err := time.Parse("2006-01-02T15:04:05Z07:00", info.Expiry)
 		if err != nil {
 			return nil, errors.WithMessagef(err, "bad expire time '%s'", info.Expiry)
@@ -172,6 +176,8 @@ func (info *FutureInfo) ToSymbol() (exchange.Symbol, error) {
 			BaseSwapSymbol: exchange.NewBaseSwapSymbolWithCfg(info.Underlying, decimal.NewFromFloat(1.0), cfg, info),
 		}, nil
 	}
+	//return nil, errors.Errorf("unkown type %s", info.Type)
+	//unsupport type
 	return nil, nil
 }
 
