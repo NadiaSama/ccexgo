@@ -66,9 +66,9 @@ func init() {
 	reigisterCB("ticker", parseNotifyTicker)
 }
 
-func NewTickerChannel(instrument string) *ChTicker {
+func NewTickerChannel(symbol exchange.Symbol) *ChTicker {
 	return &ChTicker{
-		instrument: instrument,
+		instrument: symbol.String(),
 	}
 }
 
@@ -105,6 +105,7 @@ func (tr *TickerResult) Parse() (*exchange.Ticker, error) {
 		BestBidSize: tr.BestBidAmount,
 		BestAsk:     tr.BestAskPrice,
 		BestAskSize: tr.BestAskAmount,
+		MarkPrice:   tr.MarkPrice,
 		Time:        tconv.Milli2Time(tr.Timestamp),
 		LastPrice:   tr.LastPrice,
 		Raw:         tr,

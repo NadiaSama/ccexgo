@@ -13,6 +13,7 @@ type (
 		BestBidSize decimal.Decimal
 		BestAsk     decimal.Decimal
 		BestAskSize decimal.Decimal
+		MarkPrice   decimal.Decimal
 		Time        time.Time
 		LastPrice   decimal.Decimal
 		Raw         interface{}
