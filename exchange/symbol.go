@@ -94,14 +94,16 @@ type (
 		Index() string
 		SettleTime() time.Time
 		Type() FutureType
+		ContractVal() decimal.Decimal
 	}
 	//BaseFutureSymbol define common property of future symbol
 	BaseFutureSymbol struct {
 		RawMixin
 		BaseSymbolProperty
-		index      string
-		settleTime time.Time
-		typ        FutureType
+		index       string
+		settleTime  time.Time
+		contractVal decimal.Decimal
+		typ         FutureType
 	}
 
 	SwapSymbol interface {
@@ -239,6 +241,17 @@ func (ms *BaseMarginSymbol) Lever() decimal.Decimal {
 	return ms.lever
 }
 
+func NewBaseFuturesSymbolWithCfgCV(index string, st time.Time, typ FutureType, cfg SymbolConfig, cv decimal.Decimal, raw interface{}) *BaseFutureSymbol {
+	return &BaseFutureSymbol{
+		RawMixin:           RawMixin{raw},
+		BaseSymbolProperty: cfg.Property(),
+		index:              index,
+		settleTime:         st,
+		typ:                typ,
+		contractVal:        cv,
+	}
+}
+
 func NewBaseFuturesSymbolWithCfg(index string, st time.Time, typ FutureType, cfg SymbolConfig, raw interface{}) *BaseFutureSymbol {
 	return &BaseFutureSymbol{
 		RawMixin:           RawMixin{raw},
@@ -246,14 +259,16 @@ func NewBaseFuturesSymbolWithCfg(index string, st time.Time, typ FutureType, cfg
 		index:              index,
 		settleTime:         st,
 		typ:                typ,
+		contractVal:        decimal.NewFromFloat(1.0),
 	}
 }
 
 func NewBaseFutureSymbol(index string, st time.Time, typ FutureType) *BaseFutureSymbol {
 	return &BaseFutureSymbol{
-		index:      index,
-		settleTime: st,
-		typ:        typ,
+		index:       index,
+		settleTime:  st,
+		typ:         typ,
+		contractVal: decimal.NewFromFloat(1.0),
 	}
 }
 
@@ -267,6 +282,10 @@ func (bfs *BaseFutureSymbol) SettleTime() time.Time {
 
 func (bfs *BaseFutureSymbol) Type() FutureType {
 	return bfs.typ
+}
+
+func (bfs *BaseFutureSymbol) ContractVal() decimal.Decimal {
+	return bfs.contractVal
 }
 
 func NewBaseSwapSymbolWithCfg(index string, cf decimal.Decimal, cfg SymbolConfig, raw interface{}) *BaseSwapSymbol {

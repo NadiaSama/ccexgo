@@ -167,7 +167,7 @@ func (info *FutureInfo) ToSymbol() (exchange.Symbol, error) {
 			typ = exchange.FutureTypeCQ
 		}
 		return &FuturesSymbol{
-			BaseFutureSymbol: exchange.NewBaseFuturesSymbolWithCfg(info.Underlying, st, typ, cfg, info),
+			BaseFutureSymbol: exchange.NewBaseFuturesSymbolWithCfgCV(info.Underlying, st, typ, cfg, decimal.NewFromFloat(1.0), info),
 		}, nil
 	}
 
