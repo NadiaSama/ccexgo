@@ -3,7 +3,7 @@ package float
 import "math"
 
 const (
-	floatThreshold = 1e-18
+	floatThreshold = 1e-12
 )
 
 func Equal(a, b float64) bool {
