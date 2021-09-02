@@ -1,4 +1,4 @@
-package round
+package precision
 
 import (
 	"github.com/NadiaSama/ccexgo/exchange"
