@@ -30,3 +30,37 @@ type (
 		Limit     int
 	}
 )
+
+func NewTradeReqParam() *TradeReqParam {
+	return &TradeReqParam{}
+}
+
+func (trp *TradeReqParam) SetSymbol(s Symbol) *TradeReqParam {
+	trp.Symbol = s
+	return trp
+}
+
+func (trp *TradeReqParam) SetStartTime(st time.Time) *TradeReqParam {
+	trp.StartTime = st
+	return trp
+}
+
+func (trp *TradeReqParam) SetEndTime(et time.Time) *TradeReqParam {
+	trp.EndTime = et
+	return trp
+}
+
+func (trp *TradeReqParam) SetStartID(sid string) *TradeReqParam {
+	trp.StartID = sid
+	return trp
+}
+
+func (trp *TradeReqParam) SetEndID(eid string) *TradeReqParam {
+	trp.EndID = eid
+	return trp
+}
+
+func (trp *TradeReqParam) SetLimit(l int) *TradeReqParam {
+	trp.Limit = l
+	return trp
+}
