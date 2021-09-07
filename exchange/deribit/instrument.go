@@ -4,9 +4,11 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -14,6 +16,24 @@ type (
 		currency string
 		kind     string
 		expired  bool
+	}
+
+	InstrumentResult struct {
+		TickSize            decimal.Decimal `json:"tick_size"`
+		TakerCommision      decimal.Decimal `json:"taker_commision"`
+		MakerCommision      decimal.Decimal `json:"maker_commision"`
+		Strike              decimal.Decimal `json:"strike"`
+		SettlementPeriod    string          `json:"settlement_period"`
+		QuoteCurrency       string          `json:"quote_currency"`
+		BaseCurreny         string          `json:"base_currency"`
+		MinTradeAmount      decimal.Decimal `json:"min_trade_amount"`
+		Kind                string          `json:"kind"`
+		IsActive            bool            `json:"is_active"`
+		InstrumentName      string          `json:"instrument_name"`
+		ExpirationTimestamp int64           `json:"expiration_timestamp"`
+		CreationTimestamp   int64           `json:"creation_timestamp"`
+		ContractSize        decimal.Decimal `json:"contract_size"`
+		OptionType          string          `json:"option_type"`
 	}
 )
 
@@ -67,7 +87,8 @@ func (c *RestClient) OptionSymbols(ctx context.Context, currency string) ([]exch
 
 	ret := make([]exchange.OptionSymbol, 0)
 
-	for _, ir := range irs {
+	for i := range irs {
+		ir := irs[i]
 		sym, err := ir.Symbol()
 		if err != nil {
 			return nil, err
@@ -81,4 +102,81 @@ func (c *RestClient) OptionSymbols(ctx context.Context, currency string) ([]exch
 		ret = append(ret, osym)
 	}
 	return ret, nil
+}
+
+func (c *RestClient) Symbols(ctx context.Context, currency string) ([]exchange.Symbol, error) {
+	req := NewInstrumentsRequest(currency)
+	irs, err := c.Instruments(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]exchange.Symbol, 0, len(irs))
+	for i := range irs {
+		ir := irs[i]
+		sym, err := ir.Symbol()
+		if err != nil {
+			return nil, err
+		}
+
+		ret = append(ret, sym)
+	}
+	return ret, nil
+}
+
+func (i *InstrumentResult) Symbol() (exchange.Symbol, error) {
+	cfg := exchange.SymbolConfig{
+		AmountMax:       decimal.Zero,
+		AmountMin:       i.MinTradeAmount,
+		PricePrecision:  i.TickSize,
+		AmountPrecision: i.MinTradeAmount,
+		ValueMin:        decimal.Zero,
+	}
+	var st time.Time
+	if i.Kind != KindFuture || i.SettlementPeriod != SettlePeriodPerpetual {
+		st = time.Unix(i.ExpirationTimestamp/1e3, 0)
+	}
+	if i.Kind == KindOption {
+		var t exchange.OptionType
+		if i.OptionType == OptionTypeCall {
+			t = exchange.OptionTypeCall
+		} else if i.OptionType == OptionTypePut {
+			t = exchange.OptionTypePut
+		} else {
+			return nil, errors.Errorf("unkown option type %s", i.OptionType)
+		}
+		ret := &OptionSymbol{
+			exchange.NewBaseOptionSymbol(i.BaseCurreny, st, i.Strike, t, cfg, i),
+		}
+		return ret, nil
+
+	} else if i.Kind == KindFuture {
+		if i.SettlementPeriod == SettlePeriodPerpetual {
+			return &SwapSymbol{
+				exchange.NewBaseSwapSymbolWithCfg(i.BaseCurreny, i.ContractSize, cfg, i),
+			}, nil
+		}
+
+		var ft exchange.FutureType
+		diff := time.Until(st)
+		if i.SettlementPeriod == SettlePeriodWeek {
+			if (diff / time.Second / 86400) < 7 {
+				ft = exchange.FutureTypeCW
+			} else {
+				ft = exchange.FutureTypeNW
+			}
+		} else {
+			if (diff / time.Second / 86400) < 31 {
+				ft = exchange.FutureTypeCQ
+			} else if (diff / time.Second / 86400) < 90 {
+				ft = exchange.FutureTypeNQ
+			} else {
+				ft = exchange.FutureTypeNNQ
+			}
+		}
+		return &FuturesSymbol{
+			exchange.NewBaseFuturesSymbolWithCfg(i.BaseCurreny, st, ft, cfg, i),
+		}, nil
+	}
+	return nil, errors.Errorf("unkown kind '%s'", i.Kind)
 }
