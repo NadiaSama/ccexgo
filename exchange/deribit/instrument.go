@@ -104,6 +104,7 @@ func (c *RestClient) OptionSymbols(ctx context.Context, currency string) ([]exch
 	return ret, nil
 }
 
+//Symbols fetch deribit option and futures(future + swap) symbols
 func (c *RestClient) Symbols(ctx context.Context, currency string) ([]exchange.Symbol, error) {
 	req := NewInstrumentsRequest(currency)
 	irs, err := c.Instruments(ctx, req)
