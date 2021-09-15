@@ -3,7 +3,6 @@ package spot
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -80,11 +79,10 @@ func parseTickerCB(table string, action string, raw json.RawMessage) (*rpc.Notif
 		return nil, errors.WithMessagef(err, "parse timestamp '%s'", r.Timestamp)
 	}
 
-	fields := strings.Split(r.InstrumentID, "-")
-	if len(fields) != 2 {
-		return nil, errors.Errorf("bad symbol '%s'", r.InstrumentID)
+	sym, err := ParseSymbol(r.InstrumentID)
+	if err != nil {
+		return nil, err
 	}
-	sym := okex.NewSpotSymbol(fields[0], fields[1])
 
 	ticker := &Ticker{
 		Symbol:         sym,

@@ -110,7 +110,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 	}
 
 	if len(r.Table) != 0 {
-		return r.transfer()
+		n, e := r.transfer()
+		return n, e
 	}
 	return nil, errors.Errorf("unkown message '%s'", string(resp))
 }

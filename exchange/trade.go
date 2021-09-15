@@ -7,6 +7,7 @@ import (
 )
 
 type (
+	//Trade private trade
 	Trade struct {
 		ID          string
 		OrderID     string
@@ -19,6 +20,16 @@ type (
 		Side        OrderSide
 		IsMaker     bool
 		Raw         interface{}
+	}
+
+	PublicTrade struct {
+		Symbol Symbol
+		Price  decimal.Decimal
+		Amount decimal.Decimal
+		Side   OrderSide
+		ID     string
+		Time   time.Time
+		Raw    interface{}
 	}
 
 	TradeReqParam struct {
