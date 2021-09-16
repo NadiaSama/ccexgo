@@ -87,8 +87,9 @@ const (
 	OrderOffsetOpen    = "open"
 	OrderOffsetClose   = "close"
 
-	OrderPriceLimit  = "limit"
-	OrderPriceMarket = "opponent"
+	OrderPriceLimit    = "limit"
+	OrderPriceMarket   = "opponent"
+	OrderPriceOptimal5 = "optimal_5"
 )
 
 func NewOrderReq(contractCode string, volume int, direction string, offset string, lever int, orderPriceType string) *OrderReq {
@@ -275,12 +276,12 @@ func (r *SwapOrderDetailResp) Transform() (*exchange.Order, error) {
 
 	st, ok := statusMap[r.Status]
 	if !ok {
-		return nil, errors.WithMessagef(err, "unkown order status %d", r.Status)
+		return nil, errors.Errorf("unkown order status %d", r.Status)
 	}
 
 	typ, ok := typeMap[r.OrderPriceType]
 	if !ok {
-		return nil, errors.WithMessagef(err, "unkown order type %s", r.OrderPriceType)
+		return nil, errors.Errorf("unkown order type %s", r.OrderPriceType)
 	}
 	ret.Status = st
 	ret.Type = typ

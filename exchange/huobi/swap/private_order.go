@@ -72,8 +72,9 @@ var (
 	}
 
 	typeMap = map[string]exchange.OrderType{
-		"limit":    exchange.OrderTypeLimit,
-		"opponent": exchange.OrderTypeMarket,
+		"limit":            exchange.OrderTypeLimit,
+		"opponent":         exchange.OrderTypeMarket,
+		OrderPriceOptimal5: exchange.OrderTypeMarket,
 	}
 )
 
