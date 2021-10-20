@@ -1,11 +1,8 @@
 package swap
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
-	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	ccexgo "github.com/NadiaSama/ccexgo/exchange"
@@ -40,22 +37,23 @@ const (
 	PositionInfoEndPoint = "/swap-api/v1/swap_position_info"
 )
 
-func (pir *PositionInfoRequest) Params() []byte {
-	if pir.ContractCode != "" {
-		r, _ := json.Marshal(pir)
-		return r
+func NewPositionInfoRequest(code string) *PositionInfoRequest {
+	return &PositionInfoRequest{
+		ContractCode: code,
 	}
-	return nil
+}
+
+func (pir *PositionInfoRequest) Serialize() ([]byte, error) {
+	if pir.ContractCode != "" {
+		r, err := json.Marshal(pir)
+		return r, err
+	}
+	return nil, nil
 }
 
 func (rc *RestClient) PositionInfo(ctx context.Context, req *PositionInfoRequest) ([]Position, error) {
 	var ret []Position
-	raw := req.Params()
-	var body io.Reader
-	if len(raw) != 0 {
-		body = bytes.NewBuffer(raw)
-	}
-	if err := rc.Request(ctx, http.MethodPost, PositionInfoEndPoint, nil, body, true, &ret); err != nil {
+	if err := rc.PrivatePostReq(ctx, PositionInfoEndPoint, req, &ret); err != nil {
 		return nil, errors.WithMessage(err, "get position info fail")
 	}
 
