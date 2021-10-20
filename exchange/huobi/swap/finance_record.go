@@ -3,10 +3,14 @@ package swap
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
 )
 
 type (
@@ -37,6 +41,9 @@ type (
 
 const (
 	FinancialRecordEndPoint = "/swap-api/v1/swap_financial_record"
+
+	FinancialRecordTypeFundingIncome  = 31
+	FinancialRecordTypeFundingOutCome = 32
 )
 
 func NewFinancialRecordRequest(contractCode string) *FinancialRecordRequest {
@@ -98,4 +105,26 @@ func (cl *RestClient) FinancialRecord(ctx context.Context, req *FinancialRecordR
 	}
 
 	return &ret, nil
+}
+
+//Transform financeRecord to finacial currently only funding type is support
+func (fr *FinancialRecord) Transform() (*exchange.Finance, error) {
+	symbol, err := ParseSymbol(fr.ContractCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if fr.Type != FinancialRecordTypeFundingIncome && fr.Type != FinancialRecordTypeFundingOutCome {
+		return nil, errors.Errorf("unsupport type %d", fr.Type)
+	}
+
+	return &exchange.Finance{
+		ID:       fmt.Sprintf("%d", fr.ID),
+		Symbol:   symbol,
+		Currency: fr.Symbol,
+		Amount:   decimal.NewFromFloat(fr.Amount),
+		Type:     exchange.FinanceTypeFunding,
+		Time:     huobi.ParseTS(fr.TS),
+		Raw:      fr,
+	}, nil
 }
