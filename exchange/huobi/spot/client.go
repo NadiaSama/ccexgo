@@ -7,6 +7,7 @@ import (
 type (
 	RestClient struct {
 		*huobi.RestClient
+		spotAccountID int
 	}
 )
 
