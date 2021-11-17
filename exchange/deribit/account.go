@@ -42,7 +42,7 @@ type (
 		OptionsValue               decimal.Decimal `json:"options_value"`
 	}
 
-	AccountSummaryReq struct {
+	AccountSummaryRequest struct {
 		AuthToken
 		Currency string `json:"currency"`
 		Extended bool   `json:"extended"`
@@ -50,5 +50,11 @@ type (
 )
 
 const (
-	AccountSummaryMethod = "private/get_account_summary"
+	PrivateGetAccountSummary = "private/get_account_summary"
 )
+
+func NewAccountSummaryRequest(currency string) *AccountSummaryRequest {
+	return &AccountSummaryRequest{
+		Currency: currency,
+	}
+}

@@ -2,6 +2,7 @@ package deribit
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/misc/tconv"
@@ -38,7 +39,16 @@ type (
 		InstrumentName       string          `json:"instrument_name"`
 	}
 
+	OpenOrdersByCurrencyRequest struct {
+		AuthToken
+		fields map[string]interface{}
+	}
+
 	OrderID string
+)
+
+const (
+	PrivateGetOpenOrdersByCurrency = "/private/get_open_orders_by_currency"
 )
 
 var (
@@ -68,6 +78,33 @@ var (
 		exchange.TimeInForceIOC: "immediate_or_cancel",
 	}
 )
+
+func NewOpenOrdersByCurrencyRequest(currency string) *OpenOrdersByCurrencyRequest {
+	return &OpenOrdersByCurrencyRequest{
+		fields: map[string]interface{}{
+			"currency": currency,
+		},
+	}
+}
+
+func (obr *OpenOrdersByCurrencyRequest) Kind(kind string) *OpenOrdersByCurrencyRequest {
+	obr.fields["kind"] = kind
+	return obr
+}
+
+func (obr *OpenOrdersByCurrencyRequest) Type(typ string) *OpenOrdersByCurrencyRequest {
+	obr.fields["type"] = typ
+	return obr
+}
+
+func (obr *OpenOrdersByCurrencyRequest) MarshalJSON() ([]byte, error) {
+	m := map[string]interface{}{}
+	for k, v := range obr.fields {
+		m[k] = v
+	}
+	m["access_token"] = obr.AuthToken.AccessToken
+	return json.Marshal(m)
+}
 
 func (c *Client) CreateOrder(ctx context.Context, req *exchange.OrderRequest, opts ...exchange.OrderReqOption) (*exchange.Order, error) {
 	var method string
@@ -136,6 +173,16 @@ func (c *Client) CancelOrder(ctx context.Context, order *exchange.Order) (*excha
 		return nil, err
 	}
 	return r.transform()
+}
+
+func (c *Client) OpenOrdersByCurrency(ctx context.Context, req *OpenOrdersByCurrencyRequest) ([]Order, error) {
+	var resp []Order
+
+	if err := c.call(ctx, PrivateGetOpenOrdersByCurrency, req, &resp, true); err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (order *Order) transform() (*exchange.Order, error) {
