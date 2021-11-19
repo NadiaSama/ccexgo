@@ -2,6 +2,7 @@ package deribit
 
 import (
 	"context"
+	"encoding/json"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -22,6 +23,11 @@ type (
 		key         string
 		secret      string
 		data        chan interface{}
+	}
+
+	//clientReq comment struct which used to build request param
+	clientReq struct {
+		fields map[string]interface{}
 	}
 )
 
@@ -93,4 +99,18 @@ func (c *Client) call(ctx context.Context, method string, params interface{}, de
 	id := atomic.AddInt64(&c.seq, 1)
 	err := c.Conn.Call(ctx, strconv.FormatInt(id, 10), method, params, dest)
 	return exchange.NewBadExResp(err)
+}
+
+func newClientReq() *clientReq {
+	return &clientReq{
+		fields: make(map[string]interface{}),
+	}
+}
+
+func (cr *clientReq) addField(key string, val interface{}) {
+	cr.fields[key] = val
+}
+
+func (cr *clientReq) MarshalJSON() ([]byte, error) {
+	return json.Marshal(cr.fields)
 }
