@@ -18,6 +18,9 @@ func (rc *RestClient) Finance(ctx context.Context, params *exchange.FinanceReqPa
 
 	req := NewFinancialRecordRequest(params.Symbol.String())
 	req.Type(FinancialRecordTypeFundingIncome, FinancialRecordTypeFundingOutCome)
+	if params.Limit != 0 {
+		req = req.PageSize(params.Limit)
+	}
 
 	records, err := rc.FinancialRecord(ctx, req)
 	if err != nil {
