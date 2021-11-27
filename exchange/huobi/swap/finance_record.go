@@ -42,8 +42,8 @@ type (
 const (
 	FinancialRecordEndPoint = "/swap-api/v1/swap_financial_record"
 
-	FinancialRecordTypeFundingIncome  = 31
-	FinancialRecordTypeFundingOutCome = 32
+	FinancialRecordTypeFundingIncome  = 30
+	FinancialRecordTypeFundingOutCome = 31
 )
 
 func NewFinancialRecordRequest(contractCode string) *FinancialRecordRequest {
