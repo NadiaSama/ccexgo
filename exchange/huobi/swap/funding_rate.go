@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/NadiaSama/ccexgo/exchange/huobi"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -48,4 +49,38 @@ func (rc *RestClient) SwapFundingRate(ctx context.Context, req *FundingRateReq) 
 	}
 
 	return &resp, nil
+}
+
+func (rc *RestClient) FetchFundingRate(ctx context.Context, symbol exchange.Symbol) (*exchange.FundingRate, error) {
+	resp, err := rc.SwapFundingRate(ctx, NewFundingRateReq(symbol.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	return resp.Transfer()
+}
+
+func (tr *FundingRateResp) Transfer() (*exchange.FundingRate, error) {
+	symbol, err := ParseSymbol(tr.ContractCode)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parse symbol fail")
+	}
+
+	nt, err := huobi.ParseTSStr(tr.NextFundingTime)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parse next_funding_time fail")
+	}
+
+	ts, err := huobi.ParseTSStr(tr.FundingTime)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parse funding_time fail")
+	}
+
+	return &exchange.FundingRate{
+		Symbol:          symbol,
+		FundingRate:     tr.FundingRate,
+		NextFundingTime: nt,
+		Time:            ts,
+		Raw:             tr,
+	}, nil
 }
