@@ -61,6 +61,10 @@ func (rc *RestClient) Request(ctx context.Context, method string, endPoint strin
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return errors.Errorf("invalid statusCode %d status %s", resp.StatusCode, resp.Status)
+	}
+
 	var r Response
 	if err := json.Unmarshal(data, &r); err != nil {
 		return errors.WithMessage(err, "unmarshal json error")

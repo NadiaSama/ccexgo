@@ -46,3 +46,16 @@ const (
 	PrivateGetPosition  = "private/get_position"
 	PrivateGetPositions = "private/get_positions"
 )
+
+func NewPositionsRequest(currency string, kind string) *PositionsRequest {
+	return &PositionsRequest{
+		Currency: currency,
+		Kind:     kind,
+	}
+}
+
+func NewPositionRequest(instrument string) *PositionRequest {
+	return &PositionRequest{
+		InstrumentName: instrument,
+	}
+}
