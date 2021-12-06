@@ -16,12 +16,33 @@ type (
 		client *okex.RestClient
 	}
 
+	GetRequest struct {
+		fields map[string]string
+	}
 	RestResponse struct {
 		Code string      `json:"code"`
 		Msg  string      `json:"msg"`
 		Data interface{} `json:"data"`
 	}
 )
+
+func NewGetRequest() *GetRequest {
+	return &GetRequest{
+		fields: make(map[string]string),
+	}
+}
+
+func (gr *GetRequest) Add(key, val string) {
+	gr.fields[key] = val
+}
+
+func (gr *GetRequest) Values() url.Values {
+	ret := url.Values{}
+	for k, v := range gr.fields {
+		ret.Add(k, v)
+	}
+	return ret
+}
 
 func NewRestClient(key, secret, pass string) *RestClient {
 	return &RestClient{
