@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
@@ -35,12 +36,60 @@ type (
 		State string    `json:"state"`
 		List  []Balance `json:"list"`
 	}
+
+	AccountHistoryReq struct {
+		*exchange.RestReq
+	}
+
+	AccountHistoryData struct {
+		AccountID    int    `json:"account-id"`
+		Currency     string `json:"currency"`
+		RecordID     int    `json:"record-id"`
+		TransactAmt  string `json:"transact-amt"`
+		TransactType string `json:"transact-type"`
+		AvailBalance string `json:"avail-balance"`
+		AcctBalance  string `json:"acct-balance"`
+		TransactTime int    `json:"transact-time"`
+	}
+	AccountHistoryResp struct {
+		Status  string               `json:"status"`
+		NextID  int                  `json:"next-id"`
+		ErrMsg  string               `json:"err-msg"`
+		ErrCode string               `json:"err-code"`
+		Data    []AccountHistoryData `json:"data"`
+	}
+
+	AccountLedgerReq struct {
+		*exchange.RestReq
+	}
+
+	AccountLedgerData struct {
+		AccountID    int     `json:"accountId"`
+		Currency     string  `json:"currency"`
+		TransactAmt  float64 `json:"transactAmt"`
+		TransactType string  `json:"transactType"`
+		TransferType string  `json:"transferType"`
+		TransactID   int     `json:"transactId"`
+		TransactTime int64   `json:"transactTime"`
+		Transferer   int     `json:"transferer"`
+		Transferee   int     `json:"transferee"`
+	}
+
+	AccountLedgerResp struct {
+		Code    int                 `json:"code"`
+		Message string              `json:"message"`
+		NextID  int                 `json:"nextId"`
+		OK      bool                `json:"ok"`
+		Data    []AccountLedgerData `json:"data"`
+	}
 )
 
 const (
-	AccountsEndPoint = "/v1/account/accounts"
-	TypeFrozen       = "frozen"
-	TypeTrade        = "trade"
+	AccountsEndPoint       = "/v1/account/accounts"
+	AccountHistoryEndPoint = "/v1/account/history"
+	AccountLedgerEndPoint  = "/v2/account/ledger"
+	TypeFrozen             = "frozen"
+	TypeTrade              = "trade"
 )
 
 //Init spot account id for Balance request
@@ -142,4 +191,126 @@ func (rc *RestClient) FetchBalance(ctx context.Context, currencies ...string) (*
 	}
 
 	return ret, nil
+}
+
+func NewAccountHistoryReq(uid int) *AccountHistoryReq {
+	req := exchange.NewRestReq()
+	req.AddFields("account-id", uid)
+	return &AccountHistoryReq{
+		RestReq: req,
+	}
+}
+
+func (ar *AccountHistoryReq) Currency(cy string) *AccountHistoryReq {
+	ar.AddFields("currency", cy)
+	return ar
+}
+
+func (ar *AccountHistoryReq) TransactTypes(types ...string) *AccountHistoryReq {
+	typ := strings.Join(types, ",")
+	ar.AddFields("transact-types", typ)
+	return ar
+}
+
+func (ar *AccountHistoryReq) AddTime(ts time.Time) *AccountHistoryReq {
+	ar.AddFields("start-time", ts.Unix()*1000)
+	return ar
+}
+
+func (ar *AccountHistoryReq) EndTime(ts time.Time) *AccountHistoryReq {
+	ar.AddFields("end-time", ts.Unix()*1000)
+	return ar
+}
+
+func (ar *AccountHistoryReq) Sort(sort string) *AccountHistoryReq {
+	ar.AddFields("sort", sort)
+	return ar
+}
+
+func (ar *AccountHistoryReq) Size(size int) *AccountHistoryReq {
+	ar.AddFields("size", size)
+	return ar
+}
+
+func (ar *AccountHistoryReq) FromID(id int) *AccountHistoryReq {
+	ar.AddFields("from-id", id)
+	return ar
+}
+
+func (rc *RestClient) AccountHistory(ctx context.Context, req *AccountHistoryReq) (*AccountHistoryResp, error) {
+	values, err := req.Values()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build request param fail")
+	}
+
+	var ret AccountHistoryResp
+	if err := rc.RequestWithRawResp(ctx, http.MethodGet, AccountHistoryEndPoint, values, nil, true, &ret); err != nil {
+		return nil, errors.WithMessage(err, "request failed")
+	}
+
+	if ret.Status != "ok" {
+		return nil, errors.Errorf("reqeust response failed %+v", ret)
+	}
+	return &ret, nil
+}
+
+func NewAccountLedgerReq(uid int) *AccountLedgerReq {
+	req := exchange.NewRestReq()
+	req.AddFields("accountId", uid)
+	return &AccountLedgerReq{
+		RestReq: req,
+	}
+}
+
+func (ar *AccountLedgerReq) Currency(cy string) *AccountLedgerReq {
+	ar.AddFields("currency", cy)
+	return ar
+}
+
+func (ar *AccountLedgerReq) TransactTypes(typ string) *AccountLedgerReq {
+	ar.AddFields("transactTypes", typ)
+	return ar
+}
+
+func (ar *AccountLedgerReq) StartTime(st time.Time) *AccountLedgerReq {
+	ar.AddFields("startTime", st.Unix()*1000)
+	return ar
+}
+
+func (ar *AccountLedgerReq) EndTime(et time.Time) *AccountLedgerReq {
+	ar.AddFields("endTime", et.Unix()*1000)
+	return ar
+}
+
+func (ar *AccountLedgerReq) Sort(s string) *AccountLedgerReq {
+	ar.AddFields("sort", s)
+	return ar
+}
+
+func (ar *AccountLedgerReq) Limit(limit int) *AccountLedgerReq {
+	ar.AddFields("limit", limit)
+	return ar
+}
+
+func (ar *AccountLedgerReq) FromID(id int) *AccountLedgerReq {
+	ar.AddFields("fromId", id)
+	return ar
+}
+
+func (rc *RestClient) AccountLedger(ctx context.Context, req *AccountLedgerReq) (*AccountLedgerResp, error) {
+	values, err := req.Values()
+	if err != nil {
+		return nil, errors.WithMessage(err, "build request param fail")
+	}
+
+	var ret AccountLedgerResp
+	if err := rc.RequestWithRawResp(ctx, http.MethodGet, AccountLedgerEndPoint, values, nil, true, &ret); err != nil {
+		return nil, errors.WithMessage(err, "build request fail")
+	}
+
+	if !ret.OK {
+		return nil, errors.Errorf("response error %+v", ret)
+	}
+
+	return &ret, nil
 }
