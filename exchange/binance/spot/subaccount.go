@@ -65,7 +65,7 @@ type (
 	}
 
 	SubAccountAssetResp struct {
-		Balnaces []SubAccountBalance `json:"balances"`
+		Balances []SubAccountBalance `json:"balances"`
 	}
 )
 
@@ -74,6 +74,8 @@ const (
 	SubAccountTransferHistoryEndPoint         = "/sapi/v1/sub-account/sub/transfer/history"
 	SubAccountFuturesInternalTransferEndPoint = "/sapi/v1/sub-account/futures/internalTransfer"
 	SubAccountAssetEndPoint                   = "/sapi/v3/sub-account/assets"
+
+	TransferHistoryLimit = 500
 )
 
 func NewSubAccountReq() *SubAccountReq {
