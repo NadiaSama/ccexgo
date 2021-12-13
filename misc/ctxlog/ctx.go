@@ -19,6 +19,15 @@ func GetLog(ctx context.Context) log.Logger {
 	return ret
 }
 
+//GetSafeLog like GetLog but return log.NopLogger if no logger bind with ctx
+func GetSafeLog(ctx context.Context) log.Logger {
+	ret := GetLog(ctx)
+	if ret == nil {
+		return log.NewNopLogger()
+	}
+	return ret
+}
+
 //SetLog bind ctx with logger
 func SetLog(ctx context.Context, logger log.Logger) context.Context {
 	return context.WithValue(ctx, logKey, logger)
