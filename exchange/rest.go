@@ -2,6 +2,7 @@ package exchange
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -40,8 +41,14 @@ func (rr *RestReq) Values() (url.Values, error) {
 		case int:
 			ret.Add(k, strconv.FormatInt(int64(t), 10))
 
+		case int64:
+			ret.Add(k, strconv.FormatInt(t, 10))
+
 		case float64:
 			ret.Add(k, strconv.FormatFloat(t, 'f', 8, 64))
+
+		case bool:
+			ret.Add(k, fmt.Sprintf("%t", t))
 
 		default:
 			return ret, errors.Errorf("unknown val=%+v' for key=%s", v, k)
