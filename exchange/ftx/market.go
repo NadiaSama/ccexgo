@@ -2,7 +2,12 @@ package ftx
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"net/url"
+	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 type (
@@ -22,6 +27,11 @@ type (
 		MinProvideSize float64 `json:"minProvideSize"`
 		Restricted     bool    `json:"restricted"`
 	}
+
+	Depth struct {
+		Asks [][2]float64
+		Bids [][2]float64
+	}
 )
 
 func (rc *RestClient) Markets(ctx context.Context) ([]Market, error) {
@@ -31,4 +41,23 @@ func (rc *RestClient) Markets(ctx context.Context) ([]Market, error) {
 	}
 
 	return resp, nil
+}
+
+func (rc *RestClient) Books(ctx context.Context, marketName, sz string) (*Depth, error) {
+	var ret Depth
+	values := url.Values{}
+	values.Add("market_name", marketName)
+	if sz != "" {
+		if _, err := strconv.Atoi(sz); err != nil {
+			return nil, errors.WithMessagef(err, "invalid sz '%s'", sz)
+		}
+		values.Add("sz", sz)
+	}
+
+	uri := fmt.Sprintf("/markets/%s/orderbook", marketName)
+	if err := rc.request(ctx, http.MethodGet, uri, values, nil, false, &ret); err != nil {
+		return nil, err
+	}
+
+	return &ret, nil
 }
