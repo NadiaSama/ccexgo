@@ -56,6 +56,7 @@ const (
 	channelOrderBook = "orderbook"
 	channelOrders    = "orders"
 	channelFills     = "fills"
+	channelTrades    = "trades"
 )
 
 func NewCodeC() *CodeC {
