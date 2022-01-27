@@ -32,7 +32,19 @@ type (
 		Asks [][2]float64
 		Bids [][2]float64
 	}
+
+	BookReq struct {
+		Market string
+		Sz     string
+	}
 )
+
+func NewBookReq(market, sz string) *BookReq {
+	return &BookReq{
+		Market: market,
+		Sz:     sz,
+	}
+}
 
 func (rc *RestClient) Markets(ctx context.Context) ([]Market, error) {
 	var resp []Market
@@ -43,18 +55,18 @@ func (rc *RestClient) Markets(ctx context.Context) ([]Market, error) {
 	return resp, nil
 }
 
-func (rc *RestClient) Books(ctx context.Context, marketName, sz string) (*Depth, error) {
+func (rc *RestClient) Books(ctx context.Context, req BookReq) (*Depth, error) {
 	var ret Depth
 	values := url.Values{}
-	values.Add("market_name", marketName)
-	if sz != "" {
-		if _, err := strconv.Atoi(sz); err != nil {
-			return nil, errors.WithMessagef(err, "invalid sz '%s'", sz)
+	values.Add("market_name", req.Market)
+	if req.Sz != "" {
+		if _, err := strconv.Atoi(req.Sz); err != nil {
+			return nil, errors.WithMessagef(err, "invalid sz '%s'", req.Sz)
 		}
-		values.Add("sz", sz)
+		values.Add("sz", req.Sz)
 	}
 
-	uri := fmt.Sprintf("/markets/%s/orderbook", marketName)
+	uri := fmt.Sprintf("/markets/%s/orderbook", req.Market)
 	if err := rc.request(ctx, http.MethodGet, uri, values, nil, false, &ret); err != nil {
 		return nil, err
 	}
