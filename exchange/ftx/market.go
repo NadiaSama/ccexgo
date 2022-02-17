@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/pkg/errors"
+	"github.com/NadiaSama/ccexgo/exchange"
 )
 
 type (
@@ -35,14 +35,19 @@ type (
 
 	BookReq struct {
 		Market string
-		Sz     string
+		Depth  int
+	}
+
+	Markets       struct{}
+	MarketChannel struct {
+		symbol exchange.Symbol
 	}
 )
 
-func NewBookReq(market, sz string) *BookReq {
+func NewBookReq(market string, depth int) *BookReq {
 	return &BookReq{
 		Market: market,
-		Sz:     sz,
+		Depth:  depth,
 	}
 }
 
@@ -55,15 +60,12 @@ func (rc *RestClient) Markets(ctx context.Context) ([]Market, error) {
 	return resp, nil
 }
 
-func (rc *RestClient) Books(ctx context.Context, req BookReq) (*Depth, error) {
+func (rc *RestClient) Books(ctx context.Context, req *BookReq) (*Depth, error) {
 	var ret Depth
 	values := url.Values{}
-	values.Add("market_name", req.Market)
-	if req.Sz != "" {
-		if _, err := strconv.Atoi(req.Sz); err != nil {
-			return nil, errors.WithMessagef(err, "invalid sz '%s'", req.Sz)
-		}
-		values.Add("sz", req.Sz)
+	if req.Depth != 0 {
+		depth := strconv.Itoa(req.Depth)
+		values.Add("depth", depth)
 	}
 
 	uri := fmt.Sprintf("/markets/%s/orderbook", req.Market)
@@ -72,4 +74,14 @@ func (rc *RestClient) Books(ctx context.Context, req BookReq) (*Depth, error) {
 	}
 
 	return &ret, nil
+}
+
+func NewMarketsChannel(sym exchange.Symbol) exchange.Channel {
+	return &MarketChannel{
+		symbol: sym,
+	}
+}
+
+func (m *MarketChannel) String() string {
+	return m.symbol.String()
 }

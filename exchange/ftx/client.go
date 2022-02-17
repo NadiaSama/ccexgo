@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -18,9 +19,10 @@ import (
 
 type (
 	RestClient struct {
-		key    string
-		secret string
-		prefix string
+		key        string
+		secret     string
+		prefix     string
+		subaccount string
 	}
 
 	Wrap struct {
@@ -115,10 +117,17 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 	} else {
 		req, err = http.NewRequestWithContext(ctx, method, uStr, body)
 	}
+
+	// 子账户,子账户用户名跟在secret后方
+	fields := strings.Split(rc.secret, ",")
+	if len(fields) > 1 {
+		req.Header.Add("FTX-SUBACCOUNT", fields[1])
+	}
 	return req, err
 }
 
 func signature(secret string, param string) string {
+	secret = strings.Split(secret, ",")[0]
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(param))
 	return fmt.Sprintf("%x", h.Sum(nil))

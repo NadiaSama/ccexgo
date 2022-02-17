@@ -15,10 +15,6 @@ type (
 	}
 )
 
-const (
-	TradesChannel = "trades"
-)
-
 func NewTradesChannel(sym exchange.Symbol) exchange.Channel {
 	return &TradeChannel{
 		symbol: sym,

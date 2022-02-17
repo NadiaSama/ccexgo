@@ -236,6 +236,16 @@ func parseTime(ts string) (time.Time, error) {
 	return ct, nil
 }
 
+func NewOrderHistoryReq(market, side, orderType string, startTime, endTime int) *OrdersHistoryReq {
+	return &OrdersHistoryReq{
+		Market:    market,
+		Side:      side,
+		OrderType: orderType,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+}
+
 func (rc *RestClient) OrdersHistory(ctx context.Context, param *OrdersHistoryReq) ([]*Order, error) {
 	values := url.Values{}
 

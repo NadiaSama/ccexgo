@@ -13,6 +13,7 @@ type (
 	CodeC struct {
 		*exchange.CodeC
 		orderBook map[string]*OrderBook
+		trade     map[string]*Trade
 	}
 
 	callParam struct {
@@ -53,16 +54,21 @@ const (
 
 	codeReconnet = 20001
 
-	channelOrderBook = "orderbook"
-	channelOrders    = "orders"
-	channelFills     = "fills"
-	channelTrades    = "trades"
+	channelOrderBook        = "orderbook"
+	channelOrders           = "orders"
+	channelFills            = "fills"
+	channelTrades           = "trades"
+	channelTicker           = "ticker"
+	channelMarkets          = "markets"
+	channelOrderbookGrouped = "orderbookGrouped"
+	channelFtxPay           = "ftxPay" // todo
 )
 
 func NewCodeC() *CodeC {
 	return &CodeC{
 		exchange.NewCodeC(),
 		make(map[string]*OrderBook),
+		make(map[string]*Trade),
 	}
 }
 

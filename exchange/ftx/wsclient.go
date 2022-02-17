@@ -93,32 +93,55 @@ func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel)
 	var req callParam
 
 	switch t := ch.(type) {
-	case *OrderBookChannel:
+	case *OrderBookChannel: // orderbook[public]
 		req = callParam{
 			Channel: channelOrderBook,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
 
-	case *FillChannel:
+	case *FillChannel: // fills[private]
 		req = callParam{
 			Channel: channelFills,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
 
-	case *OrderChannel:
+	case *OrderChannel: // orders[private]
 		req = callParam{
 			Channel: channelOrders,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
-	case *TradeChannel:
+
+	case *TradeChannel: // trades[public]
 		req = callParam{
 			Channel: channelTrades,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
+
+	case *TickerChannel: // ticker[public]
+		req = callParam{
+			Channel: channelTicker,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *MarketChannel: // markets[public]
+		req = callParam{
+			Channel: channelMarkets,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderbookGroupedChannel: // orderbookGrouped[public]
+		req = callParam{
+			Channel: channelOrderbookGrouped,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
 	default:
 		return errors.Errorf("unsupport typ %+v", t)
 	}
@@ -164,12 +187,35 @@ func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channe
 			OP:      "unsubscribe",
 			Market:  t.symbol.String(),
 		}
+
 	case *TradeChannel:
 		req = callParam{
 			Channel: channelTrades,
 			OP:      "unsubscribe",
 			Market:  t.symbol.String(),
 		}
+
+	case *TickerChannel:
+		req = callParam{
+			Channel: channelTicker,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *MarketChannel:
+		req = callParam{
+			Channel: channelMarkets,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderbookGroupedChannel:
+		req = callParam{
+			Channel: channelOrderbookGrouped,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
 	default:
 		return errors.Errorf("unsupport typ %+v", t)
 	}
