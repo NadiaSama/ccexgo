@@ -47,14 +47,3 @@ func TestClientRequest(t *testing.T) {
 		t.Errorf("bad error %s", err.Error())
 	}
 }
-
-func TestBalance(t *testing.T) {
-	ctx := context.Background()
-	client := NewRestClient("IdAd0lvi9sq5C3zcckdI46gD0BG4c0DFHo1qdPKa", "flT9mRCn1KZBuFlg5JU6SpQKbXVtN1yif1JwnDvv")
-	var ret []Balance
-	err := client.request(ctx, http.MethodGet, "/subaccounts", nil, nil, true, &ret)
-	if err != nil {
-		t.Error(err.Error())
-	}
-	t.Logf("ret:%+v", ret)
-}
