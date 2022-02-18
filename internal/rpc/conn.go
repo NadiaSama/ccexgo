@@ -169,7 +169,8 @@ func (c *connection) handleMessages(ctx context.Context, handler Handler) {
 				return
 			}
 		}
-
+		// fmt.Println(reflect.TypeOf(response))
+		// fmt.Println(response)
 		switch msg := response.(type) {
 		case *Result:
 			c.pendingMu.Lock()

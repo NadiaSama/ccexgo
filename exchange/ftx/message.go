@@ -116,7 +116,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return ret, nil
 
 	case typePartial:
-		if cr.Channel == channelOrderBook {
+		switch cr.Channel {
+		case channelOrderBook:
 			sym, err := ParseSymbol(cr.Market)
 			if err != nil {
 				return nil, errors.Errorf("unknow market '%s'", cr.Market)
@@ -132,25 +133,10 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 				Method: id,
 				Params: notify,
 			}, nil
-		}
-		if cr.Channel == channelTrades {
-			sym, err := ParseSymbol(cr.Market)
-			if err != nil {
-				return nil, errors.Errorf("unknow market '%s'", cr.Market)
-			}
-			tr := NewTrade(sym)
-			notify, err := tr.Init(&cr)
-			if err != nil {
-				return nil, err
-			}
-			cc.trade[cr.Market] = tr
 
-			return &rpc.Notify{
-				Method: id,
-				Params: notify,
-			}, nil
+		default:
+			return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
 		}
-		return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
 
 	case typeUpdate:
 		var param interface{}
@@ -170,6 +156,7 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 			param = f
 
 		case channelOrderBook:
+			fmt.Println("orderbook Update")
 			ob, ok := cc.orderBook[cr.Market]
 			if !ok {
 				return nil, errors.Errorf("unkown market '%s'", cr.Market)
@@ -181,11 +168,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 			param = f
 
 		case channelTrades:
-			tr, ok := cc.trade[cr.Market]
-			if !ok {
-				return nil, errors.Errorf("unkown market '%s'", cr.Market)
-			}
-			f, err := tr.Update(&cr)
+			fmt.Println("tradesUpdate")
+			f, err := cc.parseTrades(cr.Data)
 			if err != nil {
 				return nil, err
 			}
@@ -220,6 +204,15 @@ func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
 	}
 
 	return parseFillInternal(&fill)
+}
+
+func (cc *CodeC) parseTrades(raw []byte) ([]*Trade, error) {
+	var trade []*TradeNotify
+	if err := json.Unmarshal(raw, &trade); err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	return parseTradesInternal(trade)
 }
 
 func subID(channel string, market string) string {

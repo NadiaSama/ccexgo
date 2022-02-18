@@ -231,9 +231,9 @@ func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channe
 }
 
 func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
-	if notify.Method == typePong || notify.Method == typeInfo {
-		return
-	}
+	// if notify.Method == typePong || notify.Method == typeInfo {
+	// 	return
+	// }
 
 	ws.data <- &exchange.WSNotify{
 		Exchange: ftxExchange,
