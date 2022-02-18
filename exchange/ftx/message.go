@@ -13,6 +13,7 @@ type (
 	CodeC struct {
 		*exchange.CodeC
 		orderBook map[string]*OrderBook
+		trade     map[string]*Trade
 	}
 
 	callParam struct {
@@ -53,15 +54,21 @@ const (
 
 	codeReconnet = 20001
 
-	channelOrderBook = "orderbook"
-	channelOrders    = "orders"
-	channelFills     = "fills"
+	channelOrderBook        = "orderbook"
+	channelOrders           = "orders"
+	channelFills            = "fills"
+	channelTrades           = "trades"
+	channelTicker           = "ticker"
+	channelMarkets          = "markets"
+	channelOrderbookGrouped = "orderbookGrouped"
+	channelFtxPay           = "ftxPay" // todo
 )
 
 func NewCodeC() *CodeC {
 	return &CodeC{
 		exchange.NewCodeC(),
 		make(map[string]*OrderBook),
+		make(map[string]*Trade),
 	}
 }
 
@@ -109,7 +116,8 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return ret, nil
 
 	case typePartial:
-		if cr.Channel == channelOrderBook {
+		switch cr.Channel {
+		case channelOrderBook:
 			sym, err := ParseSymbol(cr.Market)
 			if err != nil {
 				return nil, errors.Errorf("unknow market '%s'", cr.Market)
@@ -125,8 +133,10 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 				Method: id,
 				Params: notify,
 			}, nil
+
+		default:
+			return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
 		}
-		return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
 
 	case typeUpdate:
 		var param interface{}
@@ -146,11 +156,20 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 			param = f
 
 		case channelOrderBook:
+			fmt.Println("orderbook Update")
 			ob, ok := cc.orderBook[cr.Market]
 			if !ok {
 				return nil, errors.Errorf("unkown market '%s'", cr.Market)
 			}
 			f, err := ob.Update(&cr)
+			if err != nil {
+				return nil, err
+			}
+			param = f
+
+		case channelTrades:
+			fmt.Println("tradesUpdate")
+			f, err := cc.parseTrades(cr.Data)
 			if err != nil {
 				return nil, err
 			}
@@ -185,6 +204,15 @@ func (cc *CodeC) parseFills(raw []byte) (*Fill, error) {
 	}
 
 	return parseFillInternal(&fill)
+}
+
+func (cc *CodeC) parseTrades(raw []byte) ([]*Trade, error) {
+	var trade []*TradeNotify
+	if err := json.Unmarshal(raw, &trade); err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	return parseTradesInternal(trade)
 }
 
 func subID(channel string, market string) string {

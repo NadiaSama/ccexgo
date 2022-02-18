@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -43,6 +44,14 @@ type (
 		ClientID string  `json:"clientId,omitempty"`
 	}
 
+	OrdersHistoryReq struct {
+		Market    string `json:"market"`
+		Side      string `json:"side"`
+		OrderType string `json:"orderType"`
+		StartTime int    `json:"startTime"`
+		EndTime   int    `json:"endTime"`
+	}
+
 	OrderChannel struct {
 		symbol exchange.Symbol
 	}
@@ -53,7 +62,8 @@ const (
 	ftxOrderOpen  = "open"
 	ftxOrderClose = "closed"
 
-	orderEndPoint = "/orders"
+	orderEndPoint        = "/orders"
+	orderHistoryEndPoint = "/orders/history"
 )
 
 var (
@@ -224,4 +234,44 @@ func parseTime(ts string) (time.Time, error) {
 		return time.Time{}, errors.WithMessagef(err, "bad create time '%s'", ts)
 	}
 	return ct, nil
+}
+
+func NewOrderHistoryReq(market, side, orderType string, startTime, endTime int) *OrdersHistoryReq {
+	return &OrdersHistoryReq{
+		Market:    market,
+		Side:      side,
+		OrderType: orderType,
+		StartTime: startTime,
+		EndTime:   endTime,
+	}
+}
+
+func (rc *RestClient) OrdersHistory(ctx context.Context, param *OrdersHistoryReq) ([]*Order, error) {
+	values := url.Values{}
+
+	if param.Market != "" {
+		values.Add("market", param.Market)
+	}
+
+	if param.Side != "" {
+		values.Add("side", param.Side)
+	}
+
+	if param.OrderType != "" {
+		values.Add("orderType", param.OrderType)
+	}
+
+	if param.StartTime != 0 {
+		values.Add("startTime", strconv.Itoa(param.StartTime))
+	}
+
+	if param.EndTime != 0 {
+		values.Add("endTime", strconv.Itoa(param.EndTime))
+	}
+
+	var ret []*Order
+	if err := rc.request(ctx, http.MethodGet, orderHistoryEndPoint, values, nil, true, &ret); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }

@@ -64,6 +64,7 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	}()
 	return nil
 }
+
 func (ws *WSClient) Auth(ctx context.Context) error {
 	ts := time.Now().UnixNano() / 1e6
 	es := fmt.Sprintf("%dwebsocket_login", ts)
@@ -92,26 +93,55 @@ func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel)
 	var req callParam
 
 	switch t := ch.(type) {
-	case *OrderBookChannel:
+	case *OrderBookChannel: // orderbook[public]
 		req = callParam{
 			Channel: channelOrderBook,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
 
-	case *FillChannel:
+	case *FillChannel: // fills[private]
 		req = callParam{
 			Channel: channelFills,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
 
-	case *OrderChannel:
+	case *OrderChannel: // orders[private]
 		req = callParam{
 			Channel: channelOrders,
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
+
+	case *TradeChannel: // trades[public]
+		req = callParam{
+			Channel: channelTrades,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *TickerChannel: // ticker[public]
+		req = callParam{
+			Channel: channelTicker,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *MarketChannel: // markets[public]
+		req = callParam{
+			Channel: channelMarkets,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderbookGroupedChannel: // orderbookGrouped[public]
+		req = callParam{
+			Channel: channelOrderbookGrouped,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
 	default:
 		return errors.Errorf("unsupport typ %+v", t)
 	}
@@ -126,10 +156,84 @@ func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel)
 	return nil
 }
 
-func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
-	if notify.Method == typePong || notify.Method == typeInfo {
-		return
+func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("ftx multi unsubscribe not support")
 	}
+
+	ch := channels[0]
+
+	var result subscribeResult
+	var req callParam
+
+	switch t := ch.(type) {
+	case *OrderBookChannel:
+		req = callParam{
+			Channel: channelOrderBook,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *FillChannel:
+		req = callParam{
+			Channel: channelFills,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderChannel:
+		req = callParam{
+			Channel: channelOrders,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *TradeChannel:
+		req = callParam{
+			Channel: channelTrades,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *TickerChannel:
+		req = callParam{
+			Channel: channelTicker,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *MarketChannel:
+		req = callParam{
+			Channel: channelMarkets,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderbookGroupedChannel:
+		req = callParam{
+			Channel: channelOrderbookGrouped,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
+
+	default:
+		return errors.Errorf("unsupport typ %+v", t)
+	}
+
+	if err := ws.Conn.Call(ctx, subID(req.Channel, req.Market), req.OP, &req, &result); err != nil {
+		return errors.WithMessagef(err, "Unsubscribe orders fail")
+	}
+
+	if result.Type != typeUnSubscribed {
+		return errors.Errorf("bad result %v", result)
+	}
+	return nil
+}
+
+func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
+	// if notify.Method == typePong || notify.Method == typeInfo {
+	// 	return
+	// }
 
 	ws.data <- &exchange.WSNotify{
 		Exchange: ftxExchange,

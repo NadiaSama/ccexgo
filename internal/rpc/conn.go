@@ -169,7 +169,6 @@ func (c *connection) handleMessages(ctx context.Context, handler Handler) {
 				return
 			}
 		}
-
 		switch msg := response.(type) {
 		case *Result:
 			c.pendingMu.Lock()
