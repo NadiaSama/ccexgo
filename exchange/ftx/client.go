@@ -19,10 +19,9 @@ import (
 
 type (
 	RestClient struct {
-		key        string
-		secret     string
-		prefix     string
-		subaccount string
+		key    string
+		secret string
+		prefix string
 	}
 
 	Wrap struct {
