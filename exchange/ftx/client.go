@@ -136,7 +136,6 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 }
 
 func signature(secret string, param string) string {
-	secret = strings.Split(secret, ",")[0]
 	h := hmac.New(sha256.New, []byte(secret))
 	h.Write([]byte(param))
 	return fmt.Sprintf("%x", h.Sum(nil))
