@@ -133,6 +133,23 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 				Params: notify,
 			}, nil
 		}
+		if cr.Channel == channelTrades {
+			sym, err := ParseSymbol(cr.Market)
+			if err != nil {
+				return nil, errors.Errorf("unknow market '%s'", cr.Market)
+			}
+			tr := NewTrade(sym)
+			notify, err := tr.Init(&cr)
+			if err != nil {
+				return nil, err
+			}
+			cc.trade[cr.Market] = tr
+
+			return &rpc.Notify{
+				Method: id,
+				Params: notify,
+			}, nil
+		}
 		return nil, errors.Errorf("unsupport partial data %s %s", cr.Channel, cr.Market)
 
 	case typeUpdate:
@@ -158,6 +175,17 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 				return nil, errors.Errorf("unkown market '%s'", cr.Market)
 			}
 			f, err := ob.Update(&cr)
+			if err != nil {
+				return nil, err
+			}
+			param = f
+
+		case channelTrades:
+			tr, ok := cc.trade[cr.Market]
+			if !ok {
+				return nil, errors.Errorf("unkown market '%s'", cr.Market)
+			}
+			f, err := tr.Update(&cr)
 			if err != nil {
 				return nil, err
 			}
