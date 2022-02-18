@@ -19,9 +19,10 @@ import (
 
 type (
 	RestClient struct {
-		key    string
-		secret string
-		prefix string
+		key        string
+		secret     string
+		subAccount string
+		prefix     string
 	}
 
 	Wrap struct {
@@ -33,13 +34,23 @@ type (
 
 const (
 	ftxExchange = "ftx"
+	ftxRSAddr   = "https://ftx.com/api"
 )
 
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
 		key:    key,
 		secret: secret,
-		prefix: "https://ftx.com/api",
+		prefix: ftxRSAddr,
+	}
+}
+
+func NewClientWithSubAccount(key, secret, subAccount string) *RestClient {
+	return &RestClient{
+		key:        key,
+		secret:     secret,
+		subAccount: subAccount,
+		prefix:     ftxRSAddr,
 	}
 }
 
@@ -118,9 +129,8 @@ func (rc *RestClient) buildRequest(ctx context.Context, method string, endPoint 
 	}
 
 	// 子账户,子账户用户名跟在secret后方
-	fields := strings.Split(rc.secret, ",")
-	if len(fields) > 1 {
-		req.Header.Add("FTX-SUBACCOUNT", fields[1])
+	if rc.subAccount != "" {
+		req.Header.Add("FTX-SUBACCOUNT", rc.subAccount)
 	}
 	return req, err
 }
