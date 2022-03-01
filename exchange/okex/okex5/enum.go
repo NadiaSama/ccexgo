@@ -32,6 +32,7 @@ const (
 	MgnModeCash     MgnMode = "cash"
 	MgnModeCross    MgnMode = "cross"
 	MgnModeIsolated MgnMode = "isolated"
+	MgnModeEmpty    MgnMode = ""
 
 	ExecTypeMaker ExecType = "M"
 	ExecTypeTaker ExecType = "T"
@@ -42,6 +43,7 @@ const (
 	InstTypeFutures InstType = "FUTURES"
 	InstTypeOption  InstType = "OPTION"
 	InstTypeAny     InstType = "ANY"
+	InstTypeEmpty   InstType = ""
 
 	TDModeIsolated TDMode = "isolated"
 	TDModeCross    TDMode = "cross"
@@ -137,6 +139,7 @@ func init() {
 		InstTypeSwap,
 		InstTypeOption,
 		InstTypeAny,
+		InstTypeEmpty,
 	}
 	for _, i := range its {
 		instTypeMap[string(i)] = i
@@ -226,6 +229,7 @@ func init() {
 		MgnModeCash,
 		MgnModeCross,
 		MgnModeIsolated,
+		MgnModeEmpty,
 	}
 	for _, m := range mms {
 		mgnModeMap[string(m)] = m
