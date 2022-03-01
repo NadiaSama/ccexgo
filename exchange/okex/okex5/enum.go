@@ -33,6 +33,7 @@ const (
 	MgnModeCash     MgnMode = "cash"
 	MgnModeCross    MgnMode = "cross"
 	MgnModeIsolated MgnMode = "isolated"
+	MgnModeEmpty    MgnMode = ""
 
 	ExecTypeMaker ExecType = "M"
 	ExecTypeTaker ExecType = "T"
@@ -230,6 +231,7 @@ func init() {
 		MgnModeCash,
 		MgnModeCross,
 		MgnModeIsolated,
+		MgnModeEmpty,
 	}
 	for _, m := range mms {
 		mgnModeMap[string(m)] = m
