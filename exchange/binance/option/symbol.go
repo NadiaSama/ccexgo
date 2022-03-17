@@ -19,12 +19,6 @@ type (
 		symbol string
 	}
 
-	OptionInfoResp struct {
-		Code int          `json:"code"`
-		Msg  string       `json:"msg"`
-		Data []OptionInfo `json:"data"`
-	}
-
 	//OptionInfo option info of binance option contract
 	OptionInfo struct {
 		ID                   int             `json:"id"`
@@ -59,11 +53,13 @@ const (
 )
 
 var (
-	symbolMap = map[string]*Symbol{}
-	mu        sync.Mutex
+	symbolMap  = map[string]*Symbol{}
+	mu         sync.Mutex
+	useTestNet bool
 )
 
-func Init(ctx context.Context) error {
+func Init(ctx context.Context, testNet bool) error {
+	useTestNet = testNet
 	st, err := updateSymbol(ctx)
 	if err != nil {
 		return errors.WithMessage(err, "updateSymbol fail")
@@ -109,7 +105,13 @@ func ParseSymbol(symbol string) (exchange.OptionSymbol, error) {
 }
 
 func updateSymbol(ctx context.Context) (minSettleTime time.Time, err error) {
-	rc := NewRestClient("", "")
+	var rc *RestClient
+
+	if useTestNet {
+		rc = NewTestRestClient("", "")
+	} else {
+		rc = NewRestClient("", "")
+	}
 
 	var (
 		symbols []exchange.OptionSymbol
@@ -147,16 +149,12 @@ func updateSymbol(ctx context.Context) (minSettleTime time.Time, err error) {
 }
 
 func (rc *RestClient) OptionInfo(ctx context.Context) ([]OptionInfo, error) {
-	var resp OptionInfoResp
+	var oi []OptionInfo
 
-	if err := rc.GetRequest(ctx, OptionInfoEndPoint, binance.NewRestReq(), false, &resp); err != nil {
-		return nil, errors.WithMessage(err, "query option info endPoint fail")
+	if err := rc.GetRequest(ctx, OptionInfoEndPoint, binance.NewRestReq(), false, &oi); err != nil {
+		return nil, err
 	}
-
-	if resp.Code != 0 {
-		return nil, errors.Errorf("invalid resp code=%d msg=%s", resp.Code, resp.Msg)
-	}
-	return resp.Data, nil
+	return oi, nil
 }
 
 func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.OptionSymbol, error) {
