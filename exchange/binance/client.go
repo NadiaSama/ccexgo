@@ -91,14 +91,6 @@ func (rc *RestClient) request(ctx context.Context, method, endPoint string, para
 		}
 		defer resp.Body.Close()
 
-		//if ip is not in apikey ip whilte list. binance will return statuscode 200 with error message
-		var ae APIError
-		if ret := json.Unmarshal(content, &ae); ret == nil {
-			if len(ae.Message) != 0 {
-				return &ae
-			}
-		}
-
 		if err := json.Unmarshal(content, dst); err != nil {
 			return err
 		}

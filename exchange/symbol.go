@@ -57,8 +57,8 @@ type (
 
 	//SymbolConfig used to specific symbol property
 	SymbolConfig struct {
-		PricePrecision  decimal.Decimal
-		AmountPrecision decimal.Decimal
+		PricePrecision  decimal.Decimal //symbol price precision in decimal
+		AmountPrecision decimal.Decimal //symbol amount precision in decimal
 		ValuePrecision  decimal.Decimal
 		AmountMin       decimal.Decimal
 		AmountMax       decimal.Decimal
