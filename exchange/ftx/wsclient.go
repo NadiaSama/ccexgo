@@ -64,6 +64,7 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	}()
 	return nil
 }
+
 func (ws *WSClient) Auth(ctx context.Context) error {
 	ts := time.Now().UnixNano() / 1e6
 	es := fmt.Sprintf("%dwebsocket_login", ts)
@@ -112,6 +113,12 @@ func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel)
 			OP:      "subscribe",
 			Market:  t.symbol.String(),
 		}
+	case *TradeChannel:
+		req = callParam{
+			Channel: channelTrades,
+			OP:      "subscribe",
+			Market:  t.symbol.String(),
+		}
 	default:
 		return errors.Errorf("unsupport typ %+v", t)
 	}
@@ -121,6 +128,57 @@ func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel)
 	}
 
 	if result.Type != typeSubscribed {
+		return errors.Errorf("bad result %v", result)
+	}
+	return nil
+}
+
+func (ws *WSClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	if len(channels) != 1 {
+		return errors.Errorf("ftx multi unsubscribe not support")
+	}
+
+	ch := channels[0]
+
+	var result subscribeResult
+	var req callParam
+
+	switch t := ch.(type) {
+	case *OrderBookChannel:
+		req = callParam{
+			Channel: channelOrderBook,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *FillChannel:
+		req = callParam{
+			Channel: channelFills,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+
+	case *OrderChannel:
+		req = callParam{
+			Channel: channelOrders,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+	case *TradeChannel:
+		req = callParam{
+			Channel: channelTrades,
+			OP:      "unsubscribe",
+			Market:  t.symbol.String(),
+		}
+	default:
+		return errors.Errorf("unsupport typ %+v", t)
+	}
+
+	if err := ws.Conn.Call(ctx, subID(req.Channel, req.Market), req.OP, &req, &result); err != nil {
+		return errors.WithMessagef(err, "Unsubscribe orders fail")
+	}
+
+	if result.Type != typeUnSubscribed {
 		return errors.Errorf("bad result %v", result)
 	}
 	return nil

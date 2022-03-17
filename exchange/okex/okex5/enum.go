@@ -29,6 +29,7 @@ const (
 	CtTypeLinear  CtType = "linear"
 	CtTypeInverse CtType = "Inverse"
 
+	MgnModeNone     MgnMode = ""
 	MgnModeCash     MgnMode = "cash"
 	MgnModeCross    MgnMode = "cross"
 	MgnModeIsolated MgnMode = "isolated"
@@ -43,7 +44,7 @@ const (
 	InstTypeFutures InstType = "FUTURES"
 	InstTypeOption  InstType = "OPTION"
 	InstTypeAny     InstType = "ANY"
-	InstTypeEmpty   InstType = ""
+	InstTypeNone    InstType = ""
 
 	TDModeIsolated TDMode = "isolated"
 	TDModeCross    TDMode = "cross"
@@ -139,7 +140,7 @@ func init() {
 		InstTypeSwap,
 		InstTypeOption,
 		InstTypeAny,
-		InstTypeEmpty,
+		InstTypeNone,
 	}
 	for _, i := range its {
 		instTypeMap[string(i)] = i
@@ -226,6 +227,7 @@ func init() {
 	}
 
 	mms := []MgnMode{
+		MgnModeNone,
 		MgnModeCash,
 		MgnModeCross,
 		MgnModeIsolated,
