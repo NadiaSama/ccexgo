@@ -31,6 +31,7 @@ func NewTestRestClient(key, secret string) *RestClient {
 	}
 }
 
+//GetRequest do get request. the dst field will be wrapped in restResp data field
 func (rc *RestClient) GetRequest(ctx context.Context, endPoint string, req binance.GetRestReq, sign bool, dst interface{}) error {
 	resp := RestResp{
 		Data: dst,
