@@ -25,6 +25,7 @@ type (
 		apiHost string
 	}
 
+	//RestReq basic binance rest request instance add recvWindow param support
 	RestReq struct {
 		*exchange.RestReq
 	}
@@ -60,6 +61,7 @@ func (rc *RestClient) signature(param string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
+//GetRequest helper method to send http GET request
 func (rc *RestClient) GetRequest(ctx context.Context, endPoint string, req GetRestReq, sign bool, dst interface{}) error {
 	values, err := req.Values()
 	if err != nil {

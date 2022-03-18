@@ -10,6 +10,7 @@ import (
 type (
 	RestClient struct {
 		*binance.RestClient
+		wsAddr string
 	}
 
 	RestResp struct {
@@ -21,12 +22,14 @@ type (
 
 func NewRestClient(key, secret string) *RestClient {
 	return &RestClient{
+		wsAddr:     "vstream.binance.com",
 		RestClient: binance.NewRestClient(key, secret, "vapi.binance.com"),
 	}
 }
 
 func NewTestRestClient(key, secret string) *RestClient {
 	return &RestClient{
+		wsAddr:     "testnetws.binanceops.com",
 		RestClient: binance.NewRestClient(key, secret, "testnet.binanceops.com"),
 	}
 }
