@@ -1,6 +1,10 @@
 package deribit
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/NadiaSama/ccexgo/exchange"
+	"github.com/pkg/errors"
+	"github.com/shopspring/decimal"
+)
 
 type (
 	PositionResult struct {
@@ -58,4 +62,30 @@ func NewPositionRequest(instrument string) *PositionRequest {
 	return &PositionRequest{
 		InstrumentName: instrument,
 	}
+}
+
+func (pr *PositionResult) Transfer() (*exchange.Position, error) {
+	symbol, err := ParseSymbol(pr.InstrumentName)
+	if err != nil {
+		return nil, errors.WithMessage(err, "parse symbol fail")
+	}
+
+	direction, ok := directionMap[pr.Direction]
+	if !ok {
+		return nil, errors.Errorf("unknown direction='%s'", pr.Direction)
+	}
+	var side exchange.PositionSide
+	if direction == exchange.OrderSideBuy {
+		side = exchange.PositionSideLong
+	} else {
+		side = exchange.PositionSideShort
+	}
+
+	return &exchange.Position{
+		Symbol:       symbol,
+		Side:         side,
+		AvgOpenPrice: pr.AveragePrice,
+		Position:     pr.Size,
+		RealizedPNL:  pr.RealizedProfitLoss,
+	}, nil
 }
