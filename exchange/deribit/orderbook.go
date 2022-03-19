@@ -60,6 +60,7 @@ type (
 		Timestamp      int              `json:"timestamp"`
 		InstrumentName string           `json:"instrument_name"`
 		ChangeID       int              `json:"charge_id"`
+		PrevChangeID   int              `json:"prev_change_id"`
 		Bids           [][3]interface{} `json:"bids"`
 		Asks           [][3]interface{} `json:"asks"`
 	}
@@ -139,6 +140,7 @@ func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 		Symbol: sym,
 		Asks:   make([]exchange.OrderElem, len(bn.Asks)),
 		Bids:   make([]exchange.OrderElem, len(bn.Bids)),
+		Raw:    &bn,
 	}
 
 	if err := processArr(on.Asks, bn.Asks); err != nil {
