@@ -2,16 +2,17 @@ package websocket
 
 import (
 	"context"
-	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/pkg/errors"
 )
 
 type (
+	//Gen is a interface for unify rpc connection and update subscription channel
 	Gen interface {
 		NewConn(ctx context.Context) (Conn, error)
-		Channels(ctx context.Context, oldChannel []exchange.Channel) (newChannels []exchange.Channel, nextTime time.Time, err error)
+		//Channel return channels which need to be subscribe.
+		Channels(ctx context.Context, oldChannel []exchange.Channel) (newChannels []exchange.Channel, notify chan struct{}, err error)
 	}
 
 	//Keeper is a struct which used to make websocket connection auto reconnect and auto update subscribe channels
@@ -59,7 +60,7 @@ func (k *Keeper) Done() chan struct{} {
 }
 
 func (k *Keeper) connLoop(ctx context.Context) {
-	timer, err := k.updateSubscribe(ctx)
+	notify, err := k.updateSubscribe(ctx)
 	if err != nil {
 		k.pushErrorClose(err)
 		return
@@ -71,8 +72,8 @@ func (k *Keeper) connLoop(ctx context.Context) {
 				k.pushErrorClose(err)
 			}
 			return
-		case <-timer.C:
-			timer, err = k.updateSubscribe(ctx)
+		case <-notify:
+			notify, err = k.updateSubscribe(ctx)
 			if err != nil {
 				k.pushErrorClose(err)
 				return
@@ -84,8 +85,8 @@ func (k *Keeper) connLoop(ctx context.Context) {
 	}
 }
 
-func (k *Keeper) updateSubscribe(ctx context.Context) (*time.Timer, error) {
-	channels, next, err := k.gen.Channels(ctx, k.channels)
+func (k *Keeper) updateSubscribe(ctx context.Context) (chan struct{}, error) {
+	channels, notify, err := k.gen.Channels(ctx, k.channels)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +103,7 @@ func (k *Keeper) updateSubscribe(ctx context.Context) (*time.Timer, error) {
 		}
 	}
 	k.channels = channels
-	return time.NewTimer(time.Until(next)), nil
+	return notify, nil
 }
 
 func (k *Keeper) pushErrorClose(err error) {
