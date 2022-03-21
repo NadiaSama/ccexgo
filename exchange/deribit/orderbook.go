@@ -8,6 +8,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
+	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -65,8 +66,22 @@ type (
 		Asks           [][3]interface{} `json:"asks"`
 	}
 
+	BookSnapData struct {
+		Timestamp      int64        `json:"timestamp"`
+		InstrumentName string       `json:"instrument_name"`
+		ChangeID       int          `json:"charge_id"`
+		Bids           [][2]float64 `json:"bids"`
+		Asks           [][2]float64 `json:"asks"`
+	}
+
 	ChOrderBook struct {
 		sym exchange.Symbol
+	}
+
+	ChOrderBookSnap struct {
+		sym   exchange.Symbol
+		depth int
+		group string
 	}
 )
 
@@ -78,6 +93,7 @@ func init() {
 	reigisterCB("book", parseNotifyBook)
 }
 
+//NewOrderBookChannel return channel for change of order book
 func NewOrderBookChannel(sym exchange.Symbol) exchange.Channel {
 	return &ChOrderBook{
 		sym: sym,
@@ -86,6 +102,19 @@ func NewOrderBookChannel(sym exchange.Symbol) exchange.Channel {
 
 func (co *ChOrderBook) String() string {
 	return fmt.Sprintf("book.%s.raw", co.sym.String())
+}
+
+//NewOrderBookSnap return channel for snapshot of orderbook
+func NewOrderBookSnapChannel(sym exchange.Symbol, group string, depth int) exchange.Channel {
+	return &ChOrderBookSnap{
+		sym:   sym,
+		depth: depth,
+		group: group,
+	}
+}
+
+func (cos *ChOrderBookSnap) String() string {
+	return fmt.Sprintf("book.%s.%s.%d.100ms", cos.sym.String(), cos.group, cos.depth)
 }
 
 func (client *Client) FetchOrderBook(ctx context.Context, symbol exchange.Symbol, maxDepth int) (*exchange.OrderBook, error) {
@@ -125,32 +154,63 @@ func (ob *RestBookData) Transform(sym exchange.Symbol) (*exchange.OrderBook, err
 
 func parseNotifyBook(resp *Notify) (*rpc.Notify, error) {
 	fields := strings.Split(resp.Channel, ".")
-	var bn BookData
-	if err := json.Unmarshal(resp.Data, &bn); err != nil {
-		return nil, errors.WithMessage(err, "unarshal orderbookNotify")
-	}
-	sym, err := ParseOptionSymbol(fields[1])
-	if err != nil {
-		return nil, errors.WithMessagef(err, "parse orderbookNotify symbol %s", fields[1])
-	}
-	notify := &rpc.Notify{
-		Method: subscriptionMethod,
-	}
-	on := &exchange.OrderBookNotify{
-		Symbol: sym,
-		Asks:   make([]exchange.OrderElem, len(bn.Asks)),
-		Bids:   make([]exchange.OrderElem, len(bn.Bids)),
-		Raw:    &bn,
-	}
 
-	if err := processArr(on.Asks, bn.Asks); err != nil {
-		return nil, err
+	if len(fields) == 3 {
+		var bn BookData
+		if err := json.Unmarshal(resp.Data, &bn); err != nil {
+			return nil, errors.WithMessage(err, "unarshal orderbookNotify")
+		}
+		sym, err := ParseOptionSymbol(fields[1])
+		if err != nil {
+			return nil, errors.WithMessagef(err, "parse orderbookNotify symbol %s", fields[1])
+		}
+		notify := &rpc.Notify{
+			Method: subscriptionMethod,
+		}
+		on := &exchange.OrderBookNotify{
+			Symbol: sym,
+			Asks:   make([]exchange.OrderElem, len(bn.Asks)),
+			Bids:   make([]exchange.OrderElem, len(bn.Bids)),
+			Raw:    &bn,
+		}
+
+		if err := processArr(on.Asks, bn.Asks); err != nil {
+			return nil, err
+		}
+		if err := processArr(on.Bids, bn.Bids); err != nil {
+			return nil, err
+		}
+		notify.Params = on
+		return notify, nil
+	} else if len(fields) == 5 {
+		var bn BookSnapData
+		if err := json.Unmarshal(resp.Data, &bn); err != nil {
+			return nil, errors.WithMessage(err, "unmarshal orderbook fail")
+		}
+
+		sym, err := ParseOptionSymbol(fields[1])
+		if err != nil {
+			return nil, errors.WithMessage(err, "parseSymbol fail")
+		}
+
+		notify := &rpc.Notify{
+			Method: subscriptionMethod,
+		}
+
+		on := &exchange.OrderBook{
+			Symbol:  sym,
+			Bids:    make([]exchange.OrderElem, len(bn.Bids)),
+			Asks:    make([]exchange.OrderElem, len(bn.Asks)),
+			Created: tconv.Milli2Time(int64(bn.Timestamp)),
+			Raw:     &bn,
+		}
+		processSnapArr(bn.Bids, on.Bids)
+		processSnapArr(bn.Asks, on.Asks)
+		notify.Params = on
+		return notify, nil
+	} else {
+		return nil, errors.Errorf("unkown channel='%s'", resp.Channel)
 	}
-	if err := processArr(on.Bids, bn.Bids); err != nil {
-		return nil, err
-	}
-	notify.Params = on
-	return notify, nil
 }
 
 func processArr(d []exchange.OrderElem, s [][3]interface{}) (ret error) {
@@ -177,4 +237,14 @@ func processArr(d []exchange.OrderElem, s [][3]interface{}) (ret error) {
 		}
 	}
 	return
+}
+
+func processSnapArr(src [][2]float64, dst []exchange.OrderElem) {
+	for i, v := range src {
+		elem := exchange.OrderElem{
+			Price:  v[0],
+			Amount: v[1],
+		}
+		dst[i] = elem
+	}
 }
