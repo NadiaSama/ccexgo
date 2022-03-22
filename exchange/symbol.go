@@ -13,8 +13,8 @@ type (
 		AmountPrecision() decimal.Decimal
 		PricePrecision() decimal.Decimal
 		ValuePrecision() decimal.Decimal
-		AmountExponent() int
-		PriceExponent() int
+		AmountExponent() int32
+		PriceExponent() int32
 		AmountMax() decimal.Decimal
 		AmountMin() decimal.Decimal
 		ValueMin() decimal.Decimal
@@ -55,8 +55,8 @@ type (
 		amountMin       decimal.Decimal
 		amountMax       decimal.Decimal
 		valueMin        decimal.Decimal //minuim price * amount
-		amountExponent  int
-		priceExponent   int
+		amountExponent  int32
+		priceExponent   int32
 	}
 
 	//SymbolConfig used to specific symbol property
@@ -152,16 +152,16 @@ func (p *SymbolConfig) Property() BaseSymbolProperty {
 		pricePrecision:  p.PricePrecision,
 		amountPrecision: p.AmountPrecision,
 		valueMin:        p.ValueMin,
-		amountExponent:  int(p.AmountPrecision.Exponent() * -1),
-		priceExponent:   int(p.PricePrecision.Exponent() * -1),
+		amountExponent:  int32(p.AmountPrecision.Exponent()),
+		priceExponent:   int32(p.PricePrecision.Exponent()),
 	}
 }
 
-func (p *BaseSymbolProperty) AmountExponent() int {
+func (p *BaseSymbolProperty) AmountExponent() int32 {
 	return p.amountExponent
 }
 
-func (p *BaseSymbolProperty) PriceExponent() int {
+func (p *BaseSymbolProperty) PriceExponent() int32 {
 	return p.priceExponent
 }
 

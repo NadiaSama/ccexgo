@@ -1,6 +1,8 @@
 package deribit
 
-import "github.com/shopspring/decimal"
+import (
+	"github.com/shopspring/decimal"
+)
 
 type (
 	AccountSummaryResp struct {
