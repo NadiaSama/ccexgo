@@ -58,6 +58,17 @@ func Init(ctx context.Context, testNet bool) error {
 	return initSymbol(ctx, testNet)
 }
 
+//NewOptionSymbol create a option symbol string with curreny, st, strike, typ. and parse it with ParseOptionSymbol
+func NewOptionSymbol(currency string, st time.Time, strike float64, typ exchange.OptionType) (exchange.OptionSymbol, error) {
+	symbol := fmt.Sprintf("%s-%s-%d-%s", currency, st.Format(timeLayout), int(strike), typ.String())
+
+	sym, err := ParseSymbol(symbol)
+	if err != nil {
+		return nil, errors.WithMessagef(err, "parse symbol fail symbol='%s'", symbol)
+	}
+	return sym.(exchange.OptionSymbol), nil
+}
+
 func ParseOptionSymbol(sym string) (exchange.OptionSymbol, error) {
 	ret, err := getSymbol(sym, reflect.TypeOf((*exchange.OptionSymbol)(nil)).Elem())
 	if err != nil {
