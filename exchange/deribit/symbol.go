@@ -38,6 +38,7 @@ const (
 	KindOption            = "option"
 	KindFuture            = "future"
 	SettlePeriodPerpetual = "perpetual"
+	SettlePeriodDay       = "day"
 	SettlePeriodWeek      = "week"
 	SettlePeriodMonth     = "month"
 )
