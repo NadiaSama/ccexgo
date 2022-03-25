@@ -61,7 +61,15 @@ func Init(ctx context.Context, testNet bool) error {
 
 //NewOptionSymbol create a option symbol string with curreny, st, strike, typ. and parse it with ParseOptionSymbol
 func NewOptionSymbol(currency string, st time.Time, strike float64, typ exchange.OptionType) (exchange.OptionSymbol, error) {
-	symbol := fmt.Sprintf("%s-%s-%d-%s", currency, st.Format(timeLayout), int(strike), typ.String())
+	var suffix string
+	if typ == exchange.OptionTypeCall {
+		suffix = "C"
+	} else if typ == exchange.OptionTypePut {
+		suffix = "P"
+	} else {
+		return nil, errors.Errorf("unkown option typ='%s'", typ)
+	}
+	symbol := fmt.Sprintf("%s-%s-%d-%s", currency, strings.ToUpper(st.Format(timeLayout)), int(strike), suffix)
 
 	sym, err := ParseSymbol(symbol)
 	if err != nil {
