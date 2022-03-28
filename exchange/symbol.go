@@ -18,6 +18,8 @@ type (
 		AmountMax() decimal.Decimal
 		AmountMin() decimal.Decimal
 		ValueMin() decimal.Decimal
+		RoundAmount(decimal.Decimal) decimal.Decimal
+		RoundPrice(decimal.Decimal) decimal.Decimal
 		String() string
 	}
 
@@ -158,6 +160,18 @@ func (p *SymbolConfig) Property() BaseSymbolProperty {
 		amountExponent:  int32(p.AmountPrecision.Exponent()),
 		priceExponent:   int32(p.PricePrecision.Exponent()),
 	}
+}
+
+func (p *BaseSymbolProperty) RoundAmount(amt decimal.Decimal) decimal.Decimal {
+	k := amt.Div(p.amountPrecision)
+	v, _ := k.Float64()
+	return decimal.NewFromInt(int64(v)).Mul(p.amountPrecision)
+}
+
+func (p *BaseSymbolProperty) RoundPrice(price decimal.Decimal) decimal.Decimal {
+	k := price.Div(p.pricePrecision)
+	v, _ := k.Float64()
+	return decimal.NewFromInt(int64(v)).Mul(p.pricePrecision)
 }
 
 func (p *BaseSymbolProperty) AmountExponent() int32 {
