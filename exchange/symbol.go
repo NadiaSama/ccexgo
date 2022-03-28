@@ -125,11 +125,14 @@ type (
 )
 
 const (
-	OptionTypeCall = iota
+	OptionTypeCall OptionType = iota
 	OptionTypePut
+)
+
+const (
 
 	//FutureTypeCW current week settle future
-	FutureTypeCW
+	FutureTypeCW FutureType = iota
 	//FutureTypeNW next week settle future
 	FutureTypeNW
 	//FutureTypeCQ current quarter settle future
