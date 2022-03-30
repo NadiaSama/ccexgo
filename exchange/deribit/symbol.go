@@ -51,12 +51,58 @@ var (
 
 	symbolMu  = sync.Mutex{}
 	symbolMap = map[string]exchange.Symbol{}
+	rc        *RestClient
 
 	Currencies = []string{"BTC", "ETH"}
 )
 
 func Init(ctx context.Context, testNet bool) error {
-	return initSymbol(ctx, testNet)
+	if testNet {
+		rc = NewTestRestClient("", "")
+	} else {
+		rc = NewRestClient("", "")
+	}
+	if err := updateSymbolMap(ctx, rc); err != nil {
+		return err
+	}
+	return nil
+}
+
+//UpdateSymbolMap rebuild symbol map. the symbol map update is leave to user
+func UpdateSymbolMap(ctx context.Context) error {
+	return updateSymbolMap(ctx, rc)
+}
+
+//Symbols get all symbols from symbol map
+func Symbols() []exchange.Symbol {
+	ret := []exchange.Symbol{}
+	symbolMu.Lock()
+	m := symbolMap
+	symbolMu.Unlock()
+	for _, v := range m {
+		ret = append(ret, v)
+	}
+	return ret
+}
+
+//OptionSymbolWithIndex get all option symbol with specific index from symbol map
+func OptionSymbolsWithIndex(index string) []exchange.OptionSymbol {
+	ret := []exchange.OptionSymbol{}
+	symbolMu.Lock()
+	m := symbolMap
+	symbolMu.Unlock()
+	for _, v := range m {
+		sym, ok := v.(exchange.OptionSymbol)
+		if !ok {
+			continue
+		}
+
+		if sym.Index() != index {
+			continue
+		}
+		ret = append(ret, sym)
+	}
+	return ret
 }
 
 //NewOptionSymbol create a option symbol string with curreny, st, strike, typ. and parse it with ParseOptionSymbol
@@ -118,32 +164,6 @@ func getSymbol(sym string, exType reflect.Type) (exchange.Symbol, error) {
 		return nil, errors.Errorf("type mismatch typ=%s exType=%s", typ, exType)
 	}
 	return ret, nil
-}
-
-func initSymbol(ctx context.Context, testNet bool) error {
-	var newClientCB func(string, string) *RestClient
-	if testNet {
-		newClientCB = NewTestRestClient
-	} else {
-		newClientCB = NewRestClient
-	}
-
-	client := newClientCB("", "")
-
-	if err := updateSymbolMap(ctx, client); err != nil {
-		return err
-	}
-
-	go func() {
-		ticker := time.NewTicker(time.Hour)
-		for {
-			select {
-			case <-ticker.C:
-				updateSymbolMap(ctx, client)
-			}
-		}
-	}()
-	return nil
 }
 
 func updateSymbolMap(ctx context.Context, restClient *RestClient) error {
