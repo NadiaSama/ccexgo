@@ -68,6 +68,20 @@ func Init(ctx context.Context, testNet bool) error {
 	return nil
 }
 
+//SymbolLoop start loop update symbol map periodly
+func SymbolLoop(ctx context.Context) {
+	ticker := time.NewTicker(time.Minute * 5)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+
+		case <-ticker.C:
+			UpdateSymbolMap(ctx)
+		}
+	}
+}
+
 //UpdateSymbolMap rebuild symbol map. the symbol map update is leave to user
 func UpdateSymbolMap(ctx context.Context) error {
 	return updateSymbolMap(ctx, rc)

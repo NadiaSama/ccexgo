@@ -85,7 +85,7 @@ func (pr *PositionResult) Transfer() (*exchange.Position, error) {
 		Symbol:       symbol,
 		Side:         side,
 		AvgOpenPrice: pr.AveragePrice,
-		Position:     pr.Size,
+		Position:     pr.Size.Abs(), //deribit short position amount is negative
 		RealizedPNL:  pr.RealizedProfitLoss,
 	}, nil
 }
