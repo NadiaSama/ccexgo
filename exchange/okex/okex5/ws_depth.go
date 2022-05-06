@@ -42,15 +42,23 @@ const (
 	DepthSnapshot = "snapshot"
 	DepthUpdate   = "update"
 
+	BooksChannel      = "books"
 	Books5Channel     = "books5"
 	Books50TBTChannel = "books50-l2-tbt"
 )
 
 func init() {
-	chs := []string{Books5Channel, Books50TBTChannel}
+	chs := []string{BooksChannel, Books5Channel, Books50TBTChannel}
 
 	for _, c := range chs {
 		parseCBMap[c] = parseDepth
+	}
+}
+
+func NewBooksChannel(instId string) exchange.Channel {
+	return &Okex5Channel{
+		InstID:  instId,
+		Channel: BooksChannel,
 	}
 }
 
