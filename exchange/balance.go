@@ -10,6 +10,7 @@ import (
 type (
 	Balance struct {
 		Currency string
+		Equitity decimal.Decimal
 		Total    decimal.Decimal
 		Free     decimal.Decimal
 		Frozen   decimal.Decimal

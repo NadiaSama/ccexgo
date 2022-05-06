@@ -57,6 +57,7 @@ func NewConn(stream Stream) Conn {
 	}
 }
 
+//Call build param and store result in dest field. if dest is nil only write the param into stream
 func (c *connection) Call(ctx context.Context, id string, method string, params interface{}, dest interface{}) error {
 	var err error
 	var rchan chan *rpcCall

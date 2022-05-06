@@ -109,16 +109,26 @@ func NewTimeInForceOption(flag TimeInForceFlag) OrderReqOption {
 	}
 }
 
+//NewOrderRequest create a order request with given param, the price and amount field
+//will be formatted according to symbol precision config
 func NewOrderRequest(sym Symbol, cid OrderID, side OrderSide, typ OrderType,
 	price float64, amount float64) *OrderRequest {
-	return &OrderRequest{
+
+	pp, _ := sym.PricePrecision().Float64()
+	ap, _ := sym.AmountPrecision().Float64()
+
+	price = float64(int(price/pp)) * pp
+	amount = float64(int(amount/ap)) * ap
+	ret := &OrderRequest{
 		Symbol:   sym,
 		ClientID: cid,
 		Side:     side,
 		Type:     typ,
-		Price:    decimal.NewFromFloat(price),
-		Amount:   decimal.NewFromFloat(amount),
+		Price:    decimal.NewFromFloatWithExponent(price, sym.PriceExponent()),
+		Amount:   decimal.NewFromFloatWithExponent(amount, sym.AmountExponent()),
 	}
+
+	return ret
 }
 
 func NewStrID(id string) StrID {

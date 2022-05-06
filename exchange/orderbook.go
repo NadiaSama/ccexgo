@@ -23,6 +23,7 @@ type (
 		Symbol Symbol
 		Bids   []OrderElem
 		Asks   []OrderElem
+		Raw    interface{}
 	}
 
 	//OrderBookDS is the ds which hold orderbook info

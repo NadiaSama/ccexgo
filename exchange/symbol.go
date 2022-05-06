@@ -13,9 +13,13 @@ type (
 		AmountPrecision() decimal.Decimal
 		PricePrecision() decimal.Decimal
 		ValuePrecision() decimal.Decimal
+		AmountExponent() int32
+		PriceExponent() int32
 		AmountMax() decimal.Decimal
 		AmountMin() decimal.Decimal
 		ValueMin() decimal.Decimal
+		RoundAmount(decimal.Decimal) decimal.Decimal
+		RoundPrice(decimal.Decimal) decimal.Decimal
 		String() string
 	}
 
@@ -53,12 +57,14 @@ type (
 		amountMin       decimal.Decimal
 		amountMax       decimal.Decimal
 		valueMin        decimal.Decimal //minuim price * amount
+		amountExponent  int32
+		priceExponent   int32
 	}
 
 	//SymbolConfig used to specific symbol property
 	SymbolConfig struct {
-		PricePrecision  decimal.Decimal
-		AmountPrecision decimal.Decimal
+		PricePrecision  decimal.Decimal //symbol price precision in decimal
+		AmountPrecision decimal.Decimal //symbol amount precision in decimal
 		ValuePrecision  decimal.Decimal
 		AmountMin       decimal.Decimal
 		AmountMax       decimal.Decimal
@@ -121,11 +127,14 @@ type (
 )
 
 const (
-	OptionTypeCall = iota
+	OptionTypeCall OptionType = iota
 	OptionTypePut
+)
+
+const (
 
 	//FutureTypeCW current week settle future
-	FutureTypeCW
+	FutureTypeCW FutureType = iota
 	//FutureTypeNW next week settle future
 	FutureTypeNW
 	//FutureTypeCQ current quarter settle future
@@ -148,7 +157,29 @@ func (p *SymbolConfig) Property() BaseSymbolProperty {
 		pricePrecision:  p.PricePrecision,
 		amountPrecision: p.AmountPrecision,
 		valueMin:        p.ValueMin,
+		amountExponent:  int32(p.AmountPrecision.Exponent()),
+		priceExponent:   int32(p.PricePrecision.Exponent()),
 	}
+}
+
+func (p *BaseSymbolProperty) RoundAmount(amt decimal.Decimal) decimal.Decimal {
+	k := amt.Div(p.amountPrecision)
+	v, _ := k.Float64()
+	return decimal.NewFromInt(int64(v)).Mul(p.amountPrecision)
+}
+
+func (p *BaseSymbolProperty) RoundPrice(price decimal.Decimal) decimal.Decimal {
+	k := price.Div(p.pricePrecision)
+	v, _ := k.Float64()
+	return decimal.NewFromInt(int64(v)).Mul(p.pricePrecision)
+}
+
+func (p *BaseSymbolProperty) AmountExponent() int32 {
+	return p.amountExponent
+}
+
+func (p *BaseSymbolProperty) PriceExponent() int32 {
+	return p.priceExponent
 }
 
 //AmountMin minium order amount

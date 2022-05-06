@@ -5,6 +5,18 @@ import (
 	"net/http"
 )
 
+var (
+	client *http.Client
+)
+
+func init() {
+	client = http.DefaultClient
+}
+
+func SetClient(nc *http.Client) {
+	client = nc
+}
+
 //Do issue http request and calls f with the response. if ctx.Done is called
 //during the request handling. Do cancels the request and wait s for f quit
 //return ctx.Err
@@ -17,7 +29,7 @@ func Do(ctx context.Context, req *http.Request, f func(*http.Response, error) er
 func DoReqWithCtx(req *http.Request, f func(*http.Response, error) error) error {
 	ctx := req.Context()
 	c := make(chan error, 1)
-	go func() { c <- f(http.DefaultClient.Do(req)) }()
+	go func() { c <- f(client.Do(req)) }()
 	select {
 	case <-ctx.Done():
 		<-c
