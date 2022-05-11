@@ -115,6 +115,10 @@ func (c *RestClient) Symbols(ctx context.Context, currency string) ([]exchange.S
 	ret := make([]exchange.Symbol, 0, len(irs))
 	for i := range irs {
 		ir := irs[i]
+		if ir.Kind == KindFutureCombo || ir.Kind == KindOptionCombo {
+			continue
+		}
+
 		sym, err := ir.Symbol()
 		if err != nil {
 			return nil, err
