@@ -42,6 +42,7 @@ type (
 	}
 
 	AccountResp struct {
+		binance.APIError                             //in case of error
 		FeeTier                    int               `json:"feeTier"`
 		CanTrade                   bool              `json:"canTrade"`
 		CanDeposit                 bool              `json:"canDeposit"`
