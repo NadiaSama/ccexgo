@@ -60,20 +60,37 @@ const (
 )
 
 var (
-	symbolMap = map[string]exchange.SwapSymbol{}
+	symbolMap  = map[string]exchange.SwapSymbol{}
+	restClient *RestClient
 )
 
 func Init(ctx context.Context) error {
-	client := NewRestClient("", "")
-	symbols, err := client.Symbols(ctx)
+	if restClient != nil {
+		return errors.Errorf("client alreaduy init")
+	}
+	restClient = NewRestClient("", "")
+	return UpdateSymbolMap(ctx)
+}
+
+func InitTest(ctx context.Context) error {
+	if restClient != nil {
+		return errors.Errorf("client alreaduy init")
+	}
+	restClient = NewTestRestClient("", "")
+	return UpdateSymbolMap(ctx)
+}
+
+func UpdateSymbolMap(ctx context.Context) error {
+	symbols, err := restClient.Symbols(ctx)
 	if err != nil {
-		return err
+		return errors.WithMessage(err, "fetch symbols fail")
 	}
 
 	for _, s := range symbols {
 		symbolMap[s.String()] = s
 	}
 	return nil
+
 }
 
 func ParseSymbol(symbol string) (exchange.SwapSymbol, error) {
