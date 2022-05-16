@@ -96,6 +96,13 @@ func (rc *RestClient) request(ctx context.Context, method, endPoint string, para
 		if err := json.Unmarshal(content, dst); err != nil {
 			return err
 		}
+
+		if api, ok := dst.(APIIF); ok {
+			if code := api.ECode(); code != 0 {
+				return errors.Errorf("api error code=%d message=%s", api.ECode(), api.EMessage())
+			}
+		}
+
 		return nil
 	})
 	return rerr
