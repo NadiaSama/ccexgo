@@ -51,12 +51,14 @@ type (
 		MultiplierDown    decimal.Decimal `json:"multiplierDown"`
 		MultiplierUp      decimal.Decimal `json:"multiplierUp"`
 		MultiplierDecimal decimal.Decimal `json:"multiplierDecimal"`
+		Notional          decimal.Decimal `json:"notional"`
 	}
 )
 
 const (
 	priceFilter = "PRICE_FILTER"
 	lotSize     = "LOT_SIZE"
+	minNotional = "MIN_NOTIONAL"
 )
 
 var (
@@ -128,8 +130,25 @@ func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.SwapSymbol, error
 }
 
 func (s *Symbol) Parse() (exchange.SwapSymbol, error) {
+	ns := *s
+
+	cfg := exchange.SymbolConfig{}
+	for _, f := range s.Filters {
+		switch f.FilterType {
+		case priceFilter:
+			cfg.PricePrecision = f.TickSize
+
+		case lotSize:
+			cfg.AmountPrecision = f.StepSize
+			cfg.AmountMin = f.MinQty
+			cfg.AmountMax = f.MaxQty
+
+		case minNotional:
+			cfg.ValueMin = f.Notional
+		}
+	}
 	return &SwapSymbol{
-		exchange.NewBaseSwapSymbol(s.BaseAsset),
+		exchange.NewBaseSwapSymbolWithCfg(s.Symbol, decimal.NewFromInt(1), cfg, &ns),
 		s.Symbol,
 	}, nil
 }
