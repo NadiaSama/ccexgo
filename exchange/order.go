@@ -145,6 +145,10 @@ func (sid IntID) String() string {
 	return strconv.FormatInt(sid.ID, 10)
 }
 
+func (sid IntID) Int() int64 {
+	return sid.ID
+}
+
 //Equal check whether o equal o2 mainly used for test
 func (o *Order) Equal(o2 *Order) bool {
 	return o.ID.String() == o2.ID.String() &&
