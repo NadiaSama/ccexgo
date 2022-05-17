@@ -14,6 +14,7 @@ type (
 	}
 
 	GetPositionSideResp struct {
+		binance.APIError
 		DualSidePosition bool `json:"dualSidePosition"`
 	}
 
