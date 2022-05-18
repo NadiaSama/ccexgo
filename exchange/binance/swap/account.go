@@ -29,7 +29,7 @@ type (
 		Symbol                 string          `json:"symbol"`
 		InitialMargin          decimal.Decimal `json:"initialMargin"`
 		MaintMargin            decimal.Decimal `json:"maintMargin"`
-		UnrealizedProfit       decimal.Decimal `json:"unrealizedPorfit"`
+		UnrealizedProfit       decimal.Decimal `json:"unrealizedProfit"`
 		PositionInitialMargin  decimal.Decimal `json:"positionInitialMargin"`
 		OpenOrderInitialMargin decimal.Decimal `json:"openOrderInitialMargin"`
 		Leverage               decimal.Decimal `json:"leverage"`
