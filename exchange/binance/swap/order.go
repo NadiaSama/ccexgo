@@ -51,7 +51,7 @@ type (
 
 const (
 	OrderEndPoint     = "/fapi/v1/order"
-	PositionSideBoth  = "both"
+	PositionSideBoth  = "BOTH"
 	PositionSideLong  = "LONG"
 	PositionSideShort = "SHORT"
 	SideBuy           = "BUY"
@@ -267,7 +267,7 @@ func (cl *RestClient) CreateOrder(ctx context.Context, req *exchange.OrderReques
 			return nil, errors.Errorf("unknown side=%s", req.Side)
 		}
 	} else {
-		positionSide = "BOTH"
+		positionSide = PositionSideBoth
 		switch req.Side {
 		case exchange.OrderSideBuy:
 			fallthrough
@@ -297,7 +297,11 @@ func (cl *RestClient) CreateOrder(ctx context.Context, req *exchange.OrderReques
 		return nil, errors.WithMessage(err, "add order fail")
 	}
 
-	return resp.Transfer()
+	ret, err := resp.Transfer()
+	if err != nil {
+		return nil, errors.WithMessage(err, "transfer order fail")
+	}
+	return ret, nil
 }
 
 func (cl *RestClient) FetchOrder(ctx context.Context, order *exchange.Order) (*exchange.Order, error) {
