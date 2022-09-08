@@ -40,7 +40,7 @@ type (
 )
 
 const (
-	FinancialRecordEndPoint = "/swap-api/v1/swap_financial_record"
+	FinancialRecordEndPoint = "/swap-api/v3/swap_financial_record"
 
 	FinancialRecordTypeFundingIncome  = 30
 	FinancialRecordTypeFundingOutCome = 31
