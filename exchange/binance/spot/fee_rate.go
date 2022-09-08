@@ -12,23 +12,18 @@ import (
 
 type (
 	TradeFee struct {
-		Symbol string
-		Maker  decimal.Decimal
-		Taker  decimal.Decimal
-	}
-
-	TradeFeeResp struct {
-		TradeFee []TradeFee `json:"tradeFee"`
-		Success  bool       `json:"success"`
+		Symbol string          `json:"symbol"`
+		Maker  decimal.Decimal `json:"makerCommission"`
+		Taker  decimal.Decimal `json:"takerCommission"`
 	}
 )
 
 const (
-	TradeFeeEndPoint = "/wapi/v3/tradeFee.html"
+	TradeFeeEndPoint = "/sapi/v1/asset/tradeFee"
 )
 
 func (rc *RestClient) TradeFee(ctx context.Context, symbol string) ([]TradeFee, error) {
-	var tfr TradeFeeResp
+	var tfr []TradeFee
 	values := url.Values{}
 	if symbol != "" {
 		values.Add("symbol", symbol)
@@ -37,11 +32,7 @@ func (rc *RestClient) TradeFee(ctx context.Context, symbol string) ([]TradeFee, 
 		return nil, errors.WithMessage(err, "fetch trade fee fail")
 	}
 
-	if tfr.Success != true {
-		return nil, errors.Errorf("fetch trade fee fail %+v", tfr)
-	}
-
-	return tfr.TradeFee, nil
+	return tfr, nil
 }
 
 func (rc *RestClient) FeeRate(ctx context.Context, symbols []exchange.Symbol) ([]*exchange.TradeFee, error) {
