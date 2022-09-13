@@ -17,9 +17,10 @@ type (
 	FinancialRecordRequest struct {
 		contractCode string
 		typ          []string
-		createDate   int
-		pageIndex    int
-		pageSize     int
+		startTime    int
+		endTime      int
+		fromID       int
+		direct       string
 	}
 
 	FinancialRecord struct {
@@ -29,13 +30,14 @@ type (
 		Amount       float64 `json:"amount"`
 		TS           int64   `json:"ts"`
 		ContractCode string  `json:"contract_code"`
+		QueryID      int64   `json:"query_id"`
 	}
 
 	FinancialRecordResponse struct {
-		TotalPage       int               `json:"total_page"`
-		CurrentPage     int               `json:"current_page"`
-		TotalSize       int               `json:"total_size"`
-		FinancialRecord []FinancialRecord `json:"financial_record"`
+		Code int               `json:"code"`
+		Msg  string            `json:"msg"`
+		TS   int64             `json:"ts"`
+		Data []FinancialRecord `json:"data"`
 	}
 )
 
@@ -55,23 +57,27 @@ func NewFinancialRecordRequest(contractCode string) *FinancialRecordRequest {
 
 func (frr *FinancialRecordRequest) Serialize() ([]byte, error) {
 	param := map[string]interface{}{
-		"contract_code": frr.contractCode,
+		"contract": frr.contractCode,
 	}
 
 	if len(frr.typ) != 0 {
 		param["type"] = strings.Join(frr.typ, ",")
 	}
 
-	if frr.createDate != 0 {
-		param["create_date"] = frr.createDate
+	if frr.startTime != 0 {
+		param["start_time"] = frr.startTime
 	}
 
-	if frr.pageIndex != 0 {
-		param["page_index"] = frr.pageIndex
+	if frr.endTime != 0 {
+		param["end_time"] = frr.endTime
 	}
 
-	if frr.pageSize != 0 {
-		param["page_size"] = frr.pageSize
+	if frr.fromID != 0 {
+		param["from_id"] = frr.fromID
+	}
+
+	if frr.direct != "" {
+		param["direct"] = frr.direct
 	}
 
 	return json.Marshal(param)
@@ -83,18 +89,25 @@ func (frr *FinancialRecordRequest) Type(types ...int) *FinancialRecordRequest {
 	return frr
 }
 
-func (frr *FinancialRecordRequest) CreateDate(date int) *FinancialRecordRequest {
-	frr.createDate = date
+// StartTime specific record query start timestamp in milliseconds
+func (frr *FinancialRecordRequest) StartTime(ts int) *FinancialRecordRequest {
+	frr.startTime = ts
 	return frr
 }
 
-func (frr *FinancialRecordRequest) PageIndex(idx int) *FinancialRecordRequest {
-	frr.pageIndex = idx
+// EndTime specific record query end timestamp in milliseconds
+func (frr *FinancialRecordRequest) EndTime(ts int) *FinancialRecordRequest {
+	frr.endTime = ts
 	return frr
 }
 
-func (frr *FinancialRecordRequest) PageSize(size int) *FinancialRecordRequest {
-	frr.pageSize = size
+func (frr *FinancialRecordRequest) FromID(fromID int) *FinancialRecordRequest {
+	frr.fromID = fromID
+	return frr
+}
+
+func (frr *FinancialRecordRequest) Direct(direct string) *FinancialRecordRequest {
+	frr.direct = direct
 	return frr
 }
 
@@ -104,10 +117,14 @@ func (cl *RestClient) FinancialRecord(ctx context.Context, req *FinancialRecordR
 		return nil, errors.WithMessage(err, "fetch financial record fail")
 	}
 
+	if len(ret.Msg) != 0 {
+		return nil, errors.Errorf("error response code=%d msg=%s", ret.Code, ret.Msg)
+	}
+
 	return &ret, nil
 }
 
-//Transform financeRecord to finacial currently only funding type is support
+// Transform financeRecord to finacial currently only funding type is support
 func (fr *FinancialRecord) Transform() (*exchange.Finance, error) {
 	symbol, err := ParseSymbol(fr.ContractCode)
 	if err != nil {

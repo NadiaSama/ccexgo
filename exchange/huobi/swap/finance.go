@@ -18,9 +18,6 @@ func (rc *RestClient) Finance(ctx context.Context, params *exchange.FinanceReqPa
 
 	req := NewFinancialRecordRequest(params.Symbol.String())
 	req.Type(FinancialRecordTypeFundingIncome, FinancialRecordTypeFundingOutCome)
-	if params.Limit != 0 {
-		req = req.PageSize(params.Limit)
-	}
 
 	records, err := rc.FinancialRecord(ctx, req)
 	if err != nil {
@@ -28,7 +25,7 @@ func (rc *RestClient) Finance(ctx context.Context, params *exchange.FinanceReqPa
 	}
 
 	var ret []exchange.Finance
-	for _, r := range records.FinancialRecord {
+	for _, r := range records.Data {
 		rec, err := r.Transform()
 		if err != nil {
 			return nil, errors.WithMessage(err, "parse financial_record fail")
