@@ -1,9 +1,11 @@
 package swap
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -113,11 +115,16 @@ func (frr *FinancialRecordRequest) Direct(direct string) *FinancialRecordRequest
 
 func (cl *RestClient) FinancialRecord(ctx context.Context, req *FinancialRecordRequest) (*FinancialRecordResponse, error) {
 	var ret FinancialRecordResponse
-	if err := cl.PrivatePostReq(ctx, FinancialRecordEndPoint, req, &ret); err != nil {
+
+	body, err := req.Serialize()
+	if err != nil {
+		return nil, errors.WithMessage(err, "serialzie request fail")
+	}
+	if err := cl.RequestWithRawResp(ctx, http.MethodPost, FinancialRecordEndPoint, nil, bytes.NewBuffer(body), true, &ret); err != nil {
 		return nil, errors.WithMessage(err, "fetch financial record fail")
 	}
 
-	if len(ret.Msg) != 0 {
+	if ret.Code != 200 {
 		return nil, errors.Errorf("error response code=%d msg=%s", ret.Code, ret.Msg)
 	}
 
