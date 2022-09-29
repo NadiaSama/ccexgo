@@ -17,6 +17,7 @@ type (
 		DeleteListenKey(ctx context.Context) error
 	}
 
+	// WSClient common private wsclient for binance
 	WSClient struct {
 		rpc.Conn
 		handler rpc.Handler
