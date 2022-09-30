@@ -5,6 +5,7 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
+	"github.com/pkg/errors"
 )
 
 type (
@@ -29,11 +30,19 @@ func NewWSClient(data chan interface{}) *WSClient {
 
 func (wcl *WSClient) Handle(ctx context.Context, n *rpc.Notify) {
 	select {
-	case wcl.data <- exchange.WSNotify{Data: n.Params, Chan: n.Method}:
+	case wcl.data <- &exchange.WSNotify{Data: n.Params, Chan: n.Method}:
 	default:
 	}
 }
 
 func (wcl *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	param := make([]string, 0, len(channels))
+	for _, c := range channels {
+		param = append(param, c.String())
+	}
+
+	if err := wcl.Call(ctx, "1", MethodSubscibe, param, nil); err != nil {
+		return errors.WithMessage(err, "subscribe error")
+	}
 	return nil
 }

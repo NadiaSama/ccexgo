@@ -2,7 +2,6 @@ package spot
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/NadiaSama/ccexgo/internal/rpc"
@@ -15,16 +14,6 @@ type (
 	// and encode sbuscribe request
 	CodeC struct {
 		lastID string
-	}
-
-	// TickerNotify binance spot ticker notify
-	TickerNotify struct {
-		UpdateID   int64  `json:"u"`
-		Symbol     string `json:"s"`
-		Bid1Price  string `json:"b"`
-		Bid1Amount string `json:"B"`
-		Ask1Price  string `json:"a"`
-		Ask1Amount string `json:"A"`
 	}
 
 	SubscribeRequest struct {
@@ -49,8 +38,6 @@ func NewCodeC() *CodeC {
 
 // Decode binance websocket notify message
 func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
-	var tn TickerNotify
-
 	g := gjson.ParseBytes(raw)
 
 	// by now only handle subscribe response which result is nil
@@ -59,10 +46,20 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 			ID: g.Get("id").String(),
 		}, nil
 	}
-	if err := json.Unmarshal(raw, &tn); err != nil {
-		return nil, errors.WithMessage(err, "unmarshal json fail")
+
+	if g.Get("code").Exists() {
+		return &rpc.Result{
+			ID:    cc.lastID,
+			Error: errors.Errorf("subscribe error code: %d msg: %s", g.Get("code").Int(), g.Get("msg").String()),
+		}, nil
 	}
-	return &rpc.Notify{Params: &tn, Method: "ticker"}, nil
+
+	if g.Get("u").Exists() {
+		tn := ParseBookTickerNotify(&g)
+		return &rpc.Notify{Params: tn, Method: "ticker"}, nil
+	}
+
+	return nil, errors.Errorf("bad notify")
 }
 
 // Encode req to binance subscribe message
@@ -75,7 +72,7 @@ func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
 	sub := SubscribeRequest{
 		ID:     id,
 		Params: req.Params(),
-		Method: MethodSubscibe,
+		Method: req.Method(),
 	}
 
 	cc.lastID = req.ID()

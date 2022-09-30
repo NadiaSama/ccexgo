@@ -39,7 +39,8 @@ type (
 		Result json.RawMessage
 	}
 
-	//Notify subscribe messages from server (kline, orders...)
+	// Notify implement Response interface.
+	// subscribe messages from server (kline, orders...)
 	Notify struct {
 		Method string
 		Params interface{}
