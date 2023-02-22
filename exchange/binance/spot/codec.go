@@ -33,6 +33,16 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 			return &rpc.Notify{Params: tn, Method: "bookTicker"}, nil
 		}
 
+		if g.Get("e").String() == "trade" {
+			tn := ParseTradeNotify(g)
+			trades, err := tn.Parse()
+			if err != nil {
+				return nil, errors.WithMessage(err, "invalid trade data")
+			}
+
+			return &rpc.Notify{Params: trades, Method: "trade"}, nil
+		}
+
 		return nil, errors.Errorf("bad notify msg=%s", g.Raw)
 	})
 }
