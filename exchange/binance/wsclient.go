@@ -2,6 +2,7 @@ package binance
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -29,6 +30,7 @@ type (
 	NotifyClient struct {
 		*exchange.WSClient
 		data chan interface{}
+		mu   sync.Mutex
 	}
 )
 
@@ -98,6 +100,9 @@ func (nc *NotifyClient) Handle(ctx context.Context, notify *rpc.Notify) {
 }
 
 func (wcl *NotifyClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	wcl.mu.Lock()
+	defer wcl.mu.Unlock()
+
 	param := make([]string, 0, len(channels))
 	for _, c := range channels {
 		param = append(param, c.String())
