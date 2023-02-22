@@ -113,3 +113,18 @@ func (wcl *NotifyClient) Subscribe(ctx context.Context, channels ...exchange.Cha
 	}
 	return nil
 }
+
+func (wcl *NotifyClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	wcl.mu.Lock()
+	defer wcl.mu.Unlock()
+
+	param := make([]string, 0, len(channels))
+	for _, c := range channels {
+		param = append(param, c.String())
+	}
+
+	if err := wcl.Call(ctx, "1", MethodUnSubscribe, param, nil); err != nil {
+		return errors.WithMessage(err, "subscribe error")
+	}
+	return nil
+}

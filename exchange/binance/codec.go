@@ -28,7 +28,8 @@ type (
 )
 
 const (
-	MethodSubscibe = "SUBSCRIBE"
+	MethodSubscibe    = "SUBSCRIBE"
+	MethodUnSubscribe = "UNSUBSCRIBE"
 )
 
 func NewCodeC() *CodeC {
