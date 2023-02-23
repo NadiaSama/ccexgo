@@ -70,7 +70,7 @@ func (rc *RestClient) Instruments(ctx context.Context, typ InstType) ([]Instrume
 	return ret, nil
 }
 
-//Symbols return all spot + margin + swap symbols
+// Symbols return all spot + margin + swap symbols
 func (rc *RestClient) Symbols(ctx context.Context) ([]exchange.Symbol, error) {
 	var ret []exchange.Symbol
 	spots, err := rc.SpotSymbols(ctx)
@@ -202,6 +202,24 @@ func initSymbols(ctx context.Context, isTest bool) error {
 	}
 
 	return nil
+}
+
+func ParseSymbol(sym string) (ret exchange.Symbol, err error) {
+	ret, err = ParseSpotSymbol(sym)
+	if err == nil {
+		return ret, nil
+	}
+
+	ret, err = ParseMarginSymbol(sym)
+	if err == nil {
+		return ret, nil
+	}
+
+	ret, err = ParseSwapSymbol(sym)
+	if err == nil {
+		return ret, nil
+	}
+	return nil, err
 }
 
 func ParseSpotSymbol(sym string) (exchange.SpotSymbol, error) {
