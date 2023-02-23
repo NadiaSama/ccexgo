@@ -93,9 +93,25 @@ func NewNotifyClient(addr string, codec rpc.Codec, data chan interface{}) *Notif
 }
 
 func (nc *NotifyClient) Handle(ctx context.Context, notify *rpc.Notify) {
+	if notify.Method == "trade" {
+		trades, ok := notify.Params.([]*exchange.Trade)
+		if !ok || len(trades) != 2 {
+			return
+		}
+		select {
+		case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: trades[0]}:
+		default:
+		}
+
+		select {
+		case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: trades[1]}:
+		default:
+		}
+		return
+	}
+
 	select {
 	case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: notify.Params}:
-	default:
 	}
 }
 
