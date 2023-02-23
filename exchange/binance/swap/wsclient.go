@@ -16,7 +16,7 @@ const (
 
 func NewWSClient(data chan interface{}) *WSClient {
 	ret := &WSClient{
-		NotifyClient: binance.NewNotifyClient(WSClientEndPoint, NewCodeC(), data),
+		NotifyClient: binance.NewNotifyClient(WSClientEndPoint, NewCodeC(), data, nil),
 	}
 	return ret
 }
