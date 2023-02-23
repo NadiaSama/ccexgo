@@ -30,7 +30,7 @@ type (
 )
 
 const (
-	okexRestHost = "www.okex.com"
+	okexRestHost = "www.okx.com"
 )
 
 func NewRestClient(key, secret, passPhrase string) *RestClient {

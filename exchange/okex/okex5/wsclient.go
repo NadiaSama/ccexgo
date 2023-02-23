@@ -26,10 +26,10 @@ type (
 )
 
 const (
-	WebSocketPublicAddr     = "wss://wsaws.okex.com:8443/ws/v5/public"
-	WebSocketPrivateAddr    = "wss://wsaws.okex.com:8443/ws/v5/private"
-	WebSocketSimPublicAddr  = "wss://wspap.okex.com:8443/ws/v5/public?brokerId=9999"
-	WebSocketSimPrivateAdrr = "wss://wspap.okex.com:8443/ws/v5/private?brokerId=9999"
+	WebSocketPublicAddr     = "wss://wsaws.okx.com:8443/ws/v5/public"
+	WebSocketPrivateAddr    = "wss://wsaws.okx.com:8443/ws/v5/private"
+	WebSocketSimPublicAddr  = "wss://wspap.okx.com:8443/ws/v5/public?brokerId=9999"
+	WebSocketSimPrivateAdrr = "wss://wspap.okx.com:8443/ws/v5/private?brokerId=9999"
 
 	MethodSubscribe   = "subscribe"
 	MethodUnSubscribe = "unsubscribe"
