@@ -83,35 +83,28 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	return nil
 }
 
-func NewNotifyClient(addr string, codec rpc.Codec, data chan interface{}) *NotifyClient {
+func NewNotifyClient(addr string, codec rpc.Codec, data chan interface{}, handler rpc.Handler) *NotifyClient {
 	ret := &NotifyClient{
 		data: data,
 	}
 
-	ret.WSClient = exchange.NewWSClient(addr, codec, ret)
+	if handler == nil {
+		handler = ret
+	}
+
+	ret.WSClient = exchange.NewWSClient(addr, codec, handler)
 	return ret
 }
 
 func (nc *NotifyClient) Handle(ctx context.Context, notify *rpc.Notify) {
-	if notify.Method == "trade" {
-		trades, ok := notify.Params.([]*exchange.Trade)
-		if !ok || len(trades) != 2 {
-			return
-		}
-		select {
-		case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: trades[0]}:
-		default:
-		}
+	nc.Push(notify.Method, notify.Params)
+}
 
-		select {
-		case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: trades[1]}:
-		default:
-		}
-		return
-	}
-
+func (nc *NotifyClient) Push(ch string, data interface{}) {
+	notify := &exchange.WSNotify{Exchange: Exchange, Chan: ch, Data: data}
 	select {
-	case nc.data <- &exchange.WSNotify{Exchange: Exchange, Chan: notify.Method, Data: notify.Params}:
+	case nc.data <- notify:
+	default:
 	}
 }
 

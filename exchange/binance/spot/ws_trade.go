@@ -29,9 +29,18 @@ type (
 	TradeChannel struct {
 		sym string
 	}
+
+	AggTradeChannel struct {
+		sym string
+	}
 )
 
-func NewTradeChannel(symbol string) *TradeChannel {
+const (
+	TradeEvent    = "trade"
+	AggTradeEvent = "aggTrade"
+)
+
+func NewTradeChannel(symbol string) exchange.Channel {
 	return &TradeChannel{
 		sym: strings.ToLower(symbol),
 	}
@@ -41,12 +50,28 @@ func (tc *TradeChannel) String() string {
 	return fmt.Sprintf("%s@trade", tc.sym)
 }
 
+func NewAggTradeChannel(symbol string) exchange.Channel {
+	return &AggTradeChannel{
+		sym: strings.ToLower(symbol),
+	}
+}
+
+func (ac *AggTradeChannel) String() string {
+	return fmt.Sprintf("%s@aggTrade", ac.sym)
+}
+
 func ParseTradeNotify(gs *gjson.Result) *TradeNotify {
+	var tradeID int64
+	if gs.Get("a").Exists() {
+		tradeID = gs.Get("a").Int()
+	} else {
+		tradeID = gs.Get("t").Int()
+	}
 	return &TradeNotify{
 		Event:       gs.Get("e").String(),
 		EventTS:     gs.Get("E").Int(),
 		Symbol:      gs.Get("s").String(),
-		TradeID:     gs.Get("t").Int(),
+		TradeID:     tradeID,
 		Price:       gs.Get("p").String(),
 		Quantity:    gs.Get("q").String(),
 		BuyOrderID:  gs.Get("b").Int(),
