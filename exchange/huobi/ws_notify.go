@@ -9,13 +9,15 @@ import (
 
 type (
 	Response struct {
-		Ping   int             `json:"ping,omitempty"`
-		Ch     string          `json:"ch,omitempty"`
-		TS     int64           `json:"ts,omitempty"`
-		Tick   json.RawMessage `json:"tick,omitempty"`
-		ID     string          `json:"id,omitempty"`
-		Status string          `json:"status,omitempty"`
-		Subbed string          `json:"subbed,omitempty"`
+		Ping    int             `json:"ping,omitempty"`
+		Ch      string          `json:"ch,omitempty"`
+		TS      int64           `json:"ts,omitempty"`
+		Tick    json.RawMessage `json:"tick,omitempty"`
+		ID      string          `json:"id,omitempty"`
+		Status  string          `json:"status,omitempty"`
+		Subbed  string          `json:"subbed,omitempty"`
+		ErrCode string          `json:"err-code,omitempty"`
+		ErrMsg  string          `json:"err-msg,omitempty"`
 	}
 )
 

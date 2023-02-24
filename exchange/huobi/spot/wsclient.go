@@ -12,11 +12,18 @@ type (
 
 const (
 	MBPAddr = "wss://api-aws.huobi.pro/feed"
+	WSAddr  = "wss://api.huobi.pro/ws"
 )
 
 func NewMBPWSClient(data chan interface{}) *WSClient {
 	return &WSClient{
 		WSClient: huobi.NewWSClient(MBPAddr, NewCodeC(), data),
+	}
+}
+
+func NewWSClient(data chan interface{}) *WSClient {
+	return &WSClient{
+		WSClient: huobi.NewWSClient(WSAddr, NewCodeC(), data),
 	}
 }
 

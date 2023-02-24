@@ -3,7 +3,7 @@ package spot
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
+	"math/big"
 	"strings"
 
 	"github.com/NadiaSama/ccexgo/exchange"
@@ -18,7 +18,7 @@ type (
 	}
 
 	TradeDetailData struct {
-		ID        int64   `json:"id"`
+		ID        big.Int `json:"id"`
 		TS        int64   `json:"ts"`
 		TradeID   int64   `json:"tradeId"`
 		Amount    float64 `json:"amount"`
@@ -61,7 +61,7 @@ func NewTradeDetailChanel(sym string) *TradeDetailChannel {
 }
 
 func (tdc *TradeDetailChannel) String() string {
-	return fmt.Sprintf("maket.%s.trade.detail", tdc.sym)
+	return fmt.Sprintf("market.%s.trade.detail", tdc.sym)
 }
 
 func ParseTradeTick(ch string, ts int64, raw json.RawMessage) ([]*exchange.Trade, error) {
@@ -89,7 +89,7 @@ func (td *TradeDetail) Parse(sym exchange.Symbol) ([]*exchange.Trade, error) {
 		}
 
 		trade := &exchange.Trade{
-			ID:     strconv.FormatInt(ch.ID, 10),
+			ID:     ch.ID.String(),
 			Time:   huobi.ParseTS(ch.TS),
 			Symbol: sym,
 			Price:  decimal.NewFromFloat(ch.Price),
