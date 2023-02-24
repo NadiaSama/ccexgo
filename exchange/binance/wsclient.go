@@ -2,8 +2,10 @@ package binance
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
 	"github.com/NadiaSama/ccexgo/misc/ctxlog"
 	"github.com/go-kit/log/level"
@@ -17,11 +19,18 @@ type (
 		DeleteListenKey(ctx context.Context) error
 	}
 
+	// WSClient common private wsclient for binance
 	WSClient struct {
 		rpc.Conn
 		handler rpc.Handler
 		codec   rpc.Codec
 		client  ListenKeyClient
+	}
+
+	NotifyClient struct {
+		*exchange.WSClient
+		data chan interface{}
+		mu   sync.Mutex
 	}
 )
 
@@ -71,5 +80,60 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	ws.Conn = conn
 
 	go ws.Conn.Run(ctx, ws.handler)
+	return nil
+}
+
+func NewNotifyClient(addr string, codec rpc.Codec, data chan interface{}, handler rpc.Handler) *NotifyClient {
+	ret := &NotifyClient{
+		data: data,
+	}
+
+	if handler == nil {
+		handler = ret
+	}
+
+	ret.WSClient = exchange.NewWSClient(addr, codec, handler)
+	return ret
+}
+
+func (nc *NotifyClient) Handle(ctx context.Context, notify *rpc.Notify) {
+	nc.Push(notify.Method, notify.Params)
+}
+
+func (nc *NotifyClient) Push(ch string, data interface{}) {
+	notify := &exchange.WSNotify{Exchange: Exchange, Chan: ch, Data: data}
+	select {
+	case nc.data <- notify:
+	default:
+	}
+}
+
+func (wcl *NotifyClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
+	wcl.mu.Lock()
+	defer wcl.mu.Unlock()
+
+	param := make([]string, 0, len(channels))
+	for _, c := range channels {
+		param = append(param, c.String())
+	}
+
+	if err := wcl.Call(ctx, "1", MethodSubscibe, param, nil); err != nil {
+		return errors.WithMessage(err, "subscribe error")
+	}
+	return nil
+}
+
+func (wcl *NotifyClient) UnSubscribe(ctx context.Context, channels ...exchange.Channel) error {
+	wcl.mu.Lock()
+	defer wcl.mu.Unlock()
+
+	param := make([]string, 0, len(channels))
+	for _, c := range channels {
+		param = append(param, c.String())
+	}
+
+	if err := wcl.Call(ctx, "1", MethodUnSubscribe, param, nil); err != nil {
+		return errors.WithMessage(err, "subscribe error")
+	}
 	return nil
 }

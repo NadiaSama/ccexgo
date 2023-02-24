@@ -21,15 +21,18 @@ type (
 		conn     Conn
 		gen      Gen
 		done     chan struct{}
+		close    chan struct{}
+		closed   bool
 		ech      chan error
 	}
 )
 
 func NewKeeper(gen Gen) *Keeper {
 	return &Keeper{
-		gen:  gen,
-		done: make(chan struct{}, 0),
-		ech:  make(chan error, 1),
+		gen:   gen,
+		done:  make(chan struct{}, 0),
+		ech:   make(chan error, 1),
+		close: make(chan struct{}),
 	}
 }
 
@@ -37,7 +40,7 @@ func (k *Keeper) Loop(ctx context.Context) {
 	defer close(k.done)
 	for {
 		conn, err := k.gen.NewConn(ctx)
-		if err == context.Canceled || err == context.DeadlineExceeded {
+		if err == context.Canceled || err == context.DeadlineExceeded || k.closed {
 			return
 		}
 		if err != nil {
@@ -50,7 +53,13 @@ func (k *Keeper) Loop(ctx context.Context) {
 	}
 }
 
-//ECh push error when error happen
+// Close loop manualy
+func (k *Keeper) Close() {
+	k.closed = true
+	close(k.close)
+}
+
+// ECh push error when error happen
 func (k *Keeper) ECh() chan error {
 	return k.ech
 }
@@ -72,6 +81,13 @@ func (k *Keeper) connLoop(ctx context.Context) {
 				k.pushErrorClose(err)
 			}
 			return
+
+		case <-k.close:
+			if err := k.conn.Close(); err != nil {
+				k.pushErrorClose(err)
+				return
+			}
+
 		case <-notify:
 			notify, err = k.updateSubscribe(ctx)
 			if err != nil {

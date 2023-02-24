@@ -1,12 +1,7 @@
 package spot
 
 import (
-	"context"
-	"strconv"
-
-	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/huobi"
-	"github.com/pkg/errors"
 )
 
 type (
@@ -17,6 +12,7 @@ type (
 
 const (
 	MBPAddr = "wss://api-aws.huobi.pro/feed"
+	WSAddr  = "wss://api.huobi.pro/ws"
 )
 
 func NewMBPWSClient(data chan interface{}) *WSClient {
@@ -25,6 +21,13 @@ func NewMBPWSClient(data chan interface{}) *WSClient {
 	}
 }
 
+func NewWSClient(data chan interface{}) *WSClient {
+	return &WSClient{
+		WSClient: huobi.NewWSClient(WSAddr, NewCodeC(), data),
+	}
+}
+
+/*
 func (ws *WSClient) Subscribe(ctx context.Context, channelds ...exchange.Channel) error {
 	for i, ch := range channelds {
 		param := huobi.CallParam{
@@ -44,3 +47,5 @@ func (ws *WSClient) Subscribe(ctx context.Context, channelds ...exchange.Channel
 	}
 	return nil
 }
+
+*/

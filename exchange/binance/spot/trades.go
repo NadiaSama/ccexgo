@@ -7,7 +7,6 @@ import (
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/exchange/binance"
-	"github.com/NadiaSama/ccexgo/misc/tconv"
 	"github.com/pkg/errors"
 	"github.com/shopspring/decimal"
 )
@@ -53,8 +52,8 @@ func (rc *RestClient) Trades(ctx context.Context, req *exchange.TradeReqParam) (
 		}
 	}
 
-	trades, err := rc.MyTrades(ctx, req.Symbol.String(), tconv.Time2Milli(req.StartTime),
-		tconv.Time2Milli(req.EndTime), fid, req.Limit)
+	trades, err := rc.MyTrades(ctx, req.Symbol.String(), binance.Time2Milli(req.StartTime),
+		binance.Time2Milli(req.EndTime), fid, req.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func (t *Trade) Parse() (*exchange.Trade, error) {
 		Price:       t.Price,
 		Fee:         t.Commission.Neg(),
 		FeeCurrency: t.CommissionAsset,
-		Time:        tconv.Milli2Time(t.Time),
+		Time:        binance.Milli2Time(t.Time),
 		Side:        side,
 		IsMaker:     t.IsMaker,
 		Raw:         *t,

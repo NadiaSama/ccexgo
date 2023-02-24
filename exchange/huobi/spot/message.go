@@ -40,7 +40,16 @@ func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
 		return nil, err
 	}
 
-	r, err := ParseDepth(resp.Ch, resp.TS, resp.Tick)
+	var (
+		r interface{}
+	)
+
+	if IsTradeDetailChanel(resp.Ch) {
+		r, err = ParseTradeTick(resp.Ch, resp.TS, resp.Tick)
+	} else {
+		r, err = ParseDepth(resp.Ch, resp.TS, resp.Tick)
+	}
+
 	if err != nil {
 		return nil, err
 	}

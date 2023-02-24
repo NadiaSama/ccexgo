@@ -9,4 +9,5 @@ require (
 	github.com/jarcoal/httpmock v1.0.6
 	github.com/pkg/errors v0.9.1
 	github.com/shopspring/decimal v1.2.0
+	github.com/tidwall/gjson v1.14.3 // indirect
 )
