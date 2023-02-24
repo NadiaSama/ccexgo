@@ -17,9 +17,10 @@ type (
 )
 
 const (
-	MethodPing     = "ping"
-	MethodPong     = "pong"
-	MethodSubscibe = "sub"
+	MethodPing        = "ping"
+	MethodPong        = "pong"
+	MethodSubscibe    = "sub"
+	MethodUnSubscribe = "unsub"
 )
 
 func NewCodeC() *CodeC {
