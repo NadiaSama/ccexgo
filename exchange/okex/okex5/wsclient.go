@@ -72,7 +72,7 @@ func (ws *WSClient) Handle(ctx context.Context, notify *rpc.Notify) {
 	}
 }
 
-func (ws *WSClient) Subscirbe(ctx context.Context, channels ...exchange.Channel) error {
+func (ws *WSClient) Subscribe(ctx context.Context, channels ...exchange.Channel) error {
 	if len(channels) != 1 {
 		return errors.Errorf("only 1 channel is support")
 	}
