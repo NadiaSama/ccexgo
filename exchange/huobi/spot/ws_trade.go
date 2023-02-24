@@ -54,7 +54,7 @@ func TradeDetailSymbol(ch string) string {
 	return ss[1]
 }
 
-func NewTradeDetailChanel(sym string) *TradeDetailChannel {
+func NewTradeDetailChannel(sym string) *TradeDetailChannel {
 	return &TradeDetailChannel{
 		sym: strings.ToLower(sym),
 	}
