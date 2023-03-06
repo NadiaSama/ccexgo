@@ -37,6 +37,8 @@ type (
 
 const (
 	eventError = "error"
+	pingMethod = "ping"
+	pongMethod = "pong"
 )
 
 var (
@@ -49,6 +51,10 @@ func NewCodec() *CodeC {
 
 func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
 	method := req.Method()
+	if method == pingMethod {
+		return []byte(pingMethod), nil
+	}
+
 	data := req.Params()
 
 	r := wsReq{
@@ -61,6 +67,12 @@ func (cc *CodeC) Encode(req rpc.Request) ([]byte, error) {
 }
 
 func (cc *CodeC) Decode(raw []byte) (rpc.Response, error) {
+	if len(raw) == 4 {
+		sr := string(raw)
+		if sr == pongMethod {
+			return &rpc.Result{}, nil
+		}
+	}
 	var resp wsResp
 	if err := json.Unmarshal(raw, &resp); err != nil {
 		return nil, err
