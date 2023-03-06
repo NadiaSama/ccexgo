@@ -126,5 +126,9 @@ func (k *Keeper) pushErrorClose(err error) {
 	if k.conn != nil {
 		k.conn.Close()
 	}
-	k.ech <- err
+
+	select {
+	case k.ech <- err:
+	default:
+	}
 }
