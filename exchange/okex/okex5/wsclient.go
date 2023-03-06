@@ -2,6 +2,7 @@ package okex5
 
 import (
 	"context"
+	"time"
 
 	"github.com/NadiaSama/ccexgo/exchange"
 	"github.com/NadiaSama/ccexgo/internal/rpc"
@@ -55,6 +56,20 @@ func (ws *WSClient) Run(ctx context.Context) error {
 	if err := ws.WSClient.Run(ctx); err != nil {
 		return err
 	}
+
+	go func() {
+		ticker := time.NewTicker(time.Second * 25)
+		for {
+			select {
+			case <-ticker.C:
+				ws.WSClient.Call(ctx, "1", pingMethod, "", nil)
+			case <-ws.WSClient.Done():
+				return
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	return nil
 }
