@@ -39,6 +39,7 @@ const (
 	KindFuture            = "future"
 	KindOptionCombo       = "option_combo"
 	KindFutureCombo       = "future_combo"
+	KindSpot              = "spot"
 	SettlePeriodPerpetual = "perpetual"
 	SettlePeriodDay       = "day"
 	SettlePeriodWeek      = "week"
@@ -70,7 +71,7 @@ func Init(ctx context.Context, testNet bool) error {
 	return nil
 }
 
-//SymbolLoop start loop update symbol map periodly
+// SymbolLoop start loop update symbol map periodly
 func SymbolLoop(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute * 5)
 	for {
@@ -84,12 +85,12 @@ func SymbolLoop(ctx context.Context) {
 	}
 }
 
-//UpdateSymbolMap rebuild symbol map. the symbol map update is leave to user
+// UpdateSymbolMap rebuild symbol map. the symbol map update is leave to user
 func UpdateSymbolMap(ctx context.Context) error {
 	return updateSymbolMap(ctx, rc)
 }
 
-//Symbols get all symbols from symbol map
+// Symbols get all symbols from symbol map
 func Symbols() []exchange.Symbol {
 	ret := []exchange.Symbol{}
 	symbolMu.Lock()
@@ -101,7 +102,7 @@ func Symbols() []exchange.Symbol {
 	return ret
 }
 
-//OptionSymbolWithIndex get all option symbol with specific index from symbol map
+// OptionSymbolWithIndex get all option symbol with specific index from symbol map
 func OptionSymbolsWithIndex(index string) []exchange.OptionSymbol {
 	ret := []exchange.OptionSymbol{}
 	symbolMu.Lock()
@@ -121,7 +122,7 @@ func OptionSymbolsWithIndex(index string) []exchange.OptionSymbol {
 	return ret
 }
 
-//NewOptionSymbol create a option symbol string with curreny, st, strike, typ. and parse it with ParseOptionSymbol
+// NewOptionSymbol create a option symbol string with curreny, st, strike, typ. and parse it with ParseOptionSymbol
 func NewOptionSymbol(currency string, st time.Time, strike float64, typ exchange.OptionType) (exchange.OptionSymbol, error) {
 	var suffix string
 	if typ == exchange.OptionTypeCall {
