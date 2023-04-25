@@ -13,9 +13,10 @@ import (
 
 type (
 	InstrumentsRequest struct {
-		currency string
-		kind     string
-		expired  bool
+		currency     string
+		kind         string
+		includeSpots bool
+		expired      bool
 	}
 
 	InstrumentResult struct {
@@ -57,6 +58,11 @@ func (ir *InstrumentsRequest) Expired() *InstrumentsRequest {
 
 func (ir *InstrumentsRequest) Kind(kind string) *InstrumentsRequest {
 	ir.kind = kind
+	return ir
+}
+
+func (ir *InstrumentsRequest) IncludeSpots(val bool) *InstrumentsRequest {
+	ir.includeSpots = val
 	return ir
 }
 
@@ -104,7 +110,7 @@ func (c *RestClient) OptionSymbols(ctx context.Context, currency string) ([]exch
 	return ret, nil
 }
 
-//Symbols fetch deribit option and futures(future + swap) symbols
+// Symbols fetch deribit option and futures(future + swap) symbols
 func (c *RestClient) Symbols(ctx context.Context, currency string) ([]exchange.Symbol, error) {
 	req := NewInstrumentsRequest(currency)
 	irs, err := c.Instruments(ctx, req)
@@ -115,7 +121,7 @@ func (c *RestClient) Symbols(ctx context.Context, currency string) ([]exchange.S
 	ret := make([]exchange.Symbol, 0, len(irs))
 	for i := range irs {
 		ir := irs[i]
-		if ir.Kind == KindFutureCombo || ir.Kind == KindOptionCombo {
+		if ir.Kind == KindFutureCombo || ir.Kind == KindOptionCombo || ir.Kind == KindSpot {
 			continue
 		}
 
